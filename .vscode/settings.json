@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "printk.h": "c",
+        "string.h": "c",
+        "compare": "c",
+        "cstdint": "c",
+        "format": "c",
+        "ns16550a.h": "c",
+        "init.h": "c",
+        "barrier.h": "c",
+        "types.h": "c",
+        "stdint.h": "c"
+    }
+}

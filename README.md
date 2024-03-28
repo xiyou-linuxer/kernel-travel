@@ -67,20 +67,20 @@ tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
 1. 下载
 
 ```bash
-git clone https://github.com/Qiubomm-OS/XOS-loongarch64.git
+git clone https://github.com/xiyou-linuxer/kernel-travel.git
 ```
 
 2. 编译
 
 ```bash
-cd XOS-loongarch64
+cd kernel-travel
 bash quick_start.sh defconfig
 bash quick_start.sh image
 ```
 
 ## 4 启动运行
 
-进入 loongson/XOS-loongarch64 目录。
+进入 loongson/kernel-travel 目录。
 
 ```bash
 bash quick_start.sh run
