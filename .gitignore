@@ -11,3 +11,5 @@ Image
 asm-offsets.s
 include/linux/version.h
 devicetable-offsets.s
+kernel/bounds.s
+vmlinux.lds
