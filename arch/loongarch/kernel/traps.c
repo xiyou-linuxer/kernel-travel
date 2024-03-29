@@ -1,13 +1,16 @@
-#include<linux/setup.h>
-#include <loongarch.h>
-#include <pt_regs.h>
+#include <asm/setup.h>
+#include <asm/loongarch.h>
+#include <asm/pt_regs.h>
 #include <asm/cacheflush.h>
 #include <linux/printk.h>
-#include <string.h>
+#include <linux/stdio.h>
+#include <linux/string.h>
 #include <linux/types.h>
+
 extern void *vector_table[];
 extern void do_irq(struct pt_regs *regs, uint64_t virq);
 
+extern void handle_reserved(void);
 void handle_reserved(void)
 {
 	printk("have a exception happened\n");
@@ -26,6 +29,7 @@ static inline int fls(int x)
 	return x ? sizeof(x) * 8 - __builtin_clz(x) : 0;
 }
 
+extern int __ilog2_u32(unsigned int n);
 int __ilog2_u32(unsigned int n)
 {
 	return fls(n) - 1;
@@ -76,6 +80,7 @@ static unsigned long hwirq_to_virq(unsigned long hwirq)
  * @sp: 中断栈指针
  * regs == sp
  */
+extern void do_vint(struct pt_regs *regs, unsigned long sp);
 void do_vint(struct pt_regs *regs, unsigned long sp)
 {
 	unsigned long hwirq = *(unsigned long *)regs;
@@ -139,7 +144,7 @@ void per_cpu_trap_init(int cpu)
 		for (i = 0; i < 64; i++)
 			set_handler(i * VECSIZE, handle_reserved, VECSIZE);
 
-	tlb_init(cpu);
+	// tlb_init(cpu);
 }
 
 /**
@@ -158,10 +163,11 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 /**
  * trap_init - 例外与中断处理初始化
  */
+extern void trap_init(void);
 void trap_init(void)
 {
 	unsigned long i;
-	void *vector_start;
+	// void *vector_start;
 	unsigned long tcfg = 0x01000000UL | (1U << 0) | (1U << 1);
 	unsigned long ecfg;
 
@@ -175,8 +181,8 @@ void trap_init(void)
 	 * 初始化中断处理入口程序
 	 */
 	for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++) {
-		vector_start = vector_table[i - EXCCODE_INT_START];
-		set_handler(i * VECSIZE, vector_start, VECSIZE);
+		// vector_start = vector_table[i - EXCCODE_INT_START];
+		// set_handler(i * VECSIZE, vector_start, VECSIZE);
 	}
 
 	local_flush_icache_range(eentry, eentry + 0x400);

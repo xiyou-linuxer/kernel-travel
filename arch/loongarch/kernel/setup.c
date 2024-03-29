@@ -1,5 +1,6 @@
 #include <asm/bootinfo.h>
-#include<setup.h>
+#include <asm/setup.h>
+
 unsigned long fw_arg0, fw_arg1, fw_arg2;
 unsigned long kernelsp;
 

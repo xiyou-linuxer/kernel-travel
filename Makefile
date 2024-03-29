@@ -344,7 +344,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 init-y		:= init/
 drivers-y	:= drivers/
 libs-y		:= lib/
-# core-y		:= kernel/
+core-y		:= kernel/
 
 # 构建目标需要引用配置文件
 ifeq ($(dot-config),1)

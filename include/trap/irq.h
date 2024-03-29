@@ -1,12 +1,13 @@
 #ifndef __KERNEL_INTERRUPT_H
 #define __KERNEL_INTERRUPT_H
-#include "stdint.h"
 
-#ifndef CONFIG_LOONGARCH64
+#include <linux/types.h>
+
+#ifndef CONFIG_LOONGARCH
 typedef void* intr_handler;
 void idt_init(void);
 #else
-#include <pt_regs.h>
+#include <asm/pt_regs.h>
 typedef void (*intr_handler)(struct pt_regs *regs);
 void irq_init(void);
 #endif

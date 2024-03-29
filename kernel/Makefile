@@ -9,6 +9,8 @@ endif
 # obj-y	= cpu.o smp.o printk.o panic.o \
 # 	workqueue.o signal.o syscall.o
 
-obj-$(CONFIG_KALLSYMS)	+= kallsyms.o
+# obj-$(CONFIG_KALLSYMS)	+= kallsyms.o
+
+obj-y += irq.o
 
 # obj-y	+= sched/ sh_kapi/ irq/ time/ locking/ count/

@@ -13,6 +13,8 @@ endif
 # Object file lists.
 
 obj-y := setup.o
+obj-y += traps.o
+obj-y += cache.o
 
 head-y			:= head.o
 extra-y := $(head-y) vmlinux.lds

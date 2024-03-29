@@ -1,8 +1,8 @@
-#include <loongarch.h>
-#include <stdint.h>
-#include <ns16550a.h>
+#include <asm/loongarch.h>
+#include <linux/types.h>
 #include <linux/printk.h>
-#include<irq.h>
+#include <linux/stdio.h>
+#include <trap/irq.h>
 
 #define INTR_NUM	256
 
@@ -99,12 +99,14 @@ void register_handler(uint8_t vector_no, intr_handler function)
 	intr_table[vector_no] = function;
 }
 
+extern void do_irq(struct pt_regs *regs, uint64_t virq);
 void do_irq(struct pt_regs *regs, uint64_t virq)
 {
 	// printk("virq = %d ", virq);
 	intr_table[virq](regs);
 }
 
+extern void timer_interrupt(struct pt_regs *regs);
 void timer_interrupt(struct pt_regs *regs)
 {
 	printk("timer interrupt\n");

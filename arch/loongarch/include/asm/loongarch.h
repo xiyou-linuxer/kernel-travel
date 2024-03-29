@@ -203,6 +203,8 @@ static inline void iocsr_write64(u64 val, u32 reg)
 
 /* CSR register number */
 
+#define  CRMD_IE			(1UL << 2)
+
 /* Basic CSR registers */
 #define LOONGARCH_CSR_CRMD		0x0	/* Current mode info */
 #define  CSR_CRMD_WE_SHIFT		9
@@ -1266,6 +1268,173 @@ __BUILD_CSR_OP(tlbidx)
 	csr_xchg32(val, val, LOONGARCH_CSR_ESTAT)
 #define clear_csr_estat(val)	\
 	csr_xchg32(~(val), val, LOONGARCH_CSR_ESTAT)
+
+static inline unsigned int read_csr_crmd(void)
+{
+	unsigned int x;
+	asm volatile("csrrd %0, 0x0" : "=r" (x) );
+	return x;
+}
+
+static inline void write_csr_crmd(unsigned int x)
+{
+  	asm volatile("csrwr %0, 0x0" : : "r" (x));
+}
+
+static inline unsigned int read_csr_prmd(void)
+{
+	unsigned int x;
+	asm volatile("csrrd %0, 0x1" : "=r" (x) );
+	return x;
+}
+
+static inline void write_csr_prmd(unsigned int x)
+{
+  	asm volatile("csrwr %0, 0x1" : : "r" (x));
+}
+
+static inline unsigned long read_csr_era(void)
+{
+	unsigned long x;
+	asm volatile("csrrd %0, 0x6" : "=r" (x) );
+	return x;
+}
+
+static inline void write_csr_era(unsigned long x)
+{
+  	asm volatile("csrwr %0, 0x6" : : "r" (x));
+}
+
+static inline unsigned long read_csr_eentry(void)
+{
+	unsigned long x;
+	asm volatile("csrrd %0, 0xc" : "=r" (x) );
+	return x;
+}
+
+static inline void write_csr_eentry(unsigned long x)
+{
+  	asm volatile("csrwr %0, 0xc" : : "r" (x) );
+}
+
+static inline void write_csr_tcfg(unsigned long x)
+{
+  	asm volatile("csrwr %0, 0x41" : : "r" (x) );
+}
+
+static inline unsigned int read_csr_ticlr(void)
+{
+	unsigned int x;
+	asm volatile("csrrd %0, 0x44" : "=r" (x) );
+	return x;
+}
+
+static inline void write_csr_ticlr(unsigned int x)
+{
+  	asm volatile("csrwr %0, 0x44" : : "r" (x) );
+}
+
+
+static inline unsigned long csrrd_prmd(void)
+{
+	unsigned long ret;
+
+	asm volatile ("csrrd %0, 1" : "=&r" (ret));
+
+	return ret;
+}
+
+static inline void csrwr_prmd(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 1" :: "Jr" (x));
+}
+
+static inline unsigned long csrrd_badv(void)
+{
+	unsigned long ret;
+
+	asm volatile ("csrrd %0, 7" : "=&r" (ret));
+
+	return ret;
+}
+
+static inline unsigned long csrrd_era(void)
+{
+	unsigned long ret;
+
+	asm volatile ("csrrd %0, 6" : "=&r" (ret));
+
+	return ret;
+}
+
+static inline void csrwr_era(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0x6" :: "Jr" (x));
+}
+
+static inline unsigned long csrrd_estat(void)
+{
+	unsigned long ret;
+
+	asm volatile ("csrrd %0, 5" : "=&r" (ret));
+
+	return ret;
+}
+
+static inline void csrwr_estat(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0x5" :: "Jr" (x));
+}
+
+static inline unsigned long csrrd_crmd(void)
+{
+	unsigned long ret;
+
+	asm volatile ("csrrd %0, 0" : "=&r" (ret));
+
+	return ret;
+}
+
+static inline void csrwr_crmd(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0" :: "Jr" (x));
+}
+
+static inline void csrwr_ecfg(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0x4" :: "Jr" (x));
+}
+
+static inline void csrwr_tcfg(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0x41" :: "Jr" (x));
+}
+
+static inline void csrwr_eentry(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0xc" :: "Jr" (x));
+}
+
+static inline void csrwr_ticlr(unsigned long x)
+{
+	asm volatile ("csrwr %z0, 0x44" :: "Jr" (x));
+}
+
+
+static inline void intr_on(void)
+{
+	csrwr_crmd(csrrd_crmd() | CRMD_IE);
+}
+
+static inline void intr_off(void)
+{
+	csrwr_crmd(csrrd_crmd() &~ CRMD_IE);
+}
+
+static inline int intr_get(void)
+{
+	return csrrd_crmd() & CRMD_IE;
+}
 
 #endif /* __ASSEMBLY__ */
 

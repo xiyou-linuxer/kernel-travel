@@ -1,0 +1,13 @@
+*.o
+*.cmd
+.config
+include/config
+include/generated
+vmlinux
+System.map
+.missing-syscalls.d
+Module.symvers
+Image
+asm-offsets.s
+include/linux/version.h
+devicetable-offsets.s
