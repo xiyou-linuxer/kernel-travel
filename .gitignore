@@ -9,6 +9,7 @@ System.map
 Module.symvers
 Image
 asm-offsets.s
+cross-tools/
 include/linux/version.h
 devicetable-offsets.s
 kernel/bounds.s
