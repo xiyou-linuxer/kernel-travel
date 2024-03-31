@@ -2,7 +2,7 @@
 
 PWD="`pwd`"
 
-TOOLCHAINS=../cross-tools/bin/loongarch64-unknown-linux-gnu-
+TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
 
 function distclean()
 {
