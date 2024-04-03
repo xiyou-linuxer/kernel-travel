@@ -9,6 +9,7 @@
         "init.h": "c",
         "barrier.h": "c",
         "types.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "io.h": "c"
     }
 }
