@@ -1,9 +1,9 @@
 #ifndef _ASM_PCI_H
 #define _ASM_PCI_H
-#include <./include/linux/types.h>
-#include<asm-generic/io.h>
 
-#define PCI_CONFIG0_BASE 0xfe00000000	/*PCI配置空间数据端口,type0一般设备*/
+#include <linux/types.h>
+
+#define PCI_CONFIG0_BASE 0xfe00000000	/*PCI配置空间数据端口,type0 一般设备*/
 #define PCI_CONFIG1_BASE 0xfe10000000   /*PCI配置空间数据端口,type1 PCI Bridge*/
 
 #define PCI_MAX_BAR 6		/*每个设备最多有6地址信息*/

@@ -10,6 +10,8 @@
         "barrier.h": "c",
         "types.h": "c",
         "stdint.h": "c",
-        "io.h": "c"
+        "io.h": "c",
+        "pci.h": "c",
+        "stdio.h": "c"
     }
 }
