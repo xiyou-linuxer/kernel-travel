@@ -122,4 +122,4 @@ void pci_device_dump(pci_device_t *device);
 void* pci_device_read(pci_device_t *device, unsigned int reg);
 void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value);
 
-void init_pci();
+void pci_init(void);

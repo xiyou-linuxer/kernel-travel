@@ -418,7 +418,7 @@ void pci_enable_bus_mastering(pci_device_t *device)
 }
 
 
-void init_pci()
+void pci_init()
 {
     /*初始化pci设备信息结构体*/
 	int i;
