@@ -5,6 +5,8 @@
 
 pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];/*存储设备信息的结构体数组*/
 
+/*初始化pci设备的bar地址*/
+
 static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val, unsigned int len_reg_val)
 {
 	/*if addr is 0xffffffff, we set it to 0*/
@@ -87,7 +89,7 @@ static void pci_device_init(
     unsigned char revision_id,
     unsigned char multi_function
 ) {
-	/*set value to device*/
+	/*设置驱动设备的信息*/
     device->bus = bus;
     device->dev = dev;
     device->function = function;
@@ -123,37 +125,37 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/*读取设备类型*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,&val);
     unsigned char header_type = ((val >> 16));
 	/*读取 command 寄存器*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_STATUS_COMMAND,&val);
     /*将寄存器中的内容存入结构体 */
     pci_dev->command = val & 0xffff;
     pci_dev->status = (val >> 16) & 0xffff;
     
    // unsigned int command = val & 0xffff;
 	/*pci_read_config class code and revision id*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_CLASS_CODE_REVISION_ID,&val);
     unsigned int classcode = val >> 8;
     unsigned char revision_id = val & 0xff;
 	
-	/*init pci device*/
+	/*初始化pci设备*/
     pci_device_init(pci_dev, bus, device, function, vendor_id, device_id, classcode, revision_id, (header_type & 0x80));
 	
-	/*init pci device bar*/
+	/*初始化设备的bar*/
 	int bar, reg;
     for (bar = 0; bar < PCI_MAX_BAR; bar++) {
         reg = PCI_BASS_ADDRESS0 + (bar*4);
-		/*pci_read_config bass address[0~5] to get address value*/
-        pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
-		/*set 0xffffffff to bass address[0~5], so that if we pci_read_config again, it's addr len*/
+		/*pci_read_config bass address[0~5] 获取地址值*/
+        pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
+		/*将0xffffffff设置为bass地址[0~5]，这样如果我们再次pci_read_config，它就是addr len*/
         pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
        
-	   /*pci_read_config bass address[0~5] to get addr len*/
+	   /*pci_read_config bass address[0~5] 获取地址长度*/
         unsigned int len;
         pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&len);
-        /*pci_write_config the io/mem address back to confige space*/
-		pci_write_config(bus, device, function, reg, val);
+        /*pci_write_config 将io/mem地址返回到confige空间*/
+		pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, val);
 		/*init pci device bar*/
         if (len != 0 && len != 0xffffffff) {
             pci_device_bar_init(&pci_dev->bar[bar], val, len);

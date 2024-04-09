@@ -13,22 +13,22 @@
 #define PCI_MAX_DEVICE_NR 256	/*系统最大支持检测多少个设备*/
 
 /*PCI配置空间数据的偏移*/
-#define PCI_DEVICE_VENDER								0x00	
-#define PCI_STATUS_COMMAND								0x04	
-#define PCI_CLASS_CODE_REVISION_ID						0x08	
-#define PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE	0x0C
-#define PCI_BASS_ADDRESS0								0x10
+#define PCI_DEVICE_VENDER								0x00	/* 设备厂商ID和设备ID的寄存器偏移量*/
+#define PCI_STATUS_COMMAND								0x04	/*状态和命令寄存器偏移量*/
+#define PCI_CLASS_CODE_REVISION_ID						0x08	/*类型、子类型、次类型和修订号寄存器偏移量*/
+#define PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE	0x0C    /*BIST（Built-In Self-Test，内建自测）、头部类型、延迟计时器和缓存行寄存器偏移量。*/
+#define PCI_BASS_ADDRESS0								0x10/*（BARs，基地址寄存器）0到5的偏移量。*/
 #define PCI_BASS_ADDRESS1								0x14
 #define PCI_BASS_ADDRESS2								0x18
 #define PCI_BASS_ADDRESS3								0x1C
 #define PCI_BASS_ADDRESS4								0x20
 #define PCI_BASS_ADDRESS5								0x24
-#define PCI_CARD_BUS_POINTER							0x28
-#define PCI_SUBSYSTEM_ID							    0x2C
-#define PCI_EXPANSION_ROM_BASE_ADDR                     0x30
-#define PCI_CAPABILITY_LIST                             0x34
-#define PCI_RESERVED							        0x38
-#define PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE			0x3C
+#define PCI_CARD_BUS_POINTER							0x28/*卡总线指针寄存器偏移量*/
+#define PCI_SUBSYSTEM_ID							    0x2C/*子系统ID寄存器偏移量*/
+#define PCI_EXPANSION_ROM_BASE_ADDR                     0x30/*扩展ROM基地址寄存器偏移量*/
+#define PCI_CAPABILITY_LIST                             0x34/*能力列表寄存器偏移量*/
+#define PCI_RESERVED							        0x38/*保留寄存器偏移量*/
+#define PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE			0x3C/*最大的总线延迟时间、最小的总线延迟时间、最大的访问延迟时间、中断引脚、中断线寄存器偏移量*/
 
 /*向command中写入的控制位*/
 #define  PCI_COMMAND_IO		0x1	/* I/O 空间的响应使能 */
