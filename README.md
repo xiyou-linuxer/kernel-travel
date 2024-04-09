@@ -10,7 +10,7 @@ cd loongarch
 
 ## 1 环境工具准备
 
-### 1.1 配置支持 loongarch64 的 qemu
+### 配置支持 loongarch64 的 qemu
 
 1. 下载 qemu，并进入
 
@@ -32,25 +32,6 @@ make
 sudo make install
 ```
 
-### 1.2 配置交叉工具链
-
-回到工作目录 loongson 下。
-
-#### 1.2.1 下载
-
-点击下载交叉工具链：
-[loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz)
-
-将交叉工具链包移动到工作目录 loongson 下。
-
-#### 1.2.2 工具解压到工作目录下
-
-```bash
-tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
-```
-
-> 可使用 -C 指定目标目录
-
 ## 2 获取UEFI启动引导
 
 回到工作目录 loongson 下。
@@ -70,13 +51,26 @@ tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
 git clone https://github.com/xiyou-linuxer/kernel-travel.git
 ```
 
-2. 编译
+2. 配置交叉工具链
+
+点击下载交叉工具链：
+[loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz)
+
+将交叉工具链包解压到 kernel-travel 目录下（交叉编译工具较大，预留足够存储空间）。
+
+```bash
+tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
+```
+
+3. 编译
 
 ```bash
 cd kernel-travel
 bash quick_start.sh defconfig
 bash quick_start.sh image
 ```
+
+提醒：QEMU_EFI.fd路径和交叉工具链包路径可以自定义，修改`quick_start.sh`中`run()`以及TOOLCHAINS路径即可。
 
 ## 4 启动运行
 

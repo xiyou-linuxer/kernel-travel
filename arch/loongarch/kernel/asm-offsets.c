@@ -1,51 +1,53 @@
-/*
- * Copyright (C) 1995-2003 Russell King
- *               2001-2002 Keith Owens
- *     
- * Generate definitions needed by assembly language modules.
- * This code generates raw asm output which is post-processed to extract
- * and format the required data.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- */
-#include <linux/compiler.h>
+#include <asm/pt_regs.h>
 #include <linux/kbuild.h>
 
-#include <asm/page.h>
-int main(void)
+void output_ptreg_defines(void);
+
+
+void output_ptreg_defines(void)
 {
+	COMMENT("LoongArch pt_regs offsets.");
+	OFFSET(PT_HWIRQ, pt_regs, hwirq);
+	OFFSET(PT_R0, pt_regs, regs[0]);
+	OFFSET(PT_R1, pt_regs, regs[1]);
+	OFFSET(PT_R2, pt_regs, regs[2]);
+	OFFSET(PT_R3, pt_regs, regs[3]);
+	OFFSET(PT_R4, pt_regs, regs[4]);
+	OFFSET(PT_R5, pt_regs, regs[5]);
+	OFFSET(PT_R6, pt_regs, regs[6]);
+	OFFSET(PT_R7, pt_regs, regs[7]);
+	OFFSET(PT_R8, pt_regs, regs[8]);
+	OFFSET(PT_R9, pt_regs, regs[9]);
+	OFFSET(PT_R10, pt_regs, regs[10]);
+	OFFSET(PT_R11, pt_regs, regs[11]);
+	OFFSET(PT_R12, pt_regs, regs[12]);
+	OFFSET(PT_R13, pt_regs, regs[13]);
+	OFFSET(PT_R14, pt_regs, regs[14]);
+	OFFSET(PT_R15, pt_regs, regs[15]);
+	OFFSET(PT_R16, pt_regs, regs[16]);
+	OFFSET(PT_R17, pt_regs, regs[17]);
+	OFFSET(PT_R18, pt_regs, regs[18]);
+	OFFSET(PT_R19, pt_regs, regs[19]);
+	OFFSET(PT_R20, pt_regs, regs[20]);
+	OFFSET(PT_R21, pt_regs, regs[21]);
+	OFFSET(PT_R22, pt_regs, regs[22]);
+	OFFSET(PT_R23, pt_regs, regs[23]);
+	OFFSET(PT_R24, pt_regs, regs[24]);
+	OFFSET(PT_R25, pt_regs, regs[25]);
+	OFFSET(PT_R26, pt_regs, regs[26]);
+	OFFSET(PT_R27, pt_regs, regs[27]);
+	OFFSET(PT_R28, pt_regs, regs[28]);
+	OFFSET(PT_R29, pt_regs, regs[29]);
+	OFFSET(PT_R30, pt_regs, regs[30]);
+	OFFSET(PT_R31, pt_regs, regs[31]);
+	OFFSET(PT_CRMD, pt_regs, csr_crmd);
+	OFFSET(PT_PRMD, pt_regs, csr_prmd);
+	OFFSET(PT_EUEN, pt_regs, csr_euen);
+	OFFSET(PT_ECFG, pt_regs, csr_ecfg);
+	OFFSET(PT_ESTAT, pt_regs, csr_estat);
+	OFFSET(PT_ERA, pt_regs, csr_era);
+	OFFSET(PT_BVADDR, pt_regs, csr_badvaddr);
+	OFFSET(PT_ORIG_A0, pt_regs, orig_a0);
+	DEFINE(PT_SIZE, sizeof(struct pt_regs));
 	BLANK();
-	DEFINE(PAGE_SZ, PAGE_SIZE);
-	BLANK();
-
-// 	DEFINE (__TIF_SINGLESTEP, PROCFLAG_SINGLESTEP);
-// 	DEFINE(S_FRAME_SIZE, sizeof(struct exception_spot));
-// 	DEFINE(MM_CONTEXT_ID,		offsetof(struct memory_map_desc, map_context.asid));
-// 	DEFINE(S_X0,			offsetof(struct exception_spot, regs[0]));
-// 	DEFINE(S_X1,			offsetof(struct exception_spot, regs[1]));
-// 	DEFINE(S_X2,			offsetof(struct exception_spot, regs[2]));
-// 	DEFINE(S_X3,			offsetof(struct exception_spot, regs[3]));
-// 	DEFINE(S_X4,			offsetof(struct exception_spot, regs[4]));
-// 	DEFINE(S_X5,			offsetof(struct exception_spot, regs[5]));
-// 	DEFINE(S_X6,			offsetof(struct exception_spot, regs[6]));
-// 	DEFINE(S_X7,			offsetof(struct exception_spot, regs[7]));
-// 	DEFINE(S_LR,			offsetof(struct exception_spot, regs[30]));
-// 	DEFINE(S_SP,			offsetof(struct exception_spot, sp));
-// #ifdef CONFIG_COMPAT
-// 	DEFINE(S_COMPAT_SP,		offsetof(struct exception_spot, compat_sp));
-// #endif
-// 	DEFINE(S_PSTATE,		offsetof(struct exception_spot, pstate));
-// 	DEFINE(S_PC,			offsetof(struct exception_spot, pc));
-// 	DEFINE(S_ORIG_X0,		offsetof(struct exception_spot, orig_x0));
-// 	DEFINE(S_SYSCALLNO,		offsetof(struct exception_spot, syscallno));
-
-// 	DEFINE(S_FRAME_SIZE,		sizeof(struct exception_spot));
-// 	DEFINE(TI_PREEMPT,		offsetof(struct process_desc, preempt_count));
-// 	DEFINE(TI_FLAGS,		offsetof(struct process_desc, flags));
-
-// 	DEFINE(THREAD_CPU_CONTEXT,	offsetof(struct task_desc, task_spot.cpu_context));
-
-	return 0; 
 }

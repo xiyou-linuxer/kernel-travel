@@ -167,7 +167,7 @@ extern void trap_init(void);
 void trap_init(void)
 {
 	unsigned long i;
-	// void *vector_start;
+	void *vector_start;
 	unsigned long tcfg = 0x01000000UL | (1U << 0) | (1U << 1);
 	unsigned long ecfg;
 
@@ -181,8 +181,8 @@ void trap_init(void)
 	 * 初始化中断处理入口程序
 	 */
 	for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++) {
-		// vector_start = vector_table[i - EXCCODE_INT_START];
-		// set_handler(i * VECSIZE, vector_start, VECSIZE);
+		vector_start = vector_table[i - EXCCODE_INT_START];
+		set_handler(i * VECSIZE, vector_start, VECSIZE);
 	}
 
 	local_flush_icache_range(eentry, eentry + 0x400);
@@ -190,4 +190,5 @@ void trap_init(void)
 	write_csr_tcfg(tcfg);
 	ecfg = read_csr_ecfg();
 	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 11);
+
 }

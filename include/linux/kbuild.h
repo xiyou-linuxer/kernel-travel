@@ -1,6 +1,8 @@
 #ifndef __DIM_SUM_KBUILD_H
 #define __DIM_SUM_KBUILD_H
 
+#include <linux/types.h>
+
 #define DEFINE(sym, val) \
         asm volatile("\n->" #sym " %0 " #val : : "i" (val))
 
