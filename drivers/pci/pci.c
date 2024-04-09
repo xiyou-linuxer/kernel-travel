@@ -3,10 +3,34 @@
 #include <asm-generic/io.h>
 #include <linux/stdio.h>
 
+static void pci_scan_buses(void);
+static unsigned int pic_get_device_connected(void);
+static pci_device_t* pci_alloc_device(void);
+
 pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];/*存储设备信息的结构体数组*/
 
-/*初始化pci设备的bar地址*/
+/*
+*base_cfg_addr:设备类型对应的基地址
+*bus：总线号
+*device：设备号
+*function：功能号
+*reg_id：命令的偏移
+*read_data：存放读入内容的内存地址
+*/
+static void pci_read_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
+{
+	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+    *(read_data) = *(volatile unsigned int *)( pcie_header_base + (reg_id<<2));
+}
 
+static void pci_write_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
+{
+	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+    *(volatile unsigned int *)( pcie_header_base + (reg_id<<2)) = write_data;
+    
+}
+
+/*初始化pci设备的bar地址*/
 static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val, unsigned int len_reg_val)
 {
 	/*if addr is 0xffffffff, we set it to 0*/
@@ -35,21 +59,6 @@ static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val
     }
 }
 
-/*从配置空间中读取寄存器*/
-void* pci_device_read(pci_device_t *device, unsigned int reg)
-{
-    void* result;
-   pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,result);
-   return result;
-}
-
-/*将值写入 pci 设备配置空间寄存器*/
-void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value)
-{
- 
-    pci_write_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg, value);
-}
-
 /*获取io地址*/
 unsigned int pci_device_get_io_addr(pci_device_t *device)
 {
@@ -62,8 +71,6 @@ unsigned int pci_device_get_io_addr(pci_device_t *device)
 
     return 0;
 }
-
-
 
 /*获取mem地址*/
 unsigned int pci_device_get_mem_addr(pci_device_t *device)
@@ -119,7 +126,7 @@ void pci_device_bar_dump(pci_device_bar_t *bar)
 }
 
 /*创建一个pci设备信息结构体*/
-static pci_device_t *pci_alloc_device()
+static pci_device_t* pci_alloc_device()
 {
 	int i;
 	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
@@ -144,28 +151,26 @@ static int pci_free_device(pci_device_t *device)
 	return -1;
 }
 
-/*
-*base_cfg_addr:设备类型对应的基地址
-*bus：总线号
-*device：设备号
-*function：功能号
-*reg_id：命令的偏移
-*read_data：存放读入内容的内存地址
-*/
-static unsigned int pci_read_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
+
+
+
+
+/*从配置空间中读取寄存器*/
+void* pci_device_read(pci_device_t *device, unsigned int reg)
 {
-	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *(read_data) = *(volatile unsigned int *)( pcie_header_base + (reg_id<<2));
-    
+    void* result;
+   pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,result);
+   return result;
 }
 
-static unsigned int pci_write_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
+/*将值写入 pci 设备配置空间寄存器*/
+void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value)
 {
-	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *(volatile unsigned int *)( pcie_header_base + (reg_id<<2)) = write_data;
-    
+ 
+    pci_write_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg, value);
 }
 
+/*初始化pci设备信息*/
 static void pci_device_init(
     pci_device_t *device,
     unsigned char bus,
@@ -313,7 +318,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 
 }
 
-
+/*扫描*/
 static void pci_scan_buses()
 {
 	unsigned int bus;
