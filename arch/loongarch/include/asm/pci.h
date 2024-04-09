@@ -17,7 +17,7 @@
 #define PCI_STATUS_COMMAND								0x04	/*状态和命令寄存器偏移量*/
 #define PCI_CLASS_CODE_REVISION_ID						0x08	/*类型、子类型、次类型和修订号寄存器偏移量*/
 #define PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE	0x0C    /*BIST（Built-In Self-Test，内建自测）、头部类型、延迟计时器和缓存行寄存器偏移量。*/
-#define PCI_BASS_ADDRESS0								0x10/*（BARs，基地址寄存器）0到5的偏移量。*/
+#define PCI_BASS_ADDRESS0								0x10/*（BARs，基地址寄存器），从0～5一共可以存六个地址信息*/
 #define PCI_BASS_ADDRESS1								0x14
 #define PCI_BASS_ADDRESS2								0x18
 #define PCI_BASS_ADDRESS3								0x1C
@@ -44,8 +44,8 @@
 #define  PCI_COMMAND_INTX_DISABLE 0x400 /* INTx模拟禁用 */
 
 /*IO地址和MEM地址的地址mask*/
-#define PCI_BASE_ADDR_MEM_MASK           (~0x0FUL)
-#define PCI_BASE_ADDR_IO_MASK            (~0x03UL)
+#define PCI_BASE_ADDR_MEM_MASK           (~0x0FUL)//屏蔽低四位
+#define PCI_BASE_ADDR_IO_MASK            (~0x03UL)//屏蔽低两位
 
 /* PCI设备ID */
 struct pci_device_id
@@ -105,4 +105,21 @@ typedef struct pci_device
 #endif
 
 
-void init_pci();//初始化pci
+unsigned int pci_device_get_io_addr(pci_device_t *device);
+unsigned int pci_device_get_mem_addr(pci_device_t *device);
+unsigned int pci_device_get_mem_len(pci_device_t *device);
+unsigned int pci_device_get_irq_line(pci_device_t *device);
+void pci_enable_bus_mastering(pci_device_t *device);
+pci_device_t* pci_get_device(unsigned int vendor_id, unsigned int device_id);
+pci_device_t* pci_get_device_by_class_code(unsigned int class, unsigned int sub_class);
+
+pci_device_t *pci_locate_device(unsigned short vendor, unsigned short device);
+pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass);
+
+void pci_device_bar_dump(pci_device_bar_t *bar);
+void pci_device_dump(pci_device_t *device);
+
+void* pci_device_read(pci_device_t *device, unsigned int reg);
+void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value);
+
+void init_pci();

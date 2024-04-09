@@ -9,6 +9,7 @@
 #include <linux/smp.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
+#include <asm/pci.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -30,6 +31,7 @@ void __init __no_sanitize_address start_kernel(void)
 		//初始化中断处理程序
 	trap_init();
 	irq_init();
+	pci_init();
 	// local_irq_disable();
 	// early_boot_irqs_disabled = true;
 

@@ -13,18 +13,104 @@ static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val
     if (addr_reg_val == 0xffffffff) {
         addr_reg_val = 0;
     }
-	/*we judge type by addr register bit 0, if 1, type is io, if 0, type is memory*/
+	/*bar寄存器中bit0位用来标记地址类型，如果是1则为io空间，若为0则为mem空间*/
     if (addr_reg_val & 1) {
+        /*I/O元基地址寄存器:
+        *Bit1:保留
+        *Bit31-2:RO,基地址单元
+        *Bit63-32:保留
+        */
         bar->type = PCI_BAR_TYPE_IO;
 		bar->base_addr = addr_reg_val  & PCI_BASE_ADDR_IO_MASK;
         bar->length    = ~(len_reg_val & PCI_BASE_ADDR_IO_MASK) + 1;
     } else {
+        /*MEM 基地址存储器:
+        Bit2-1:RO,MEM 基地址寄存器-译码器宽度单元,00-32 位,10-64 位
+        Bit3:RO,预提取属性
+        Bit64-4:基地址单元
+        */
         bar->type = PCI_BAR_TYPE_MEM;
         bar->base_addr = addr_reg_val  & PCI_BASE_ADDR_MEM_MASK;
         bar->length    = ~(len_reg_val & PCI_BASE_ADDR_MEM_MASK) + 1;
     }
 }
 
+/*从配置空间中读取寄存器*/
+void* pci_device_read(pci_device_t *device, unsigned int reg)
+{
+    void* result;
+   pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,result);
+   return result;
+}
+
+/*将值写入 pci 设备配置空间寄存器*/
+void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value)
+{
+ 
+    pci_write_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg, value);
+}
+
+/*获取io地址*/
+unsigned int pci_device_get_io_addr(pci_device_t *device)
+{
+	int i;
+    for (i = 0; i < PCI_MAX_BAR; i++) {
+        if (device->bar[i].type == PCI_BAR_TYPE_IO) {
+            return device->bar[i].base_addr;
+        }
+    }
+
+    return 0;
+}
+
+
+
+/*获取mem地址*/
+unsigned int pci_device_get_mem_addr(pci_device_t *device)
+{
+	int i;
+    for (i = 0; i < PCI_MAX_BAR; i++) {
+        if (device->bar[i].type == PCI_BAR_TYPE_MEM) {
+            return device->bar[i].base_addr;
+        }
+    }
+
+    return 0;
+}
+
+/*获取mem地址的长度*/
+unsigned int pci_device_get_mem_len(pci_device_t *device)
+{
+    int i;
+    for(i=0; i<PCI_MAX_BAR; i++) {
+        if(device->bar[i].type == PCI_BAR_TYPE_MEM) {
+            return device->bar[i].length;
+        }
+    }
+    return 0;
+}
+
+/*获取中断号*/
+unsigned int pci_device_get_irq_line(pci_device_t *device)
+{
+    return device->irq_line;
+}
+
+
+static unsigned int pic_get_device_connected()
+{
+	int i;
+	pci_device_t *device;
+	for (i = 0; i < PCI_MAX_BAR; i++) {
+		device = &pci_device_table[i];
+        if (device->flags != PCI_DEVICE_USING) {
+            break;
+        }
+    }
+	return i;
+}
+
+/*打印pci设备的地址信息*/
 void pci_device_bar_dump(pci_device_bar_t *bar)
 {
     printk(KERN_DEBUG "pci_device_bar_dump: type: %s\n", bar->type == PCI_BAR_TYPE_IO ? "io base address" : "mem base address");
@@ -32,6 +118,7 @@ void pci_device_bar_dump(pci_device_bar_t *bar)
     printk(KERN_DEBUG "pci_device_bar_dump: len: %x\n", bar->length);
 }
 
+/*创建一个pci设备信息结构体*/
 static pci_device_t *pci_alloc_device()
 {
 	int i;
@@ -44,6 +131,7 @@ static pci_device_t *pci_alloc_device()
 	return NULL;
 }
 
+/*释放一个pci设备信息结构体*/
 static int pci_free_device(pci_device_t *device)
 {
 	int i;
@@ -71,7 +159,7 @@ static unsigned int pci_read_config(unsigned int base_cfg_addr, unsigned int bus
     
 }
 
-static unsigned int pci_read_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
+static unsigned int pci_write_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
 {
 	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
     *(volatile unsigned int *)( pcie_header_base + (reg_id<<2)) = write_data;
@@ -104,6 +192,36 @@ static void pci_device_init(
          device->bar[i].type = PCI_BAR_TYPE_INVALID;
     }
     device->irq_line = -1;
+}
+
+/*打印配置信息*/
+void pci_device_dump(pci_device_t *device)
+{
+	//printk("status:      %d\n", device->flags);
+    
+    printk(KERN_DEBUG "pci_device_dump: vendor id:      0x%x\n", device->vendor_id);
+    printk(KERN_DEBUG "pci_device_dump: device id:      0x%x\n", device->device_id);
+	printk(KERN_DEBUG "pci_device_dump: class code:     0x%x\n", device->class_code);
+    printk(KERN_DEBUG "pci_device_dump: revision id:    0x%x\n", device->revision_id);
+    printk(KERN_DEBUG "pci_device_dump: multi function: %d\n", device->multi_function);
+    printk(KERN_DEBUG "pci_device_dump: card bus CIS pointer: %x\n", device->card_bus_pointer);
+    printk(KERN_DEBUG "pci_device_dump: subsystem vendor id: %x\n", device->subsystem_vendor_id);
+    printk(KERN_DEBUG "pci_device_dump: subsystem device id: %x\n", device->subsystem_device_id);
+    printk(KERN_DEBUG "pci_device_dump: expansion ROM base address: %x\n", device->expansion_rom_base_addr);
+    printk(KERN_DEBUG "pci_device_dump: capability list pointer:  %x\n", device->capability_list);
+    printk(KERN_DEBUG "pci_device_dump: irq line: %d\n", device->irq_line);
+    printk(KERN_DEBUG "pci_device_dump: irq pin:  %d\n", device->irq_pin);
+    printk(KERN_DEBUG "pci_device_dump: min Gnt: %d\n", device->min_gnt);
+    printk(KERN_DEBUG "pci_device_dump: max Lat:  %d\n", device->max_lat);
+    int i;
+	for (i = 0; i < PCI_MAX_BAR; i++) {
+		/*if not a invalid bar*/
+        if (device->bar[i].type != PCI_BAR_TYPE_INVALID) {
+            printk(KERN_DEBUG "pci_device_dump: bar %d:\n", i);
+			pci_device_bar_dump(&device->bar[i]);
+        }
+    }
+    printk("\n");
 }
 
 static void pci_scan_device(unsigned char bus, unsigned char device, unsigned char function)
@@ -144,11 +262,11 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	
 	/*初始化设备的bar*/
 	int bar, reg;
-    for (bar = 0; bar < PCI_MAX_BAR; bar++) {
+    for (bar = 0; bar < PCI_MAX_BAR; bar++) {//遍历六个地址寄存器
         reg = PCI_BASS_ADDRESS0 + (bar*4);
-		/*pci_read_config bass address[0~5] 获取地址值*/
+		/*获取地址值*/
         pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
-		/*将0xffffffff设置为bass地址[0~5]，这样如果我们再次pci_read_config，它就是addr len*/
+		/*设置bar寄存器为全1禁用此地址，在禁用后再次读取读出的内容为地址空间的大小*/
         pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
        
 	   /*pci_read_config bass address[0~5] 获取地址长度*/
@@ -162,25 +280,25 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
         }
     }
 
-    /* get card bus CIS pointer */
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    /* 获取 card bus CIS 指针 */
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_CARD_BUS_POINTER,&val);
     pci_dev->card_bus_pointer = val;
 
-    /* get subsystem device id and vendor id */
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    /* 获取子系统设备 ID 和供应商 ID */
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_SUBSYSTEM_ID,&val);
     pci_dev->subsystem_vendor_id = val & 0xffff;
     pci_dev->subsystem_device_id = (val >> 16) & 0xffff;
     
-    /* get expansion ROM base address */
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    /* 获取扩展ROM基地址 */
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_EXPANSION_ROM_BASE_ADDR,&val);
     pci_dev->expansion_rom_base_addr = val;
     
-    /* get capability list */
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    /* 获取能力列表 */
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_CAPABILITY_LIST,&val);
     pci_dev->capability_list = val;
     
-	/*get irq line and pin*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+	/*获取中断相关的信息*/
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE,&val);
     if ((val & 0xff) > 0 && (val & 0xff) < 32) {
         unsigned int irq = val & 0xff;
         pci_dev->irq_line = irq;
@@ -201,24 +319,114 @@ static void pci_scan_buses()
 	unsigned int bus;
 	unsigned char device, function;
 	/*扫描每一条总线上的设备*/
-    for (bus = 0; bus < PCI_MAX_BUS; bus++) {
-        for (device = 0; device < PCI_MAX_DEV; device++) {
-           for (function = 0; function < PCI_MAX_FUN; function++) {
+    for (bus = 0; bus < PCI_MAX_BUS; bus++) {//遍历总线
+        for (device = 0; device < PCI_MAX_DEV; device++) {//遍历总线上的每一个设备
+           for (function = 0; function < PCI_MAX_FUN; function++) {//遍历每个功能号
 				pci_scan_device(bus, device, function);
 			}
         }
     }
 }
 
+pci_device_t* pci_get_device(unsigned int vendor_id, unsigned int device_id)
+{
+	int i;
+	pci_device_t* device;
+	
+	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
+		device = &pci_device_table[i];
+        
+		if (device->flags == PCI_DEVICE_USING &&
+            device->vendor_id == vendor_id && 
+            device->device_id == device_id) {
+			return device;
+		}
+	}
+    return NULL;
+}
+
+pci_device_t* pci_get_device_by_class_code(unsigned int class, unsigned int sub_class)
+{
+	int i;
+	pci_device_t* device;
+	
+    /* 构建类代码 */
+    unsigned int class_code = ((class & 0xff) << 16) | ((sub_class & 0xff) << 8);
+
+	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
+		device = &pci_device_table[i];
+		if (device->flags == PCI_DEVICE_USING &&
+            (device->class_code & 0xffff00) == class_code) {
+			return device;
+		}
+	}
+    return NULL;
+}
+
+/* 根据供应商和设备 ID 搜索 pci 设备 */
+pci_device_t *pci_locate_device(unsigned short vendor, unsigned short device)
+{
+	if(vendor == 0xFFFF || device == 0xFFFF)
+		return NULL;
+
+    pci_device_t* tmp;
+	int i;
+	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
+		tmp = &pci_device_table[i];
+		if (tmp->flags == PCI_DEVICE_USING &&
+            tmp->vendor_id == vendor && 
+            tmp->device_id == device) {
+			return tmp;
+		}
+	}
+	return NULL;
+}
+
+pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass)
+{
+	if(class == 0xFFFF || _subclass == 0xFFFF)
+		return NULL;
+	pci_device_t *tmp;
+	/* 构建类代码 */
+    unsigned int class_code = ((class & 0xff) << 16) | ((_subclass & 0xff) << 8);
+    int i;
+	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
+		tmp = &pci_device_table[i];
+		if (tmp->flags == PCI_DEVICE_USING &&
+            (tmp->class_code & 0xffff00) == class_code) {
+			return tmp;
+		}
+	}
+	return NULL;
+}
+
+/*这段代码的作用是启用PCI设备的总线主控功能*/
+void pci_enable_bus_mastering(pci_device_t *device)
+{
+    unsigned int val;
+    pci_read_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function,PCI_STATUS_COMMAND,&val);
+    // #if DEBUG_LOCAL == 1
+    printk(KERN_DEBUG "pci_enable_bus_mastering: before command: %x\n", val);    
+//#endif
+	val |= 4;
+    pci_write_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND, val);
+
+    pci_read_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND,&val);
+//#if DEBUG_LOCAL == 1
+    printk(KERN_DEBUG "pci_enable_bus_mastering: after command: %x\n", val);    
+//#endif
+}
+
+
 void init_pci()
 {
-    /*init pci device table*/
+    /*初始化pci设备信息结构体*/
 	int i;
 	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
 		pci_device_table[i].flags = PCI_DEVICE_INVALID;
 	}
 
-	/*scan all pci buses*/
+	/*扫描所有总线设备*/
 	pci_scan_buses();
 
     printk(KERN_INFO "init_pci: pci type device found %d.\n", pic_get_device_connected());
