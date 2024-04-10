@@ -28,7 +28,7 @@
 #define _ACAST32_		(_ATYPE_)(_ATYPE32_)	/* widen if necessary */
 #define _ACAST64_		(_ATYPE64_)		/* do _not_ narrow */
 #endif
-
+#define CACHE_BASE		CSR_DMW1_BASE
 #define PHYSADDR(a)		((_ACAST64_(a)) & TO_PHYS_MASK)
-
+#define TO_CACHE(x)		(CACHE_BASE   |	((x) & TO_PHYS_MASK))//取出后48位偏移地址并与cache的基地址相或取得虚拟地址（前文中将虚拟地址映射到了cache之中
 #endif /* _ASM_ADDRSPACE_H */

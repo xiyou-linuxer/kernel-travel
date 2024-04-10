@@ -2,7 +2,7 @@
 #include <linux/printk.h>
 #include <asm-generic/io.h>
 #include <linux/stdio.h>
-
+#include <asm/addrspace.h>
 static void pci_scan_buses(void);
 static unsigned int pic_get_device_connected(void);
 static pci_device_t* pci_alloc_device(void);
@@ -19,14 +19,15 @@ pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];/*存储设备信息的结构�
 */
 static void pci_read_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
-	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *(read_data) = *(volatile unsigned int *)( pcie_header_base + (reg_id<<2));
+    unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+    *read_data = *(volatile unsigned int *)(TO_CACHE( pcie_header_base + (reg_id<<2))) ;
+    //printk("read_data:%d\n", *(read_data));
 }
 
 static void pci_write_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
 {
 	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *(volatile unsigned int *)( pcie_header_base + (reg_id<<2)) = write_data;
+    *(volatile unsigned int *)(TO_CACHE( pcie_header_base + (reg_id<<2))) = write_data;
     
 }
 
@@ -151,10 +152,6 @@ static int pci_free_device(pci_device_t *device)
 	return -1;
 }
 
-
-
-
-
 /*从配置空间中读取寄存器*/
 void* pci_device_read(pci_device_t *device, unsigned int reg)
 {
@@ -231,6 +228,7 @@ void pci_device_dump(pci_device_t *device)
 
 static void pci_scan_device(unsigned char bus, unsigned char device, unsigned char function)
 {
+    
 	/*读取总线设备的设备id*/
     unsigned int val;
     pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
@@ -240,7 +238,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
     if (vendor_id == 0xffff) {
         return;
     }
-    
+    //printk("pci_scan_device start\n");
 	/*分配一个空闲的pci设备信息结构体*/
 	pci_device_t *pci_dev = pci_alloc_device();
 	if(pci_dev == NULL){
@@ -328,7 +326,7 @@ static void pci_scan_buses()
         for (device = 0; device < PCI_MAX_DEV; device++) {//遍历总线上的每一个设备
            for (function = 0; function < PCI_MAX_FUN; function++) {//遍历每个功能号
 				pci_scan_device(bus, device, function);
-			}
+            }
         }
     }
 }
@@ -405,6 +403,8 @@ pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass)
 	return NULL;
 }
 
+//pci_device_t* pci_device_find(char bus,char dev,char)
+
 /*这段代码的作用是启用PCI设备的总线主控功能*/
 void pci_enable_bus_mastering(pci_device_t *device)
 {
@@ -425,14 +425,16 @@ void pci_enable_bus_mastering(pci_device_t *device)
 
 void pci_init()
 {
+    printk("pci_init start\n");
     /*初始化pci设备信息结构体*/
-	int i;
-	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
-		pci_device_table[i].flags = PCI_DEVICE_INVALID;
-	}
-
-	/*扫描所有总线设备*/
-	pci_scan_buses();
-
-    printk(KERN_INFO "init_pci: pci type device found %d.\n", pic_get_device_connected());
+    int i;
+    for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
+        pci_device_table[i].flags = PCI_DEVICE_INVALID;
+    }
+    /*扫描所有总线设备*/
+    pci_scan_buses();
+    pci_device_t *ahci = pci_locate_class(0x1, 0x6);
+    //pci_device_dump(ahci);
+    printk(KERN_INFO "init_pci: pci type device found %d.\n",
+           pic_get_device_connected());
 }

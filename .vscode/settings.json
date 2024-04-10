@@ -12,6 +12,11 @@
         "stdint.h": "c",
         "io.h": "c",
         "pci.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "pt_regs.h": "c",
+        "setup.h": "c",
+        "irq.h": "c",
+        "bootinfo.h": "c",
+        "memory.h": "c"
     }
 }

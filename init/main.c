@@ -10,7 +10,9 @@
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
-
+#include <asm/setup.h>
+#include <asm/bootinfo.h>
+#include <asm/boot_param.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -29,12 +31,13 @@ void __init __no_sanitize_address start_kernel(void)
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	// printk("@@@@@@: %d\n", BITS_PER_LONG);
 	setup_arch();//初始化体系结构
-		//初始化中断处理程序
+	//初始化中断处理程序
 	trap_init();
 	irq_init();
+	local_irq_enable();
 	pci_init();
 	// local_irq_disable();
-	local_irq_enable();
+	
 	// early_boot_irqs_disabled = true;
 
 	/**
