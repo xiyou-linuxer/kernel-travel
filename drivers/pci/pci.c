@@ -17,17 +17,16 @@ pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];/*存储设备信息的结构�
 *reg_id：命令的偏移
 *read_data：存放读入内容的内存地址
 */
-static void pci_read_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
+static void pci_read_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
-    unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *read_data = *(volatile unsigned int *)(TO_CACHE( pcie_header_base + (reg_id<<2))) ;
-    //printk("read_data:%d\n", *(read_data));
+    unsigned long pcie_header_base = 0x8000000000000000|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+    *read_data = *(volatile unsigned int *)(pcie_header_base + reg_id) ; 
 }
 
-static void pci_write_config(unsigned int base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
+static void pci_write_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
 {
-	unsigned long pcie_header_base = base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *(volatile unsigned int *)(TO_CACHE( pcie_header_base + (reg_id<<2))) = write_data;
+	unsigned long pcie_header_base = 0x8000000000000000|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+    *(volatile unsigned int *)( pcie_header_base + reg_id) = write_data;
     
 }
 
@@ -156,8 +155,8 @@ static int pci_free_device(pci_device_t *device)
 void* pci_device_read(pci_device_t *device, unsigned int reg)
 {
     void* result;
-   pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,result);
-   return result;
+    pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,result);
+    return result;
 }
 
 /*将值写入 pci 设备配置空间寄存器*/
@@ -238,7 +237,6 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
     if (vendor_id == 0xffff) {
         return;
     }
-    //printk("pci_scan_device start\n");
 	/*分配一个空闲的pci设备信息结构体*/
 	pci_device_t *pci_dev = pci_alloc_device();
 	if(pci_dev == NULL){
@@ -272,9 +270,9 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		/*设置bar寄存器为全1禁用此地址，在禁用后再次读取读出的内容为地址空间的大小*/
         pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
        
-	   /*pci_read_config bass address[0~5] 获取地址长度*/
+	   /* bass address[0~5] 获取地址长度*/
         unsigned int len;
-        pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&len);
+        pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg,&len);
         /*pci_write_config 将io/mem地址返回到confige空间*/
 		pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, val);
 		/*init pci device bar*/
@@ -310,8 +308,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
     pci_dev->min_gnt = (val >> 16) & 0xff;
     pci_dev->max_lat = (val >> 24) & 0xff;
     
-    printk(KERN_DEBUG "pci_scan_device: pci device at bus: %d, device: %d function: %d\n", 
-        bus, device, function);
+    printk(KERN_DEBUG "pci_scan_device: pci device at bus: %d, device: %d function: %d\n", bus, device, function);
     pci_device_dump(pci_dev);
 
 }
@@ -422,6 +419,18 @@ void pci_enable_bus_mastering(pci_device_t *device)
 //#endif
 }
 
+static void dump_addr(unsigned long *addr)
+{
+    int i;
+    printk("%16x\n", addr);
+    for (i = 0; i < 256;) {
+        printk("%08x", *(addr + i));
+        if ((i + 1) % 4 == 0) {
+            printk("\n");
+        }
+        i += 4;
+    }
+}
 
 void pci_init()
 {
@@ -433,8 +442,6 @@ void pci_init()
     }
     /*扫描所有总线设备*/
     pci_scan_buses();
-    pci_device_t *ahci = pci_locate_class(0x1, 0x6);
-    //pci_device_dump(ahci);
     printk(KERN_INFO "init_pci: pci type device found %d.\n",
            pic_get_device_connected());
 }
