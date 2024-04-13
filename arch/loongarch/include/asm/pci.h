@@ -121,5 +121,7 @@ void pci_device_dump(pci_device_t *device);
 
 void* pci_device_read(pci_device_t *device, unsigned int reg);
 void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value);
-
+pci_device_t* pci_get_device_by_bus(unsigned int bus,
+                                    unsigned int dev,
+                                    unsigned int function);
 void pci_init(void);

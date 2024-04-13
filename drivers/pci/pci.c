@@ -308,8 +308,8 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
     pci_dev->min_gnt = (val >> 16) & 0xff;
     pci_dev->max_lat = (val >> 24) & 0xff;
     
-    printk(KERN_DEBUG "pci_scan_device: pci device at bus: %d, device: %d function: %d\n", bus, device, function);
-    pci_device_dump(pci_dev);
+    /*printk(KERN_DEBUG "pci_scan_device: pci device at bus: %d, device: %d function: %d\n", bus, device, function);
+    pci_device_dump(pci_dev);*/
 
 }
 
@@ -361,6 +361,26 @@ pci_device_t* pci_get_device_by_class_code(unsigned int class, unsigned int sub_
 		}
 	}
     return NULL;
+}
+
+/*通过主线号，设备号，功能号寻找设备信息*/
+pci_device_t* pci_get_device_by_bus(unsigned int bus, unsigned int dev,unsigned int function){
+    if (bus>PCI_MAX_BUS|| dev>PCI_MAX_DEV || function>PCI_MAX_FUN)
+    {
+        return NULL;
+    }
+    pci_device_t* tmp;
+    for (int i = 0; i < PCI_MAX_DEVICE_NR; i++) {
+		tmp = &pci_device_table[i];
+		if (
+            tmp->bus == bus && 
+            tmp->dev == dev&&
+            tmp->function == function) {
+                    printk("pci_get_device_by_bus\n");
+                    return tmp;
+            }
+	}
+	return NULL;
 }
 
 /* 根据供应商和设备 ID 搜索 pci 设备 */
@@ -442,6 +462,9 @@ void pci_init()
     }
     /*扫描所有总线设备*/
     pci_scan_buses();
+    /*pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
+    printk("pci_dev:%x", pci_dev);
+    pci_device_dump(pci_dev);*/
     printk(KERN_INFO "init_pci: pci type device found %d.\n",
            pic_get_device_connected());
 }
