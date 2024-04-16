@@ -14,16 +14,43 @@
 #define ATA_CMD_READ_DMA_EXT 0x25//读磁盘
 #define ATA_CMD_WRITE_DMA_EXT 0x30//写磁盘
 
-/*端口基地址*/
-#define PORT0_BASE 0x100 //端口0
-#define PORT1_BASE 0X180 //端口1
+
 
 /*磁盘驱动程序的的返回结果*/
 enum disk_result{
-	AHCI_SUCCESS ,  	// 请求成功
+	AHCI_SUCCESS,  	//请求成功
+	IO_FAILED,		//失败   
 }
 
-/*HBA 寄存器*/
+/*SATA控制器*/
+#define HBA_CAP 0x000//HBA 特性寄存器
+#define HBA_GHC 0x004//全局 HBA 控制寄存器
+#define HBA_IS 0x008//中断状态寄存器
+#define HBA_PI 0x00c//端口寄存器
+#define HBA_VS 0x010// AHCI 版本寄存器
+#define HBA_CCC_CTL 0x014//命令完成合并控制寄存器
+#define HBA_CCC_PORTS 0x018// 命令完成合并端口寄存器
+#define HBA_CAP2 0x024//HBA 特性扩展寄存器
+#define HBA_BISTAFR 0x0A0// BIST 激活 FIS
+#define HBA_BISTCR 0x0A4//BIST 控制寄存器
+#define HBA_BISTCTR 0x0A8//BIST FIS 计数寄存器
+#define HBA_BISTSR 0x0AC // BIST 状态寄存器
+#define HBA_BISTDECR 0x0B0// BIST 双字错计数寄存器
+#define HBA_OOBR 0x0BC//OOB 寄存器
+#define HBA_TIMER1MS 0x0E0//1ms 计数寄存器
+#define HBA_GPARAM1R 0x0E8//全局参数寄存器 1
+
+/*GHC中填入的位*/
+#define HBA_GHC_IE (1UL << 1)//HBA全局使能
+#define HBA_GHC_AHCI_ENABLE (1UL << 31)//启用AHCI
+#define HBA_GHC_RESET (1UL << 0)//复位标志
+
+/*端口基地址*/
+#define PORT0_BASE 0x100 //端口0
+#define PORT1_BASE 0X180 //端口1
+#define PORT_NR 0x02//一共有两个端口
+
+/*HBA 端口寄存器*/
 #define PORT_CLB 0X00//命令列表基地址低 32 位
 #define PORT_CLBU 0X04//命令列表基地址高 32 位
 #define PORT_FB 0X08//FIS 基地址低 32 位
@@ -43,11 +70,23 @@ enum disk_result{
 #define PORT_PHYCR 0X78//PHY 控制寄存器
 #define PORT_PHYSR 0X7C//PHY 状态寄存器
 
-/*向CMD寄存器中填入*/
-#define HBA_PxCMD_ST    0x0001
-#define HBA_PxCMD_FRE   0x0010
-#define HBA_PxCMD_FR    0x4000
-#define HBA_PxCMD_CR    0x8000
+/*向CMD寄存器中填入的位*/
+#define HBA_PxCMD_ST    0x0001//表示端口的命令引擎的启动/停止位
+#define HBA_PxCMD_FRE   0x0010//表示端口的 FIS 接收引擎
+#define HBA_PxCMD_FR    0x4000//表示端口的 FIS 接收引擎状态位
+#define HBA_PxCMD_CR    0x8000//表示端口的命令引擎状态位
+
+/*向IE寄存器写入的位*/
+#define HBA_PORT0_IE_DHRE (1UL << 0)//中断使能
+
+#define HBA_PORT_IPM_ACTIVE 1//端口的 IPM状态为激活状态
+#define HBA_PORT_DET_PRESENT 3//端口的 DET状态为已连接状态
+ 
+/*设备签名*/
+#define	SATA_SIG_ATA	0x00000101	// 普通的 SATA 硬盘驱动器
+#define	SATA_SIG_ATAPI	0xEB140101	// SATAPI设备，识别支持 ATAPI 协议的 SATA 设备
+#define	SATA_SIG_SEMB	0xC33C0101	// Enclosure management bridge
+#define	SATA_SIG_PM	    0x96690101	// Port multiplier
 
 /* 在SATA3.0规范中定义的Frame Information Structure类型*/
 typedef enum
@@ -65,7 +104,8 @@ typedef enum
 /*主机到设备*/
 struct fis_reg_host_to_device {
 	uint8_t	fis_type;//FIS_TYPE_REG_H2D帧类型
-	
+
+	/*一个8位的位域如下指定出的整数*/
 	uint8_t pmport:4;//端口多路复用器编号，表示该 FIS 目标设备的端口号。在这个结构中，占用了 4 个位，表示端口号范围为 0 到 15
 	uint8_t reserved0:3;
 	uint8_t c:1;//用于指示该 FIS 是一个命令 FIS。
@@ -199,4 +239,80 @@ struct fis_dev_bits {
 	volatile uint32_t protocol;
 }__attribute__ ((packed));
 
+struct hba_memory {
+	volatile uint32_t capability;
+	volatile uint32_t global_host_control;
+	volatile uint32_t interrupt_status;
+	volatile uint32_t port_implemented;
+	volatile uint32_t version;
+	volatile uint32_t ccc_control;
+	volatile uint32_t ccc_ports;
+	volatile uint32_t em_location;
+	volatile uint32_t em_control;
+	volatile uint32_t ext_capabilities;
+	volatile uint32_t bohc;
+	
+	volatile uint8_t reserved[0xA0 - 0x2C];
+	
+	volatile uint8_t vendor[0x100 - 0xA0];
+	
+	volatile struct hba_port ports[1];
+}__attribute__ ((packed));
+
+struct hba_received_fis {
+	volatile struct fis_dma_setup fis_ds;
+	volatile uint8_t pad0[4];
+	
+	volatile struct fis_pio_setup fis_ps;
+	volatile uint8_t pad1[12];
+	
+	volatile struct fis_reg_device_to_host fis_r;
+	volatile uint8_t pad2[4];
+	
+	volatile struct fis_dev_bits fis_sdb;
+	volatile uint8_t ufis[64];
+	volatile uint8_t reserved[0x100 - 0xA0];
+}__attribute__ ((packed));
+
+/*命令列表*/
+struct hba_command_header {
+	uint8_t fis_length:5;
+	uint8_t atapi:1;
+	uint8_t write:1;
+	uint8_t prefetchable:1;
+	
+	uint8_t reset:1;
+	uint8_t bist:1;
+	uint8_t clear_busy_upon_r_ok:1;
+	uint8_t reserved0:1;
+	uint8_t pmport:4;
+	
+	uint16_t prdt_len;
+	
+	volatile uint32_t prdb_count;
+	
+	uint32_t command_table_base_l;
+	uint32_t command_table_base_h;
+	
+	uint32_t reserved1[4];
+}__attribute__ ((packed));
+
+struct hba_prdt_entry {
+	uint32_t data_base_l;// 数据基址的低32位
+	uint32_t data_base_h;// 数据基址的高32位
+	uint32_t reserved0;// 保留字段
+	
+	uint32_t byte_count:22;// 字节计数字段，占用22位
+	uint32_t reserved1:9;// 保留字段，占用9位
+	uint32_t interrupt_on_complete:1;// 完成时中断位，占用1位
+}__attribute__ ((packed));
+
+struct hba_command_table {
+	uint8_t command_fis[64];// 64字节的命令FIS（帧信息结构）数组
+	uint8_t acmd[16]; // 16字节的ATAPI命令数组
+	uint8_t reserved[48];// 48字节的保留空间数组
+	struct hba_prdt_entry prdt_entries[1];// 物理区域描述符表（PRDT）条目的数组
+}__attribute__ ((packed));
+
+ 
 #endif
