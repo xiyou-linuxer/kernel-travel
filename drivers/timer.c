@@ -51,7 +51,7 @@ void schedule()
     if (cur->status == TASK_RUNNING) {
         ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
         list_append(&thread_ready_list, &cur->general_tag);
-        cur->ticks = cur->priority;    
+        cur->ticks = cur->priority;
         cur->status = TASK_READY;
     } else { 
 
@@ -68,7 +68,6 @@ void schedule()
     thread_tag = list_pop(&thread_ready_list);
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
-
 
     //switch_to(cur, next);
 }

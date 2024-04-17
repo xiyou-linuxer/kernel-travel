@@ -21,6 +21,4 @@ switch_to:
 	ldptr.d	t1, a1, THREAD_CSRPRMD
 	csrwr	t1, LOONGARCH_CSR_PRMD
 
-    ;xor ra,ra,ra
-    ;addi.d ra,ra,186
 	jr	ra
