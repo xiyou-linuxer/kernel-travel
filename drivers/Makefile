@@ -6,3 +6,5 @@ obj-y   += ../thread/switch.o
 obj-y   += timer.o
 obj-y   += ../thread/thread.o
 obj-y   += ../lib/kernel/list.o
+obj-y   += ../lib/kernel/bitmap.o
+

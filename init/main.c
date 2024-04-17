@@ -14,6 +14,7 @@
 #include <asm/boot_param.h>
 #include <timer.h>
 #include <thread.h>
+#include <sync.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -27,8 +28,8 @@ extern void trap_init(void);
 void thread_a(void* unused)
 {
     printk("enter thread_a\n");
-    while(1) {
-        printk("a ");
+    while (1) {
+        printk("a%d ",running_thread()->pid);
     }
 }
 
@@ -36,7 +37,7 @@ void thread_b(void* unused)
 {
     printk("enter thread_b\n");
     while(1) {
-        printk("b ");
+        printk("b:%d ",running_thread()->pid);
     }
 }
 

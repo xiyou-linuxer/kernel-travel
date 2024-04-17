@@ -74,6 +74,12 @@ struct task_struct* running_thread(void);
 void thread_init(void);
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);
 struct task_struct *thread_start(char *name, int prio, thread_func function, void *func_arg);
+void schedule(void);
+void thread_block(enum task_status stat);
+void thread_unblock(struct task_struct* thread);
+static void pid_pool_init(void);
+static pid_t allocate_pid(void);
+void release_pid(pid_t pid);
 
 #endif
 

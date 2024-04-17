@@ -3,6 +3,7 @@
 #
 
 obj-y                          := main.o init_task.o
+obj-y += ../thread/sync.o
 
 # dependencies on generated files need to be listed explicitly
 $(obj)/version.o: include/generated/compile.h
