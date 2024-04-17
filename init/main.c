@@ -13,6 +13,7 @@
 #include <asm/setup.h>
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
+#include <linux/ahci.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -36,9 +37,10 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 	local_irq_enable();
 	pci_init();
-	// local_irq_disable();
-	
-	// early_boot_irqs_disabled = true;
+    disk_init();
+        // local_irq_disable();
+
+        // early_boot_irqs_disabled = true;
 
 	/**
 	 * 禁止中断，进行必要的设置后开启

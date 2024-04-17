@@ -17,6 +17,7 @@
         "setup.h": "c",
         "irq.h": "c",
         "bootinfo.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "cstdlib": "c"
     }
 }

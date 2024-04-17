@@ -5,6 +5,8 @@
 
 #define ATA_SECTOR_SIZE 512//磁盘块的大小
 
+#define HBA_PxIS_TFES   (1 << 30)       /* 若置位则代表文件有错误 */
+
 /*磁盘状态*/
 #define BIT_STAT_BSY 0x80	// 硬盘忙
 #define BIT_STAT_DRQ 0x08	// 数据传输准备好了
@@ -14,13 +16,12 @@
 #define ATA_CMD_READ_DMA_EXT 0x25//读磁盘
 #define ATA_CMD_WRITE_DMA_EXT 0x30//写磁盘
 
-
-
 /*磁盘驱动程序的的返回结果*/
-enum disk_result{
-	AHCI_SUCCESS,  	//请求成功
-	IO_FAILED,		//失败   
-}
+enum disk_result {
+    AHCI_SUCCESS,       // 请求成功
+    E_NOEMPTYSLOT,      // 没有空闲的命令槽位slot
+    E_TASK_FILE_ERROR,  // 文件错误
+};
 
 /*SATA控制器*/
 #define HBA_CAP 0x000//HBA 特性寄存器
@@ -46,9 +47,9 @@ enum disk_result{
 #define HBA_GHC_RESET (1UL << 0)//复位标志
 
 /*端口基地址*/
-#define PORT0_BASE 0x100 //端口0
-#define PORT1_BASE 0X180 //端口1
-#define PORT_NR 0x02//一共有两个端口
+#define PORT_BASE 0x100 //端口基址
+#define PORT_OFFEST 0X80 //端口偏移量
+#define PORT_NR 0x20//一共有32端口
 
 /*HBA 端口寄存器*/
 #define PORT_CLB 0X00//命令列表基地址低 32 位
@@ -86,21 +87,26 @@ enum disk_result{
 #define	SATA_SIG_ATA	0x00000101	// 普通的 SATA 硬盘驱动器
 #define	SATA_SIG_ATAPI	0xEB140101	// SATAPI设备，识别支持 ATAPI 协议的 SATA 设备
 #define	SATA_SIG_SEMB	0xC33C0101	// Enclosure management bridge
-#define	SATA_SIG_PM	    0x96690101	// Port multiplier
+#define SATA_SIG_PM 0x96690101          // Port multiplier
+
+/*返回的设备类型*/
+#define AHCI_DEV_NULL 0
+#define AHCI_DEV_SATA 1
+#define AHCI_DEV_SEMB 2
+#define AHCI_DEV_PM 3
+#define AHCI_DEV_SATAPI 4
 
 /* 在SATA3.0规范中定义的Frame Information Structure类型*/
-typedef enum
-{
-    FIS_TYPE_REG_H2D = 0x27,   // 寄存器FIS - 主机到设备
-    FIS_TYPE_REG_D2H = 0x34,   // 寄存器FIS - 设备到主机
-    FIS_TYPE_DMA_ACT = 0x39,   // DMA激活FIS - 设备到主机
-    FIS_TYPE_DMA_SETUP = 0x41, // DMA设置FIS - 双向
-    FIS_TYPE_DATA = 0x46,      // 数据FIS - 双向
-    FIS_TYPE_BIST = 0x58,      // BIST激活FIS - 双向
-    FIS_TYPE_PIO_SETUP = 0x5F, // PIO设置FIS - 设备到主机
-    FIS_TYPE_DEV_BITS = 0xA1,  // 设置设备位FIS - 设备到主机
+typedef enum {
+    FIS_TYPE_REG_H2D = 0x27,    // Register FIS - host to device
+    FIS_TYPE_REG_D2H = 0x34,    // Register FIS - device to host
+    FIS_TYPE_DMA_ACT = 0x39,    // DMA activate FIS - device to host
+    FIS_TYPE_DMA_SETUP = 0x41,  // DMA setup FIS - bidirectional
+    FIS_TYPE_DATA = 0x46,       // Data FIS - bidirectional
+    FIS_TYPE_BIST = 0x58,       // BIST activate FIS - bidirectional
+    FIS_TYPE_PIO_SETUP = 0x5F,  // PIO setup FIS - device to host
+    FIS_TYPE_DEV_BITS = 0xA1,   // Set device bits FIS - device to host
 } FIS_TYPE;
-
 /*主机到设备*/
 struct fis_reg_host_to_device {
 	uint8_t	fis_type;//FIS_TYPE_REG_H2D帧类型
@@ -239,7 +245,7 @@ struct fis_dev_bits {
 	volatile uint32_t protocol;
 }__attribute__ ((packed));
 
-struct hba_memory {
+/*struct hba_memory {
 	volatile uint32_t capability;
 	volatile uint32_t global_host_control;
 	volatile uint32_t interrupt_status;
@@ -257,7 +263,7 @@ struct hba_memory {
 	volatile uint8_t vendor[0x100 - 0xA0];
 	
 	volatile struct hba_port ports[1];
-}__attribute__ ((packed));
+}__attribute__ ((packed));*/
 
 struct hba_received_fis {
 	volatile struct fis_dma_setup fis_ds;
@@ -291,15 +297,13 @@ struct hba_command_header {
 	
 	volatile uint32_t prdb_count;
 	
-	uint32_t command_table_base_l;
-	uint32_t command_table_base_h;
+	uint64_t command_table_base;
 	
 	uint32_t reserved1[4];
 }__attribute__ ((packed));
 
 struct hba_prdt_entry {
-	uint32_t data_base_l;// 数据基址的低32位
-	uint32_t data_base_h;// 数据基址的高32位
+	uint64_t data_base;// 数据基址
 	uint32_t reserved0;// 保留字段
 	
 	uint32_t byte_count:22;// 字节计数字段，占用22位
@@ -313,6 +317,6 @@ struct hba_command_table {
 	uint8_t reserved[48];// 48字节的保留空间数组
 	struct hba_prdt_entry prdt_entries[1];// 物理区域描述符表（PRDT）条目的数组
 }__attribute__ ((packed));
+void disk_init(void);
 
- 
 #endif

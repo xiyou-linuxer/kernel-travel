@@ -439,19 +439,6 @@ void pci_enable_bus_mastering(pci_device_t *device)
 //#endif
 }
 
-static void dump_addr(unsigned long *addr)
-{
-    int i;
-    printk("%16x\n", addr);
-    for (i = 0; i < 256;) {
-        printk("%08x", *(addr + i));
-        if ((i + 1) % 4 == 0) {
-            printk("\n");
-        }
-        i += 4;
-    }
-}
-
 void pci_init()
 {
     printk("pci_init start\n");
@@ -463,7 +450,6 @@ void pci_init()
     /*扫描所有总线设备*/
     pci_scan_buses();
     /*pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
-    printk("pci_dev:%x", pci_dev);
     pci_device_dump(pci_dev);*/
     printk(KERN_INFO "init_pci: pci type device found %d.\n",
            pic_get_device_connected());
