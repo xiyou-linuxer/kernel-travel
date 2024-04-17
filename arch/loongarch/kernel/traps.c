@@ -187,7 +187,7 @@ void trap_init(void)
 
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器
-	//write_csr_tcfg(tcfg);
+	write_csr_tcfg(tcfg);
 	ecfg = read_csr_ecfg();
 	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 11);
 

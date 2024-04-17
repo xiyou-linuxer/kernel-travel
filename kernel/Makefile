@@ -11,6 +11,10 @@ endif
 
 # obj-$(CONFIG_KALLSYMS)	+= kallsyms.o
 
+ccflags-y := -std=gnu99 -Wno-declaration-after-statement
+
 obj-y += irq.o
+obj-y += softirq.o
+obj-y += debug.o
 
 # obj-y	+= sched/ sh_kapi/ irq/ time/ locking/ count/
