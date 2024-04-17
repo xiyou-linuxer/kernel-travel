@@ -78,7 +78,7 @@ struct task_struct *task_alloc(void)
 struct task_struct* running_thread()
 {
     register uint64_t sp asm("sp");
-    printk("now sp at:%x\n",sp);
+    //printk("now sp at:%x\n",sp);
     return (struct task_struct *)(sp & ~(KERNEL_STACK_SIZE - 1));
 }
 
@@ -115,7 +115,6 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
     kthread_stack->reg03 = (uint64_t)pthread->self_kstack;
 }
 
-
 struct task_struct *thread_start(char *name, int prio, thread_func function, void *func_arg)
 {
     struct task_struct *thread = task_alloc();
@@ -131,7 +130,6 @@ struct task_struct *thread_start(char *name, int prio, thread_func function, voi
     //printk("thread start thread reg01:%x\n",thread->thread.reg01);
     //printk("thread reg01 at:%x\n",(unsigned long)&thread->thread.reg01);
     //printk("thread+THREAD_REG01=%x\n",(unsigned long)thread+THREAD_REG01);
-    switch_to(running_thread(),thread);
 
     return thread;
 }

@@ -7,6 +7,7 @@
 #include <trap/irq.h>
 #include <trap/softirq.h>
 #include <linux/stdio.h>
+#include <switch.h>
 
 #define IRQ0_FREQUENCY     100
 #define INPUT_FREQUENCY    1193180
@@ -32,19 +33,18 @@ void intr_timer_handler(struct pt_regs *regs)
     ticks++;
 
     write_csr_ticlr(read_csr_ticlr() | (0x1 << 0));
-    printk("%d",ticks);
+    printk("%d",cur_thread->ticks--);
 
-    /*
     if (cur_thread->ticks == 0) {
         schedule();
     } else {
         cur_thread->ticks--;
     }
-    */
 }
 
 void schedule()
 {
+    printk("schedule...\n");
     ASSERT(intr_get_status() == INTR_OFF);
 
     struct task_struct* cur = running_thread(); 
@@ -53,7 +53,7 @@ void schedule()
         list_append(&thread_ready_list, &cur->general_tag);
         cur->ticks = cur->priority;
         cur->status = TASK_READY;
-    } else { 
+    } else {
 
     }
 
@@ -69,7 +69,7 @@ void schedule()
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
 
-    //switch_to(cur, next);
+    switch_to(cur, next);
 }
 
 void timer_init() {

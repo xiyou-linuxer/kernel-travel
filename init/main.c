@@ -28,7 +28,15 @@ void thread_a(void* unused)
 {
     printk("enter thread_a\n");
     while(1) {
-        printk("I'm thread_a");
+        printk("a ");
+    }
+}
+
+void thread_b(void* unused)
+{
+    printk("enter thread_b\n");
+    while(1) {
+        printk("b ");
     }
 }
 
@@ -45,12 +53,12 @@ void __init __no_sanitize_address start_kernel(void)
 	//初始化中断处理程序
 	trap_init();
 	irq_init();
-	//local_irq_enable();
-    local_irq_disable();
+	local_irq_enable();
 	//pci_init();
     thread_init();
+    timer_init();
     thread_start("thread_a",31,thread_a,NULL);
-    //timer_init();
+    thread_start("thread_b",31,thread_b,NULL);
 	//local_irq_enable();
 	// local_irq_disable();
 	
@@ -66,5 +74,6 @@ void __init __no_sanitize_address start_kernel(void)
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
+        printk("m ");
 	}
 }
