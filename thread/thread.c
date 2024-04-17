@@ -45,11 +45,16 @@ static void kernel_thread(void)
     return;
 }
 
+struct task_page {
+    struct task_struct task;
+    char padding[KERNEL_STACK_SIZE-sizeof(struct task_struct)];
+};
+
 struct task_struct_allocator_t {
-    struct task_struct tasks[256];
+    struct task_page task_pages[256];
     bool used[256];
 } task_struct_allocator = {
-    .tasks = { 0 },
+    .task_pages = { 0 },
     .used = { 0 },
 };
 
@@ -60,7 +65,7 @@ struct task_struct *task_alloc(void)
 
     for (i = 0 ; i < 256 ; i++) {
         if (task_struct_allocator.used[i] == false) {
-            task = &task_struct_allocator.tasks[i];
+            task = &task_struct_allocator.task_pages[i].task;
             task_struct_allocator.used[i] = true;
             break;
         }
