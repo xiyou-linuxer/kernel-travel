@@ -7,22 +7,24 @@
 #include <linux/list.h>
 #include <linux/string.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
-struct hba_command_header ahci_port_base_vaddr[32];
+struct hba_command_header ahci_port_base_vaddr[1000];
 /*启动命令引擎*/
 static void start_cmd(unsigned long prot_base)
 {
-
+    printk("start_cmd start\n");
     // Wait until CR (bit15) is cleared
-    while (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_CR);
+    //while (*(unsigned int *)(0x80000000400e0000|(prot_base+PORT_CMD)) & HBA_PxCMD_CR);
 
     // Set FRE (bit4) and ST (bit0)
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) |= HBA_PxCMD_FRE;// 开启端口的接收
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) |= HBA_PxCMD_ST;//开启向端口输入命令
+    printk("start_cmd down\n");
 }
 
 /*停止命令引擎*/ 
 static void stop_cmd(unsigned int prot_base)
 {
+    printk("stop_cmd start\n");
     // Clear ST (bit0)
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) &= ~HBA_PxCMD_ST;
 
@@ -38,6 +40,7 @@ static void stop_cmd(unsigned int prot_base)
             continue;
         break;
     }
+    printk("stop_cmd down\n");
 }
 
 /*寻找可用的命令槽位*/
@@ -161,7 +164,6 @@ static long ahci_query_disk()
 
 static int check_type(unsigned int port)
 {
-    printk("check_type\n");
     uint32_t ssts = *(unsigned int*)(SATA_ABAR_BASE | (port + PORT_SSTS));
     uint32_t sig = *(unsigned int*)(SATA_ABAR_BASE | (port + PORT_SIG));
     uint8_t ipm = (ssts >> 8) & 0x0F;
@@ -218,40 +220,41 @@ static void ahci_probe_port(void)
             }
         }
     }
-    printk("ahci_probe_port down");
+    printk("ahci_probe_port down\n");
 }
 
 static void port_rebase(int portno)
 {
-    unsigned int port = PORT_BASE + portno * PORT_OFFEST;//计算端口的偏移地址
+    unsigned long port = PORT_BASE + portno * PORT_OFFEST;//计算端口的偏移地址
     
-    stop_cmd(port); // 停止命令引擎
+    stop_cmd(port);  // 停止命令引擎
 
-    // Command list offset: 1K*portno
-    // Command list entry size = 32
-    // Command list entry maxim count = 32
-    // Command list maxim size = 32*32 = 1K per port
-
+    // 命令列表偏移量：1K*portno
+    // 命令列表条目大小 = 32
+    // 命令列表条目最大数量 = 32
+    // 命令列表最大大小 = 32*32 = 每个端口 1K
     *(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB)) = ahci_port_base_vaddr + (portno << 10);
+    printk("clb%x\n", ahci_port_base_vaddr + (portno << 10));
 
     memset((void *)(ahci_port_base_vaddr + (portno << 10)), 0, 1024);
 
-    // FIS offset: 32K+256*portno
-    // FIS entry size = 256 bytes per port
+    // FIS 偏移量：32K+256*端口号
+    // FIS 条目大小 = 每个端口 256 字节
     *(unsigned long *)(SATA_ABAR_BASE|(port+PORT_FB)) = ahci_port_base_vaddr + (32 << 10) + (portno << 8);
 
     memset((void *)(ahci_port_base_vaddr + (32 << 10) + (portno << 8)), 0, 256);
-
-    // Command table offset: 40K + 8K*portno
-    // Command table size = 256*32 = 8K per port
-    struct hba_command_header *cmdheader = (struct hba_command_header *)((SATA_ABAR_BASE|(port+PORT_CLB)));
-    for (int i = 0; i < 32; ++i)
+    printk("fb:%x\n", ahci_port_base_vaddr + (32 << 10) + (portno << 8));
+    // 命令表偏移：40K + 8K*portno
+    // 命令表大小 = 256*32 = 每个端口 8K
+    struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB)));
+    printk("clb:%x\n", cmdheader);
+    for (int i = 0; i < 32; ++i)//32个命令槽位
     {
-        cmdheader[i].prdt_len = 8; // 8 prdt entries per command table
-                                // 256 bytes per command table, 64+16+48+16*8
-        // Command table offset: 40K + 8K*portno + cmdheader_index*256
+        cmdheader[i].prdt_len = 8;  // 每个命令表 8 个 prdt 条目
+                                    // 256 bytes per command table, 64+16+48+16*8
+                                    // 每个命令表256字节，64+16+48+16*8
+       
         cmdheader[i].command_table_base = ahci_port_base_vaddr + (40 << 10) + (portno << 13) + (i << 8);
-
         memset((void *)cmdheader[i].command_table_base, 0, 256);
     }
 
@@ -278,7 +281,7 @@ void disk_init(void) {
 
     // kalloc();//分配
     ahci_probe_port();  // 扫描ahci的所有端口
-    port_rebase(1);//开启0号端口
+    port_rebase(1);//开启1号端口
 
     /*io调度初始化*/
     /*ahci_req_queue.in_service = NULL;
