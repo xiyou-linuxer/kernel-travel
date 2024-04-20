@@ -15,12 +15,14 @@
 /*磁盘控制命令*/
 #define ATA_CMD_READ_DMA_EXT 0x25//读磁盘
 #define ATA_CMD_WRITE_DMA_EXT 0x30//写磁盘
+#define ATA_CMD_IDENTIFY 0xEC//读取磁盘信息
 
 /*磁盘驱动程序的的返回结果*/
 enum disk_result {
     AHCI_SUCCESS,       // 请求成功
     E_NOEMPTYSLOT,      // 没有空闲的命令槽位slot
     E_TASK_FILE_ERROR,  // 文件错误
+	E_PORT_HUNG,
 };
 
 /*SATA控制器*/
@@ -245,26 +247,6 @@ struct fis_dev_bits {
 	volatile uint32_t protocol;
 }__attribute__ ((packed));
 
-/*struct hba_memory {
-	volatile uint32_t capability;
-	volatile uint32_t global_host_control;
-	volatile uint32_t interrupt_status;
-	volatile uint32_t port_implemented;
-	volatile uint32_t version;
-	volatile uint32_t ccc_control;
-	volatile uint32_t ccc_ports;
-	volatile uint32_t em_location;
-	volatile uint32_t em_control;
-	volatile uint32_t ext_capabilities;
-	volatile uint32_t bohc;
-	
-	volatile uint8_t reserved[0xA0 - 0x2C];
-	
-	volatile uint8_t vendor[0x100 - 0xA0];
-	
-	volatile struct hba_port ports[1];
-}__attribute__ ((packed));*/
-
 struct hba_received_fis {
 	volatile struct fis_dma_setup fis_ds;
 	volatile uint8_t pad0[4];
@@ -282,22 +264,22 @@ struct hba_received_fis {
 
 /*命令列表*/
 struct hba_command_header {
-	uint8_t fis_length:5;
-	uint8_t atapi:1;
-	uint8_t write:1;
+	uint8_t fis_length:5;			//FIS 的长度
+	uint8_t atapi:1;				//是否支持SATAPI
+	uint8_t write:1;				//读写指令
 	uint8_t prefetchable:1;
 	
 	uint8_t reset:1;
-	uint8_t bist:1;
-	uint8_t clear_busy_upon_r_ok:1;
+	uint8_t bist:1;					//指示是否执行内建自检
+	uint8_t clear_busy_upon_r_ok:1;	//指示是否在读操作完成时清除繁忙位
 	uint8_t reserved0:1;
-	uint8_t pmport:4;
+	uint8_t pmport:4;				//指示端口多路复用的值
 	
 	uint16_t prdt_len;
 	
-	volatile uint32_t prdb_count;
+	volatile uint32_t prdb_count;	//物理区域描述符字节长度
 	
-	uint64_t command_table_base;
+	uint64_t command_table_base;	//命令表的基址，即存储命令数据的地址
 	
 	uint32_t reserved1[4];
 }__attribute__ ((packed));
@@ -318,5 +300,70 @@ struct hba_command_table {
 	struct hba_prdt_entry prdt_entries[1];// 物理区域描述符表（PRDT）条目的数组
 }__attribute__ ((packed));
 void disk_init(void);
+
+struct ata_identify {
+	uint16_t ata_device;
+	
+	uint16_t dont_care[48];
+	
+	uint16_t cap0;
+	uint16_t cap1;
+	
+	uint16_t obs[2];
+	
+	uint16_t free_fall;
+	
+	uint16_t dont_care_2[8];
+	
+	uint16_t dma_mode0;
+	
+	uint16_t pio_modes;
+	
+	uint16_t dont_care_3[4];
+	
+	uint16_t additional_supported;
+	
+	uint16_t rsv1[6];
+	
+	uint16_t serial_ata_cap0;
+	
+	uint16_t rsv2;
+	
+	uint16_t serial_ata_features;
+	
+	uint16_t serial_ata_features_enabled;
+	
+	uint16_t maj_ver;
+	
+	uint16_t min_ver;
+	
+	uint16_t features0;
+	
+	uint16_t features1;
+	
+	uint16_t features2;
+	
+	uint16_t features3;
+	
+	uint16_t features4;
+	
+	uint16_t features5;
+	
+	uint16_t udma_modes;
+	
+	uint16_t dont_care_4[11];
+	
+	uint64_t lba48_addressable_sectors;
+	
+	uint16_t wqewqe[2];
+	
+	uint16_t ss_1;
+	
+	uint16_t rrrrr[4];
+	
+	uint32_t ss_2;
+	
+	/* ...and more */
+};
 
 #endif
