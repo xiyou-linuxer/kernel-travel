@@ -7,7 +7,7 @@
 #include <linux/list.h>
 #include <linux/string.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
-struct hba_command_header ahci_port_base_vaddr[1000];
+char ahci_port_base_vaddr[1048576];
 
 /*启动命令引擎*/
 static void start_cmd(unsigned long prot_base)
@@ -84,7 +84,7 @@ struct hba_command_table *ahci_initialize_command_table(struct hba_command_heade
 
     // Last entry
     cmdtbl->prdt_entries[i].data_base = buf;
-    cmdtbl->prdt_entries[i].byte_count = (count << 9) - 1; // 512 bytes per sector
+    cmdtbl->prdt_entries[i].byte_count = (count << 9) ; // 512 bytes per sector
     cmdtbl->prdt_entries[i].interrupt_on_complete = interrupt_on_complete;
     return cmdtbl;
 }
@@ -131,6 +131,11 @@ struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct hba_com
     return cmdfis;
 }
 
+void kong(void)
+{
+    return;
+}
+
 static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
@@ -154,17 +159,20 @@ static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int 
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot; // Issue command
     
     //等待命令发送
-    while (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) &(1 << slot)))
+    while (1)
     {
-        if (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) &(1 << slot)))
-        {
+        printk("");
+        if (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) |
+              *(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_SACT)) &
+                  (1 << slot))) {
+           
             break;
         }
         if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) // 如果HBA_PxIS_TFES被置位则说明访问异常
         {
             printk("Read disk error");
             return E_TASK_FILE_ERROR;
-        }
+        } 
     }
 
     // Check again
@@ -173,6 +181,7 @@ static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int 
         printk("Read disk error");
         return E_TASK_FILE_ERROR;
     }
+    //printk("buf:%s\n", buf);
     return AHCI_SUCCESS;
 }
 
@@ -208,7 +217,8 @@ static int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 ; // Issue command
     while (1)
     {
-        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1  & (1 << slot)) == 0)
+        printk("1");
+        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 << slot)) == 0)
             break;
         if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
         { // Task file error
@@ -290,7 +300,6 @@ static int check_type(unsigned int port)
         return AHCI_DEV_NULL;
     if (ipm != HBA_PORT_IPM_ACTIVE)
         return AHCI_DEV_NULL;
-
     switch (sig)
     {
     case SATA_SIG_ATAPI:
@@ -308,7 +317,6 @@ static void ahci_probe_port(void)
 {
     
     uint32_t pi = *(unsigned int*)(SATA_ABAR_BASE | HBA_PI);
-    printk("ahci_probe_port pi:%d\n",pi);
     for (int i = 0; i < PORT_NR; ++i, (pi >>= 1))
     {
         if (pi & 1)
@@ -385,18 +393,26 @@ void disk_init(void) {
         printk(KERN_ERR "[ahci]: no AHCI controllers present!\n");
     }
     SATA_ABAR_BASE = 0x8000000000000000|pci_dev->bar[0].base_addr;
-    printk("SATA_ABAR_BASE: %16x\n", SATA_ABAR_BASE);
     /*注册中断处理程序*/
 
     *(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_IE;//全局中断使能
     *(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_AHCI_ENABLE;//启用ahci
-
     // kalloc();//分配
     ahci_probe_port();  // 扫描ahci的所有端口
     port_rebase(1);//开启1号端口
     char buf[10000];
     ahci_read(0x180, 0, 0, 2, (unsigned long)buf);
     printk("buf:%s\n", buf);
+    for (int i = 0; i < 1024; i++)
+    {
+        printk("%x ", buf[i]);
+        if (i%8==0)
+        {
+            printk("\n");
+        }
+    }
+    //memcpy(buf, "hello world\n", 13);
+    //ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
     /*io调度初始化*/
     /*ahci_req_queue.in_service = NULL;
     list_init(&(ahci_req_queue.queue_list));
