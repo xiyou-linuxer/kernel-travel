@@ -1,7 +1,7 @@
 #include <asm/regdef.h>
 #include <asm/stackframe.h>
 #include <asm/asm-offsets.h>
-#include <asmmacro.h>
+#include <asm/asmmacro.h>
 
 .section ".text","ax"
 

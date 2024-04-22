@@ -36,12 +36,13 @@ struct memblock memblock = {
 
 static int memblock_debug __meminitdata;
 
-static void __meminit memblock_add_range(struct memblock_type* memblock_type,phys_addr_t base,phys_addr_t size,enum memblock_flags flags)
+static int __meminit memblock_add_range(struct memblock_type* memblock_type,phys_addr_t base,phys_addr_t size,enum memblock_flags flags)
 {
 	// memblock_type.cnt
-	if(type->regions[0].size == 0) {
+	if(memblock_type->regions[0].size == 0) {
 		//...
 	}
+	return 0;
 }
 
 int __meminit memblock_add(phys_addr_t base, phys_addr_t size)
