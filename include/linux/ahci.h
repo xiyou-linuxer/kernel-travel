@@ -2,7 +2,7 @@
 #define _LINUX_ALIGN_H
 
 #include <linux/types.h>
-#include <block_device.h>
+#include <linux/block_device.h>
 
 #define ATA_SECTOR_SIZE 512//磁盘块的大小
 
@@ -370,5 +370,14 @@ struct block_device_request_queue ahci_req_queue;//io调度队列
 
 void disk_init(void);//初始化磁盘驱动
 void ahci_submit(struct block_device_request_packet* pack);
-
+int ahci_read(unsigned long prot_base,
+              unsigned int startl,
+              unsigned int starth,
+              unsigned int count,
+              unsigned long buf);
+int ahci_write(unsigned long prot_base,
+               unsigned int startl,
+               unsigned int starth,
+               unsigned int count,
+               unsigned long buf);
 #endif

@@ -20,6 +20,11 @@
         "memory.h": "c",
         "cstdlib": "c",
         "list": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "timer.h": "c",
+        "thread.h": "c",
+        "ahci.h": "c",
+        "debug.h": "c",
+        "block_device.h": "c"
     }
 }

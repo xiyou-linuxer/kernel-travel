@@ -6,6 +6,7 @@
 #include <linux/ahci.h>
 #include <linux/list.h>
 #include <linux/string.h>
+#include <linux/block_device.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
 struct block_device_request_queue ahci_req_queue;
@@ -132,7 +133,7 @@ static struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct 
     return cmdfis;
 }
 
-static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
     int spin = 0;            // Spin lock timeout counter
@@ -180,7 +181,7 @@ static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int 
     return AHCI_SUCCESS;
 }
 
-static int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0xffff; // Clear pending interrupt bits
     int slot = ahci_find_cmdslot(prot_base);
@@ -272,12 +273,18 @@ static int ahci_identify(unsigned long prot_base)
     }
     return AHCI_SUCCESS;
 }
+
 //io调度函数
 static long ahci_query_disk()
 {
     while (1)
     {
-        
+        if (ahci_req_queue.request_count!=0)
+        {
+            /* code */
+        }else{
+            //若无要刷入磁盘的请求则调用线程休眠的函数
+        }
     }
 }
 
@@ -402,6 +409,17 @@ void disk_init(void) {
     // kalloc();//分配
     ahci_probe_port();  // 扫描ahci的所有端口
     port_rebase(1);//开启1号端口
+    char buf[512];
+    block_read(0, 1, buf, 1);
+    for (int i = 0; i < 1024; i++)
+    {
+        printk("%x ", buf[i]);
+        if (i%8==0)
+        {
+            printk("\n");
+        }
+    }
+    printk("")
     /*io调度初始化*/
     /*ahci_req_queue.in_service = NULL;
     list_init(&(ahci_req_queue.queue_list));
