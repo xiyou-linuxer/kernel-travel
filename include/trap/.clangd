@@ -1,0 +1,7 @@
+ CompileFlags:
+  Add:
+    - -I../../include
+    - -I../../arch/loongarch/include
+    - -DCONFIG_LOONGARCH  
+    - -include asm/pt_regs.h
+    - -xc

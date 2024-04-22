@@ -2,6 +2,7 @@
 #define _LINUX_ALIGN_H
 
 #include <linux/types.h>
+#include <linux/block_device.h>
 
 #define ATA_SECTOR_SIZE 512//磁盘块的大小
 

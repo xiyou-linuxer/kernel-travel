@@ -2,15 +2,10 @@
 #define __KERNEL_INTERRUPT_H
 
 #include <linux/types.h>
-
-#ifndef CONFIG_LOONGARCH
-typedef void* intr_handler;
-void idt_init(void);
-#else
 #include <asm/pt_regs.h>
+
 typedef void (*intr_handler)(struct pt_regs *regs);
 void irq_init(void);
-#endif
 
 /* 定义中断的两种状态:
  * INTR_OFF值为0,表示关中断,
@@ -20,6 +15,7 @@ enum intr_status {		 // 中断状态
     INTR_ON		         // 中断打开
 };
 
+bool in_interrupt(void);
 enum intr_status intr_get_status(void);
 enum intr_status intr_set_status (enum intr_status);
 enum intr_status intr_enable (void);

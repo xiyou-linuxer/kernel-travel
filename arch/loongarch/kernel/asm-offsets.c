@@ -1,5 +1,6 @@
 #include <asm/pt_regs.h>
 #include <linux/kbuild.h>
+#include <linux/thread.h>
 
 void output_ptreg_defines(void);
 
@@ -49,5 +50,24 @@ void output_ptreg_defines(void)
 	OFFSET(PT_BVADDR, pt_regs, csr_badvaddr);
 	OFFSET(PT_ORIG_A0, pt_regs, orig_a0);
 	DEFINE(PT_SIZE, sizeof(struct pt_regs));
+
+
+    OFFSET(THREAD_REG01,task_struct,thread.reg01);
+    OFFSET(THREAD_CSRPRMD,task_struct,thread.csr_prmd);
+    OFFSET(THREAD_CSRCRMD,task_struct,thread.csr_crmd);
+    /* s0 - s8 */
+    OFFSET(THREAD_REG23,task_struct,thread.reg23);
+    OFFSET(THREAD_REG24,task_struct,thread.reg24);
+    OFFSET(THREAD_REG25,task_struct,thread.reg25);
+    OFFSET(THREAD_REG26,task_struct,thread.reg26);
+    OFFSET(THREAD_REG27,task_struct,thread.reg27);
+    OFFSET(THREAD_REG28,task_struct,thread.reg28);
+    OFFSET(THREAD_REG29,task_struct,thread.reg29);
+    OFFSET(THREAD_REG30,task_struct,thread.reg30);
+    OFFSET(THREAD_REG31,task_struct,thread.reg31);
+
+    OFFSET(THREAD_REG03,task_struct,thread.reg03); //sp
+    OFFSET(THREAD_REG22,task_struct,thread.reg22); //fp
+
 	BLANK();
 }
