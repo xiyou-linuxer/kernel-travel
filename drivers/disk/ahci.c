@@ -66,12 +66,12 @@ static int ahci_find_cmdslot(unsigned long prot_base)
 *buf：读写缓冲区
 *interrupt_on_complete：中断完成时占位标志，1为读0为写
 */
-struct hba_command_table *ahci_initialize_command_table(struct hba_command_header * cmdheader,unsigned int count,unsigned long buf,unsigned int interrupt_on_complete)
+static struct hba_command_table *ahci_initialize_command_table(struct hba_command_header * cmdheader,unsigned int count,unsigned long buf,unsigned int interrupt_on_complete)
 {
     struct hba_command_table *cmdtbl = (struct hba_command_table *)(cmdheader->command_table_base);
     memset(cmdtbl, 0, sizeof(struct hba_command_table) + (cmdheader->prdt_len - 1) * sizeof(struct hba_prdt_entry));
 
-    // 8K bytes (16 sectors) per PRDT
+    // 一个表项对应16个磁盘扇区
     int i;
     for (i = 0; i < cmdheader->prdt_len - 1; ++i)
     {
@@ -95,7 +95,7 @@ struct hba_command_table *ahci_initialize_command_table(struct hba_command_heade
 *count：扇区数
 *write：读/写命令
 */
-struct hba_command_header *ahci_initialize_command_header(unsigned long prot_base,int slot,unsigned int count,int write)
+static struct hba_command_header *ahci_initialize_command_header(unsigned long prot_base,int slot,unsigned int count,int write)
 {
     struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long*)(SATA_ABAR_BASE|(prot_base+PORT_CLB)));
     cmdheader += slot;
@@ -110,7 +110,7 @@ struct hba_command_header *ahci_initialize_command_header(unsigned long prot_bas
 *startl starth：磁盘的高32位和低32位
 *ata_command：磁盘命令，读写
 */
-struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct hba_command_table *cmdtbl,unsigned int startl, unsigned int starth,int ata_command,unsigned int count)
+static struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct hba_command_table *cmdtbl,unsigned int startl, unsigned int starth,int ata_command,unsigned int count)
 {
     struct fis_reg_host_to_device *cmdfis = (struct fis_reg_host_to_device *)(&cmdtbl->command_fis);
     cmdfis->fis_type = FIS_TYPE_REG_H2D;
@@ -129,11 +129,6 @@ struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct hba_com
     cmdfis->count_l = count & 0xFF;
     cmdfis->count_h = (count >> 8) & 0xFF;
     return cmdfis;
-}
-
-void kong(void)
-{
-    return;
 }
 
 static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
@@ -155,7 +150,6 @@ static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int 
         printk("Port is hung");
         return E_PORT_HUNG;
     }
-    //printk("slot=%d\n", slot);
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot; // Issue command
     
     //等待命令发送
@@ -217,7 +211,7 @@ static int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 ; // Issue command
     while (1)
     {
-        printk("1");
+        printk("");
         if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 << slot)) == 0)
             break;
         if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
@@ -400,19 +394,6 @@ void disk_init(void) {
     // kalloc();//分配
     ahci_probe_port();  // 扫描ahci的所有端口
     port_rebase(1);//开启1号端口
-    char buf[10000];
-    ahci_read(0x180, 0, 0, 2, (unsigned long)buf);
-    printk("buf:%s\n", buf);
-    for (int i = 0; i < 1024; i++)
-    {
-        printk("%x ", buf[i]);
-        if (i%8==0)
-        {
-            printk("\n");
-        }
-    }
-    //memcpy(buf, "hello world\n", 13);
-    //ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
     /*io调度初始化*/
     /*ahci_req_queue.in_service = NULL;
     list_init(&(ahci_req_queue.queue_list));

@@ -299,7 +299,6 @@ struct hba_command_table {
 	uint8_t reserved[48];// 48字节的保留空间数组
 	struct hba_prdt_entry prdt_entries[1];// 物理区域描述符表（PRDT）条目的数组
 }__attribute__ ((packed));
-void disk_init(void);
 
 struct ata_identify {
 	uint16_t ata_device;
@@ -365,5 +364,8 @@ struct ata_identify {
 	
 	/* ...and more */
 };
+
+void disk_init(void);//初始化磁盘驱动
+
 
 #endif
