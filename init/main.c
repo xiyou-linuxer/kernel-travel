@@ -1,6 +1,5 @@
 #include <linux/irqflags.h>
 #include <linux/printk.h>
-#include <linux/sched.h>
 #include <linux/task.h>
 #include <linux/init.h>
 #include <linux/ns16550a.h>
@@ -13,6 +12,9 @@
 #include <asm/setup.h>
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
+#include <timer.h>
+#include <thread.h>
+
 #include <linux/ahci.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -21,6 +23,23 @@ bool early_boot_irqs_disabled;
 extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);
+
+
+void thread_a(void* unused)
+{
+    printk("enter thread_a\n");
+    while(1) {
+        printk("a ");
+    }
+}
+
+void thread_b(void* unused)
+{
+    printk("enter thread_b\n");
+    while(1) {
+        printk("b ");
+    }
+}
 
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -37,10 +56,9 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 	local_irq_enable();
 	pci_init();
-    disk_init();
-        // local_irq_disable();
-
-        // early_boot_irqs_disabled = true;
+	// local_irq_disable();
+	
+	// early_boot_irqs_disabled = true;
 
 	/**
 	 * 禁止中断，进行必要的设置后开启
@@ -50,7 +68,8 @@ void __init __no_sanitize_address start_kernel(void)
 	printk("cpu = %d\n", cpu);
 
 	while (1) {
-		time = csr_read64(LOONGARCH_CSR_TVAL);
-		// printk("%lu\n",time);
+		//time = csr_read64(LOONGARCH_CSR_TVAL);
+		//printk("%lu\n",ticks);
+        printk("m ");
 	}
 }
