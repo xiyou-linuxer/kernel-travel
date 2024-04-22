@@ -7,7 +7,7 @@
 
 	.align 12
 
-.global switch_to
+.globl switch_to
 switch_to:
 	csrrd	t1, LOONGARCH_CSR_PRMD
 	stptr.d	t1, a0, THREAD_CSRPRMD
@@ -17,7 +17,6 @@ switch_to:
 
 	cpu_restore_nonscratch a1
 
-    ldptr.d ra, a1, THREAD_REG01
 	ldptr.d	t1, a1, THREAD_CSRPRMD
 	csrwr	t1, LOONGARCH_CSR_PRMD
 

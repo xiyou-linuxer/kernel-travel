@@ -17,6 +17,7 @@ SYM_FUNC_START(handle_vint_\num)
 SYM_FUNC_END(handle_vint_\num)
 	.endm
 
+
 	BUILD_VI_HANDLER 0
 	BUILD_VI_HANDLER 1
 	BUILD_VI_HANDLER 2
@@ -32,8 +33,12 @@ SYM_FUNC_END(handle_vint_\num)
 	BUILD_VI_HANDLER 12
 	BUILD_VI_HANDLER 13
 
+user_ret:
+    RESTORE_ALL_AND_RET
+
 .section .data, "aw"
 	.align	3
+        .globl  user_ret
         .globl  vector_table
 vector_table:
 	PTR	handle_vint_0

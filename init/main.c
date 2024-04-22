@@ -15,6 +15,7 @@
 #include <timer.h>
 #include <thread.h>
 #include <sync.h>
+#include <process.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -29,15 +30,18 @@ void thread_a(void* unused)
 {
     printk("enter thread_a\n");
     while (1) {
-        printk("a%d ",running_thread()->pid);
+        unsigned long crmd = read_csr_crmd();
+        printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
     }
 }
 
-void thread_b(void* unused)
+void proc_1(void* unused)
 {
-    printk("enter thread_b\n");
+    printk("enter proc_1\n");
     while(1) {
-        printk("b:%d ",running_thread()->pid);
+        unsigned long crmd = read_csr_crmd();
+        printk("oo");
+        printk("proc_1:at pri %d  ",crmd&PLV_MASK);
     }
 }
 
@@ -59,7 +63,7 @@ void __init __no_sanitize_address start_kernel(void)
     thread_init();
     timer_init();
     thread_start("thread_a",31,thread_a,NULL);
-    thread_start("thread_b",31,thread_b,NULL);
+    process_execute(proc_1,"proc_1");
 	//local_irq_enable();
 	// local_irq_disable();
 	

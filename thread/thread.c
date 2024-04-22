@@ -10,8 +10,8 @@
 #include <asm/loongarch.h>
 #include <switch.h>
 #include <asm/asm-offsets.h>
-#include <linux/compiler_attributes.h>
 #include <sync.h>
+#include <allocator.h>
 
 struct task_struct* main_thread;
 struct task_struct* idle_thread;
@@ -61,40 +61,11 @@ static void kernel_thread(void)
     return;
 }
 
-union task_page {
-    struct task_struct task;
-    char padding[KERNEL_STACK_SIZE];
-} __aligned(KERNEL_STACK_SIZE);
-
-struct task_struct_allocator_t {
-    union task_page task_pages[256];
-    bool used[256];
-} task_struct_allocator = {
-    .task_pages = { 0 },
-    .used = { 0 },
-};
-
-struct task_struct *task_alloc(void)
-{
-    struct task_struct *task = NULL;
-    int i;
-
-    for (i = 0 ; i < 256 ; i++) {
-        if (task_struct_allocator.used[i] == false) {
-            task = &task_struct_allocator.task_pages[i].task;
-            task_struct_allocator.used[i] = true;
-            break;
-        }
-    }
-
-    return task;
-}
-
 struct task_struct* running_thread()
 {
     register uint64_t sp asm("sp");
     //printk("now sp at:%x\n",sp);
-    return (struct task_struct *)(sp & ~(KERNEL_STACK_SIZE - 1));
+    return (struct task_struct *)((sp-1) & ~(KERNEL_STACK_SIZE - 1));
 }
 
 void init_thread(struct task_struct *pthread, char *name, int prio)
