@@ -1,5 +1,5 @@
-#include <timer.h>
-#include <thread.h>
+#include <asm/timer.h>
+#include <linux/thread.h>
 #include <debug.h>
 #include <linux/printk.h>
 #include <asm/pt_regs.h>
@@ -7,7 +7,7 @@
 #include <trap/irq.h>
 #include <trap/softirq.h>
 #include <linux/stdio.h>
-#include <switch.h>
+#include <linux/switch.h>
 
 #define IRQ0_FREQUENCY     100
 #define INPUT_FREQUENCY    1193180

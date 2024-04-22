@@ -27,6 +27,8 @@
         "debug.h": "c",
         "block_device.h": "c",
         "bitsperlong.h": "c",
-        "smp.h": "c"
+        "smp.h": "c",
+        "switch.h": "c",
+        "bitmap.h": "c"
     }
 }
