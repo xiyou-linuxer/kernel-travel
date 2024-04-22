@@ -18,6 +18,8 @@
         "irq.h": "c",
         "bootinfo.h": "c",
         "memory.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "list": "c",
+        "list.h": "c"
     }
 }

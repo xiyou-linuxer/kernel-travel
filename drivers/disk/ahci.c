@@ -8,6 +8,7 @@
 #include <linux/string.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
+struct block_device_request_queue ahci_req_queue;
 
 /*启动命令引擎*/
 static void start_cmd(unsigned long prot_base)
@@ -271,17 +272,24 @@ static int ahci_identify(unsigned long prot_base)
     }
     return AHCI_SUCCESS;
 }
-/*io调度函数
+//io调度函数
 static long ahci_query_disk()
 {
-    
-}*/
+    while (1)
+    {
+        
+    }
+}
 
 /*将请求提交到io调度队列*/
-/*static void ahci_submit(struct block_device_request_packet *pack)
+void ahci_submit(struct block_device_request_packet *pack)
 {
-    
-}*/
+    list_append(&(ahci_req_queue.queue_list), &(pack->list));
+    ++ahci_req_queue.request_count;
+
+    if (ahci_req_queue.in_service == NULL) // 当前没有正在请求的io包，立即执行磁盘请求
+        ahci_query_disk();
+}
 
 static int check_type(unsigned int port)
 {

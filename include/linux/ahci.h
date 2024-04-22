@@ -2,6 +2,7 @@
 #define _LINUX_ALIGN_H
 
 #include <linux/types.h>
+#include <block_device.h>
 
 #define ATA_SECTOR_SIZE 512//磁盘块的大小
 
@@ -365,7 +366,9 @@ struct ata_identify {
 	/* ...and more */
 };
 
-void disk_init(void);//初始化磁盘驱动
+struct block_device_request_queue ahci_req_queue;//io调度队列
 
+void disk_init(void);//初始化磁盘驱动
+void ahci_submit(struct block_device_request_packet* pack);
 
 #endif
