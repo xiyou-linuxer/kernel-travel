@@ -23,7 +23,12 @@ const struct loongarchlist_mem_map lalist_mem_map = {
 
 void __init memblock_init(void)
 {
-	printk("%lu\n", lalist_mem_map.map_count);
-	printk("%lu\n", lalist_mem_map.map->mem_type);
-	printk("%lu\n", lalist_mem_map.map->mem_start);
+	u32 mem_cnt = lalist_mem_map.map_count;
+	u64 mem_start, mem_end, mem_size;
+	mem_start = lalist_mem_map.map[0].mem_start;
+	mem_size = lalist_mem_map.map[0].mem_size;
+	mem_end = mem_start + mem_size;
+
+	for(u32 i = 0; i < mem_cnt; i++)
+		memblock_add(mem_start,mem_size);
 }
