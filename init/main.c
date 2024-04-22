@@ -41,12 +41,20 @@ void thread_b(void* unused)
     }
 }
 
+int add(int a,int b)
+{
+	return a+b;
+}
+
 void __init __no_sanitize_address start_kernel(void)
 {
+	printk("%lx\n", lalist_mem_map.map_count);
+	printk("%lx\n", lalist_mem_map.map->mem_type);
+	printk("%lx\n", lalist_mem_map.map->mem_start);
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
 	unsigned long time;
-
+	int t = add(1,2);
 	// serial_ns16550a_init(9600);
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	// printk("@@@@@@: %d\n", BITS_PER_LONG);
