@@ -6,9 +6,10 @@
 #include <linux/ahci.h>
 #include <linux/list.h>
 #include <linux/string.h>
+#include<linux/block_device.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
-
+struct block_device_request_queue ahci_req_queue;
 /*启动命令引擎*/
 static void start_cmd(unsigned long prot_base)
 {
@@ -136,7 +137,7 @@ void kong(void)
     return;
 }
 
-static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
     int spin = 0;            // Spin lock timeout counter
@@ -185,7 +186,7 @@ static int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int 
     return AHCI_SUCCESS;
 }
 
-static int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+ int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0xffff; // Clear pending interrupt bits
     int slot = ahci_find_cmdslot(prot_base);
@@ -400,17 +401,7 @@ void disk_init(void) {
     // kalloc();//分配
     ahci_probe_port();  // 扫描ahci的所有端口
     port_rebase(1);//开启1号端口
-    char buf[10000];
-    ahci_read(0x180, 0, 0, 2, (unsigned long)buf);
-    printk("buf:%s\n", buf);
-    for (int i = 0; i < 1024; i++)
-    {
-        printk("%x ", buf[i]);
-        if (i%8==0)
-        {
-            printk("\n");
-        }
-    }
+   
     //memcpy(buf, "hello world\n", 13);
     //ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
     /*io调度初始化*/

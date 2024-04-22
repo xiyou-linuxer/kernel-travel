@@ -299,7 +299,6 @@ struct hba_command_table {
 	uint8_t reserved[48];// 48字节的保留空间数组
 	struct hba_prdt_entry prdt_entries[1];// 物理区域描述符表（PRDT）条目的数组
 }__attribute__ ((packed));
-void disk_init(void);
 
 struct ata_identify {
 	uint16_t ata_device;
@@ -365,5 +364,17 @@ struct ata_identify {
 	
 	/* ...and more */
 };
+extern struct block_device_request_queue ahci_req_queue;//io调度队列
+void disk_init(void);
+int ahci_read(unsigned long prot_base,
+              unsigned int startl,
+              unsigned int starth,
+              unsigned int count,
+              unsigned long buf);
 
+int ahci_write(unsigned long prot_base,
+               unsigned int startl,
+               unsigned int starth,
+               unsigned int count,
+               unsigned long buf);
 #endif

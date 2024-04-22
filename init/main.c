@@ -14,6 +14,7 @@
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
 #include <linux/ahci.h>
+#include <linux/block_device.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -38,6 +39,17 @@ void __init __no_sanitize_address start_kernel(void)
 	local_irq_enable();
 	pci_init();
     disk_init();
+	char buf[10000];
+    block_read(0,1,buf,1);
+    printk("buf:%s\n", buf);
+    for (int i = 0; i < 1024; i++)
+    {
+        printk("%x ", buf[i]);
+        if (i%8==0)
+        {
+            printk("\n");
+        }
+    }
         // local_irq_disable();
 
         // early_boot_irqs_disabled = true;
