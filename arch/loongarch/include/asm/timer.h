@@ -8,6 +8,5 @@ extern unsigned long ticks;
 extern void intr_timer_handler(struct pt_regs *regs);
 
 void timer_init(void);
-void schedule(void);
 
 #endif

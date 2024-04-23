@@ -14,5 +14,4 @@ int bit_scan_test(struct bitmap* btmp,uint32_t bit_idx);
 int bit_scan(struct bitmap* btmp,uint32_t cnt);
 void bitmap_set(struct bitmap* btmp,uint32_t bit_idx,uint8_t value);
 
-
 #endif

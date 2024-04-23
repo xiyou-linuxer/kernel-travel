@@ -42,35 +42,6 @@ void intr_timer_handler(struct pt_regs *regs)
     }
 }
 
-void schedule()
-{
-    printk("schedule...\n");
-    ASSERT(intr_get_status() == INTR_OFF);
-
-    struct task_struct* cur = running_thread(); 
-    if (cur->status == TASK_RUNNING) {
-        ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
-        list_append(&thread_ready_list, &cur->general_tag);
-        cur->ticks = cur->priority;
-        cur->status = TASK_READY;
-    } else {
-
-    }
-
-    /*
-    if (list_empty(&thread_ready_list)) {
-        thread_unblock(idle_thread);
-    }
-    */
-
-    ASSERT(!list_empty(&thread_ready_list));
-    thread_tag = NULL;	  // thread_tag清空
-    thread_tag = list_pop(&thread_ready_list);
-    struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
-    next->status = TASK_RUNNING;
-
-    switch_to(cur, next);
-}
 
 void timer_init() {
     printk("timer_init start\n");
