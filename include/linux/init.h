@@ -16,6 +16,9 @@
 #define __FINIT		.previous
 
 /* silence warnings when references are OK */
-#define __REF            .section       ".ref.text", "ax"
+#define __REF		.section       ".ref.text", "ax"
 
+/* Used for memory*/
+#define __meminit	__section(".meminit.text")
+#define __meminitdata	__section(".meminit.data")
 #endif /* _LINUX_INIT_H */
