@@ -1,5 +1,5 @@
 #include <process.h>
-#include <thread.h>
+#include <linux/thread.h>
 #include <debug.h>
 #include <trap/irq.h>
 #include <allocator.h>

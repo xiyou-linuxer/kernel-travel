@@ -1,6 +1,6 @@
 #include <sync.h>
 #include <trap/irq.h>
-#include <thread.h>
+#include <linux/thread.h>
 #include <debug.h>
 
 

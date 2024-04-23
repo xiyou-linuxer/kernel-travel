@@ -1,6 +1,6 @@
 #ifndef __KERNEL_ALLOCATOR_H
 #define __KERNEL_ALLOCATOR_H
-#include <thread.h>
+#include <linux/thread.h>
 #include <asm/bootinfo.h>
 #include <linux/compiler_attributes.h>
 
