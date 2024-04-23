@@ -1,3 +1,3 @@
-ccflags-y := -std=gnu99 -Wno-declaration-after-statement
+ccflags-y := -std=gnu99 -Wno-declaration-after-statement -Wno-unused-function
 
 obj-y	+= pci.o

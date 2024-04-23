@@ -14,7 +14,8 @@
 #include <asm/boot_param.h>
 #include <asm/timer.h>
 #include <linux/thread.h>
-
+#include <linux/ahci.h>
+#include <sync.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -27,18 +28,21 @@ extern void trap_init(void);
 void thread_a(void* unused)
 {
     printk("enter thread_a\n");
-    while(1) {
-        printk("a ");
+    while (1) {
+        unsigned long crmd = read_csr_crmd();
+        printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
     }
 }
 
-void thread_b(void* unused)
-{
-    printk("enter thread_b\n");
-    while(1) {
-        printk("b ");
-    }
-}
+//void proc_1(void* unused)
+//{
+//    printk("enter proc_1\n");
+//    while(1) {
+//        unsigned long crmd = read_csr_crmd();
+//        printk("oo");
+//        printk("proc_1:at pri %d  ",crmd&PLV_MASK);
+//    }
+//}
 
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -60,7 +64,7 @@ void __init __no_sanitize_address start_kernel(void)
     thread_init();
     timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
-	thread_start("thread_b",31,thread_b,NULL);
+	
 	//local_irq_enable();
 	// local_irq_disable();
 	

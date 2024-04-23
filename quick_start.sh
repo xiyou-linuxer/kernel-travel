@@ -41,6 +41,7 @@ function rungdb()
 function image()
 {
 	make ARCH=loongarch CROSS_COMPILE=$TOOLCHAINS -j1 Image
+    sudo docker cp /home/username/Desktop/Os/kernel-travel/arch/loongarch/boot/Image  os-contest:/srv/tftp/Image
 }
 
 function gdb()
