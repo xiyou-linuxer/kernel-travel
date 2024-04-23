@@ -13,4 +13,5 @@ void setup_arch(void)
 	// init_environ();
 
 	memblock_init();
+	
 }

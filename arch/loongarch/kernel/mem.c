@@ -25,10 +25,14 @@ void __init memblock_init(void)
 {
 	u32 mem_cnt = lalist_mem_map.map_count;
 	u64 mem_start, mem_end, mem_size;
+
+	// 物理内存
+	mem_start = lalist_mem_map.map[1].mem_start;
+	mem_size = lalist_mem_map.map[1].mem_size;
+	memblock_add(mem_start,mem_size);
+	
+	// 保留内存
 	mem_start = lalist_mem_map.map[0].mem_start;
 	mem_size = lalist_mem_map.map[0].mem_size;
-	mem_end = mem_start + mem_size;
-
-	for(u32 i = 0; i < mem_cnt; i++)
-		memblock_add(mem_start,mem_size);
+	memblock_reserve(mem_start,mem_size);
 }
