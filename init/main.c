@@ -14,7 +14,7 @@
 #include <asm/boot_param.h>
 #include <asm/timer.h>
 #include <linux/thread.h>
-
+#include <linux/ahci.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -55,11 +55,13 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 	local_irq_enable();
-	//pci_init();
-	thread_init();
-	timer_init();
+	pci_init();
+    disk_init();
+    thread_init();
+    timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
 	thread_start("thread_b",31,thread_b,NULL);
+	
 	//local_irq_enable();
 	// local_irq_disable();
 	
