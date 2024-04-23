@@ -55,9 +55,10 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 	local_irq_enable();
-	//pci_init();
-	thread_init();
-	timer_init();
+	pci_init();
+    disk_init();
+    thread_init();
+    timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
 	thread_start("thread_b",31,thread_b,NULL);
 	//local_irq_enable();

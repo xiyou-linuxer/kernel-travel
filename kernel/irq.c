@@ -128,10 +128,19 @@ bool in_interrupt(void)
     return (bh_count + irq_count);
 }
 
+/*设置中断路由
+*cpu：cpu向量号，0/1
+*IPx：中断引脚号，可填入0~3
+source_num：中断源号0~63
+*/
+void irq_routing_set(uint8_t cpu,uint8_t IPx,uint8_t source_num)
+{
+    *(unsigned long*)(0x8000000000000000 | IO_ENTTER + source_num) =((IPx << 3) | (cpu & 0x7));
+}
+
 void irq_init(void)
 {
     printk("irq_init start\n");
     exception_init();
-
     printk("irq_init done\n");
 }

@@ -15,6 +15,8 @@ enum intr_status {		 // 中断状态
     INTR_ON		         // 中断打开
 };
 
+#define IO_ENTTER 0x1fe0140//中断路由寄存器基址
+
 bool in_interrupt(void);
 enum intr_status intr_get_status(void);
 enum intr_status intr_set_status (enum intr_status);
