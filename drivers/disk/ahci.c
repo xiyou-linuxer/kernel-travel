@@ -7,6 +7,8 @@
 #include <linux/list.h>
 #include <linux/string.h>
 #include<linux/block_device.h>
+
+struct port port_table[PORT_NR];
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
 struct block_device_request_queue ahci_req_queue;
@@ -132,8 +134,9 @@ static struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct 
     return cmdfis;
 }
 
-int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
+    int prot_base = port_num*PORT_OFFEST+PORT_BASE;
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
     int spin = 0;            // Spin lock timeout counter
     int slot = ahci_find_cmdslot(prot_base);//寻找是否有空出的命令槽位
@@ -154,7 +157,7 @@ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth,
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot; // Issue command
     
     //等待命令发送
-    while (1)
+    /*while (1)
     {
         printk("");
         if (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) |
@@ -168,8 +171,8 @@ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth,
             printk("Read disk error");
             return E_TASK_FILE_ERROR;
         } 
-    }
-
+    }*/
+    sema_down(&port_table[port_num].lock);
     // Check again
     if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
     {
@@ -180,8 +183,10 @@ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth,
     return AHCI_SUCCESS;
 }
 
- int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+ int ahci_write(unsigned int port_num, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
+
+    int prot_base = port_num*PORT_OFFEST+PORT_BASE;
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0xffff; // Clear pending interrupt bits
     int slot = ahci_find_cmdslot(prot_base);
     if (slot == -1)
@@ -209,18 +214,19 @@ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth,
     struct fis_reg_host_to_device *cmdfis = ahci_initialize_fis_host_to_device(cmdtbl,startl,starth,ATA_CMD_WRITE_DMA_EXT,count);
    
     //    printk("[slot]{%d}", slot);
-    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 ; // Issue command
-    while (1)
-    {
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot ; // Issue command
+    port_table[port_num].slots = slot;
+    /*while (1) {
         printk("");
-        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 << slot)) == 0)
-            break;
-        if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
-        { // Task file error
+        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 <<
+    slot)) == 0) break; if (*(unsigned int
+    *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) { // Task file error
             printk("Write disk error");
             return E_TASK_FILE_ERROR;
         }
-    }
+    }*/
+    sema_down(&port_table[port_num].lock);
+
     if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
     {
         printk("Write disk error");
@@ -333,6 +339,7 @@ static void ahci_probe_port(void)
             printk("ahci_probe_port dt:%d\n",dt);
             if (dt == AHCI_DEV_SATA)
             {
+                port_rebase(i);
                 printk("SATA drive found at port %d\n", i);
             }
             else if (dt == AHCI_DEV_SATAPI)
@@ -358,8 +365,7 @@ static void ahci_probe_port(void)
 
 static void port_rebase(int portno)
 {
-    unsigned long port = PORT_BASE + portno * PORT_OFFEST;//计算端口的偏移地址
-    
+    unsigned long port = PORT_BASE + portno * PORT_OFFEST;  // 计算端口的偏移地址
     stop_cmd(port);  // 停止命令引擎
 
     // 命令列表偏移量：1K*portno
@@ -387,6 +393,26 @@ static void port_rebase(int portno)
         memset((void *)cmdheader[i].command_table_base, 0, 256);
     }
     start_cmd(port); // Start command engine
+    port_table[portno].flag = 1;
+    port_table[portno].port_base = port;
+    lock_init(&port_table[portno].lock);
+}
+
+/* 硬盘中断处理程序 */
+void intr_hd_handler(uint8_t irq_no) {
+    int prot_base = 0x180;
+    int slot = port_table[1].slots;
+    while (1) {
+        printk("");
+        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 << slot)) == 0)
+            break;
+        if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
+        { // Task file error
+            printk("Write disk error");
+            return E_TASK_FILE_ERROR;
+        }
+    }
+    sema_up(&port_table[1].lock);
 }
 
 /*磁盘驱动初始化*/
@@ -401,14 +427,17 @@ void disk_init(void) {
         printk(KERN_ERR "[ahci]: no AHCI controllers present!\n");
     }
     SATA_ABAR_BASE = 0x8000000000000000|pci_dev->bar[0].base_addr;
+    for (int i = 0; i < PORT_NR; i++)
+    {
+        port_table[i].flag == 0;
+    }
     /*注册中断处理程序*/
-
-    *(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_IE;//全局中断使能
+    register_handler(EXCCODE_IP0, intr_hd_handler);
+    *(unsigned int*)(SATA_ABAR_BASE | HBA_GHC) |= HBA_GHC_IE;  // 全局中断使能
     *(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_AHCI_ENABLE;//启用ahci
     // kalloc();//分配
     ahci_probe_port();  // 扫描ahci的所有端口
-    port_rebase(1);//开启1号端口
-   
+    //port_rebase(1);//开启1号端口
     //memcpy(buf, "hello world\n", 13);
     //ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
     /*io调度初始化*/

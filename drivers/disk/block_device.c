@@ -36,10 +36,10 @@
     switch (cmd)
     {
     case ATA_CMD_READ_DMA_EXT:
-        ahci_read(prot_base,LBA_startl,LBA_starth,count,buffer);
+        ahci_read(port_num,LBA_startl,LBA_starth,count,buffer);
         break;
     case ATA_CMD_WRITE_DMA_EXT:
-        ahci_write(prot_base,LBA_startl,LBA_starth,count,buffer);
+        ahci_write(port_num,LBA_startl,LBA_starth,count,buffer);
         break;
     default:        
         break;

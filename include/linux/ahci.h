@@ -3,6 +3,9 @@
 
 #include <linux/types.h>
 #include <linux/block_device.h>
+#include <sync.h>
+#include <trap/irq.h>
+#include <linux/thread.h>
 
 #define ATA_SECTOR_SIZE 512//磁盘块的大小
 
@@ -365,15 +368,23 @@ struct ata_identify {
 	
 	/* ...and more */
 };
+struct port
+{
+    char flag;
+    int slots;
+    int port_base;
+    struct lock lock;
+};
+
 extern struct block_device_request_queue ahci_req_queue;//io调度队列
 void disk_init(void);
-int ahci_read(unsigned long prot_base,
+int ahci_read(unsigned int port_num,
               unsigned int startl,
               unsigned int starth,
               unsigned int count,
               unsigned long buf);
 
-int ahci_write(unsigned long prot_base,
+int ahci_write(unsigned int port_num,
                unsigned int startl,
                unsigned int starth,
                unsigned int count,
