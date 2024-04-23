@@ -17,6 +17,18 @@
         "setup.h": "c",
         "irq.h": "c",
         "bootinfo.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "cstdlib": "c",
+        "list": "c",
+        "list.h": "c",
+        "timer.h": "c",
+        "thread.h": "c",
+        "ahci.h": "c",
+        "debug.h": "c",
+        "block_device.h": "c",
+        "bitsperlong.h": "c",
+        "smp.h": "c",
+        "switch.h": "c",
+        "bitmap.h": "c"
     }
 }

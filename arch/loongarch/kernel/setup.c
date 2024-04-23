@@ -10,9 +10,7 @@ void setup_arch(void)
 	 * 例外与中断的初始化
 	 */
 	per_cpu_trap_init(0);
-	/**
-	 * 解析boot params interface
-	 */
-	//init_environ();
-	//memblock_init();
+	// init_environ();
+
+	memblock_init();
 }

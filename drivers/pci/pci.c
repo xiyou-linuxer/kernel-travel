@@ -155,7 +155,7 @@ static int pci_free_device(pci_device_t *device)
 void* pci_device_read(pci_device_t *device, unsigned int reg)
 {
     void* result;
-    pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,result);
+    pci_read_config(PCI_CONFIG0_BASE,device->bus, device->dev, device->function, reg,(int *)result);
     return result;
 }
 
@@ -230,7 +230,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
     
 	/*读取总线设备的设备id*/
     unsigned int val;
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,(int *)&val);
     unsigned int vendor_id = val & 0xffff;
     unsigned int device_id = val >> 16;
 	/*总线设备不存在，直接返回*/
@@ -244,17 +244,17 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/*读取设备类型*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,(int *)&val);
     unsigned char header_type = ((val >> 16));
 	/*读取 command 寄存器*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_STATUS_COMMAND,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_STATUS_COMMAND,(int *)&val);
     /*将寄存器中的内容存入结构体 */
     pci_dev->command = val & 0xffff;
     pci_dev->status = (val >> 16) & 0xffff;
     
    // unsigned int command = val & 0xffff;
 	/*pci_read_config class code and revision id*/
-    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_CLASS_CODE_REVISION_ID,&val);
+    pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_CLASS_CODE_REVISION_ID,(int *)&val);
     unsigned int classcode = val >> 8;
     unsigned char revision_id = val & 0xff;
 	
@@ -268,7 +268,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		/*获取地址值*/
         pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
 		/*设置bar寄存器为全1禁用此地址，在禁用后再次读取读出的内容为地址空间的大小*/
-        pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
+        pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, (int *)0xffffffff);
        
 	   /* bass address[0~5] 获取地址长度*/
         unsigned int len;
@@ -426,30 +426,17 @@ pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass)
 void pci_enable_bus_mastering(pci_device_t *device)
 {
     unsigned int val;
-    pci_read_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function,PCI_STATUS_COMMAND,&val);
+    pci_read_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function,PCI_STATUS_COMMAND,(int *)&val);
     // #if DEBUG_LOCAL == 1
     printk(KERN_DEBUG "pci_enable_bus_mastering: before command: %x\n", val);    
 //#endif
 	val |= 4;
-    pci_write_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND, val);
+    pci_write_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND, (int *)val);
 
-    pci_read_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND,&val);
+    pci_read_config(PCI_BASS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND,(int *)&val);
 //#if DEBUG_LOCAL == 1
     printk(KERN_DEBUG "pci_enable_bus_mastering: after command: %x\n", val);    
 //#endif
-}
-
-static void dump_addr(unsigned long *addr)
-{
-    int i;
-    printk("%16x\n", addr);
-    for (i = 0; i < 256;) {
-        printk("%08x", *(addr + i));
-        if ((i + 1) % 4 == 0) {
-            printk("\n");
-        }
-        i += 4;
-    }
 }
 
 void pci_init()
@@ -463,7 +450,6 @@ void pci_init()
     /*扫描所有总线设备*/
     pci_scan_buses();
     /*pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
-    printk("pci_dev:%x", pci_dev);
     pci_device_dump(pci_dev);*/
     printk(KERN_INFO "init_pci: pci type device found %d.\n",
            pic_get_device_connected());

@@ -4,8 +4,8 @@
 #include <linux/stdio.h>
 #include <trap/irq.h>
 #include <trap/softirq.h>
-#include <debug.h>
-#include <timer.h>
+#include <linux/debug.h>
+#include <asm/timer.h>
 
 #define INTR_NUM	256
 

@@ -1,4 +1,4 @@
-#include <thread.h>
+#include <linux/thread.h>
 #include <debug.h>
 #include <bitmap.h>
 #include <linux/printk.h>
@@ -8,7 +8,7 @@
 #include <asm/pt_regs.h>
 #include <trap/irq.h>
 #include <asm/loongarch.h>
-#include <switch.h>
+#include <linux/switch.h>
 #include <asm/asm-offsets.h>
 #include <sync.h>
 #include <allocator.h>

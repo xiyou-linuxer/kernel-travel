@@ -16,7 +16,8 @@ obj-y := setup.o
 obj-y += traps.o
 obj-y += cache.o
 obj-y += genex.o
-obj-y +=env.o
+obj-y += env.o
+obj-y += mem.o
 
 head-y			:= head.o
 extra-y := $(head-y) vmlinux.lds

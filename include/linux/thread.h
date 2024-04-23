@@ -1,6 +1,6 @@
 #ifndef __THREAD_THREAD_H
 #define __THREAD_THREAD_H
-#include <list.h>
+#include <linux/list.h>
 #include <stdint.h>
 
 #define TASK_NAME_LEN 16
