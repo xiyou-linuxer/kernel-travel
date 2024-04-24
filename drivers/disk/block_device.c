@@ -1,5 +1,6 @@
 #include <linux/block_device.h>
 #include <linux/ahci.h>
+#include <linux/stdio.h>
 
 /*打包请求*/
  /*struct block_device_request_packet **/void block_make_request(int cmd, uint64_t base_addr, uint64_t count, uint64_t buffer,uint8_t port_num)
@@ -36,7 +37,8 @@
     switch (cmd)
     {
     case ATA_CMD_READ_DMA_EXT:
-        ahci_read(port_num,LBA_startl,LBA_starth,count,buffer);
+        printk("block_make_request\n");
+        ahci_read(port_num, LBA_startl, LBA_starth, count, buffer);
         break;
     case ATA_CMD_WRITE_DMA_EXT:
         ahci_write(port_num,LBA_startl,LBA_starth,count,buffer);
@@ -53,7 +55,10 @@
 */
 void block_read(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t port_num)
 {
+    printk("block_read\n");
+
     /*struct block_device_request_packet * pack=*/ block_make_request(ATA_CMD_READ_DMA_EXT,base_addr, count, buffer,port_num);
+
     //ahci_submit(pack);
 }
 

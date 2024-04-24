@@ -373,6 +373,7 @@ struct port
     char flag;
     int slots;
     int port_base;
+	struct semaphore disk_done;
     struct lock lock;
 };
 

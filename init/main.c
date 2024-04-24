@@ -15,6 +15,7 @@
 #include <asm/timer.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
+#include<linux/block_device.h>
 #include <sync.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -28,10 +29,24 @@ extern void trap_init(void);
 void thread_a(void* unused)
 {
     printk("enter thread_a\n");
-    while (1) {
+    /*while (1) {
         unsigned long crmd = read_csr_crmd();
         printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
+    }*/
+    char buffer[512];
+    block_read(0, 1, buffer, 1);
+	for (int i = 0; i < 512; i++)
+	{
+        printk("%x", buffer[i]);
     }
+	while (1)
+	{
+            /*printk("slot:%x\n",
+                   *(unsigned int*)(0x80000000400e0000 | (0x180 + PORT_CI)) );
+            if ((*(unsigned int *)(0x80000000400e0000|(0x180+PORT_CI)) & (1 <<
+        0)) == 0) break;*/
+        }
+	
 }
 
 //void proc_1(void* unused)
@@ -64,7 +79,12 @@ void __init __no_sanitize_address start_kernel(void)
     thread_init();
     timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
-	
+	/*char buffer[512];
+    block_read(0, 1, buffer, 1);
+	for (int i = 0; i < 512; i++)
+	{
+        printk("%x", buffer[i]);
+    }*/
 	//local_irq_enable();
 	// local_irq_disable();
 	
@@ -74,6 +94,6 @@ void __init __no_sanitize_address start_kernel(void)
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-        printk("m ");
+        //printk("m ");
 	}
 }

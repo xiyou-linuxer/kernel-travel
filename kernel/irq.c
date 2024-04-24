@@ -116,6 +116,7 @@ extern void do_irq(struct pt_regs *regs, uint64_t virq);
 void do_irq(struct pt_regs *regs, uint64_t virq)
 {
     irq_enter();
+    printk("virq:%x\n", virq);
     intr_table[virq](regs);
 
     irq_exit();
@@ -130,12 +131,17 @@ bool in_interrupt(void)
 
 /*设置中断路由
 *cpu：cpu向量号，0/1
-*IPx：中断引脚号，可填入0~3
-source_num：中断源号0~63
+*IPx：中断引脚号，可填入0～3
+*source_num：中断源号0～63
 */
 void irq_routing_set(uint8_t cpu,uint8_t IPx,uint8_t source_num)
 {
-    *(unsigned long*)(0x8000000000000000 | IO_ENTTER + source_num) =((IPx << 3) | (cpu & 0x7));
+    printk("Inten_0:%x\n", *(unsigned int*)(0x8000000000000000 | 0x1fe01424));
+    *(unsigned int*)(0x8000000000000000 | 0x1fe01428) |= (1 << source_num);
+    printk("Inten_0:%x\n", *(unsigned int*)(0x8000000000000000 | 0x1fe01424));
+    *(unsigned long*)(0x8000000000000000 |0x1fe01413 /*IO_ENTTER + source_num*/) = 0x11; /*|=
+        ((1 << IPx) | (1 << cpu));*/
+    printk("irq_routing_set\n");
 }
 
 void irq_init(void)
