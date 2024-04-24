@@ -137,7 +137,7 @@ int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, u
     
     //ASSERT(port_table[port_num].flag == 1);
     int prot_base = port_num * PORT_OFFEST + PORT_BASE;
-    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 1; // Clear pending interrupt bits
     int spin = 0;            // Spin lock timeout counter
     int slot = ahci_find_cmdslot(prot_base);//寻找是否有空出的命令槽位
     if (slot == -1)
@@ -155,13 +155,11 @@ int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, u
         return E_PORT_HUNG;
     }
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot; // Issue command
-    
     //等待命令发送
-    /*while (1)
+    while (1)
     {
         printk("");
-        if (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) &
-                  (1 << slot))) {
+        if (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) &(1 << slot))) {
            
             break;
         }
@@ -170,10 +168,7 @@ int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, u
             printk("Read disk error");
             return E_TASK_FILE_ERROR;
         } 
-    }*/
-    //printk("slot:%x\n", *(unsigned int*)(0x80000000400e0000 | (0x180 + PORT_CI)) );
-    //printk("ahci_read\n");
-    sema_down(&port_table[port_num].disk_done);
+    }
     // Check again
     if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
     {
@@ -216,17 +211,15 @@ int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, u
     //    printk("[slot]{%d}", slot);
     *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot ; // Issue command
     port_table[port_num].slots = slot;
-    /*while (1) {
+    while (1) {
         printk("");
-        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 <<
-    slot)) == 0) break; if (*(unsigned int
-    *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) { // Task file error
+        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 <<slot)) == 0) 
+            break; 
+        if (*(unsigned int*)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) { // Task file error
             printk("Write disk error");
             return E_TASK_FILE_ERROR;
         }
-    }*/
-    sema_down(&port_table[port_num].disk_done);
-
+    }
     if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
     {
         printk("Write disk error");
@@ -356,7 +349,7 @@ static void port_rebase(int portno)
         cmdheader[i].command_table_base = ahci_port_base_vaddr + (40 << 10) + (portno << 13) + (i << 8);
         memset((void *)cmdheader[i].command_table_base, 0, 256);
     }
-    *(unsigned int*)(SATA_ABAR_BASE | (port + PORT_IE)) = 1<< portno;
+    *(unsigned int*)(SATA_ABAR_BASE | (port + PORT_IE)) = HBA_PORT_IE_DHRE;
     start_cmd(port);  // Start command engine
     port_table[portno].flag = 1;
     port_table[portno].port_base = port;

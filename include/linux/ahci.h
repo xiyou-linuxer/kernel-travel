@@ -84,7 +84,7 @@ enum disk_result {
 #define HBA_PxCMD_CR    0x8000//表示端口的命令引擎状态位
 
 /*向IE寄存器写入的位*/
-#define HBA_PORT0_IE_DHRE (1UL << 0)//中断使能
+#define HBA_PORT_IE_DHRE (1UL << 0)//中断使能
 
 #define HBA_PORT_IPM_ACTIVE 1//端口的 IPM状态为激活状态
 #define HBA_PORT_DET_PRESENT 3//端口的 DET状态为已连接状态
