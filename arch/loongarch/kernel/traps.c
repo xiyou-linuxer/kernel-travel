@@ -8,6 +8,7 @@
 #include <linux/types.h>
 
 extern void *vector_table[];
+extern void tlb_handler(void);
 extern void do_irq(struct pt_regs *regs, uint64_t virq);
 
 extern void handle_reserved(void);
@@ -184,6 +185,7 @@ void trap_init(void)
 		vector_start = vector_table[i - EXCCODE_INT_START];
 		set_handler(i * VECSIZE, vector_start, VECSIZE);
 	}
+    set_handler(80*VECSIZE,tlb_handler,VECSIZE);
 
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器

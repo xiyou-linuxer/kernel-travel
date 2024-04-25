@@ -14,6 +14,7 @@
 			pr_info(fmt, ##__VA_ARGS__);			\
 	} while (0)
 
+
 static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS];
 static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS];
 
