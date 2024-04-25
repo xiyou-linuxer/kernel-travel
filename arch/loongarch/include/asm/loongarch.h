@@ -1344,6 +1344,16 @@ static inline unsigned long csrrd_prmd(void)
 	return ret;
 }
 
+static inline void write_csr_pwcl(unsigned long x)
+{
+	asm volatile ("csrwr %0, 0x1c"::"r"(x));
+}
+
+static inline void write_csr_pgdl(unsigned long x)
+{
+	asm volatile ("csrwr %0, 0x19"::"r"(x));
+}
+
 static inline void csrwr_prmd(unsigned long x)
 {
 	asm volatile ("csrwr %z0, 1" :: "Jr" (x));
@@ -1420,7 +1430,6 @@ static inline void csrwr_ticlr(unsigned long x)
 	asm volatile ("csrwr %z0, 0x44" :: "Jr" (x));
 }
 
-
 static inline void intr_on(void)
 {
 	csrwr_crmd(csrrd_crmd() | CRMD_IE);
@@ -1435,6 +1444,7 @@ static inline int intr_get(void)
 {
 	return csrrd_crmd() & CRMD_IE;
 }
+
 
 #endif /* __ASSEMBLY__ */
 
