@@ -38,10 +38,10 @@
     {
     case ATA_CMD_READ_DMA_EXT:
         printk("block_make_request\n");
-        ahci_read(port_num, LBA_startl, LBA_starth, count, buffer);
+        ahci_read(port_num, base_addr, count, buffer);
         break;
     case ATA_CMD_WRITE_DMA_EXT:
-        ahci_write(port_num,LBA_startl,LBA_starth,count,buffer);
+        ahci_write(port_num,base_addr,count,buffer);
         break;
     default:        
         break;
