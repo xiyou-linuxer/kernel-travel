@@ -115,13 +115,11 @@ void register_handler(uint8_t vector_no, intr_handler function)
 extern void do_irq(struct pt_regs *regs, uint64_t virq);
 void do_irq(struct pt_regs *regs, uint64_t virq)
 {
-    irq_enter();
-    printk("virq:%x\n", virq);
-    intr_table[virq](regs);
-
-    irq_exit();
-    if (softirq_active)
-        do_softirq();
+	irq_enter();
+	intr_table[virq](regs);
+	irq_exit();
+	if (softirq_active)
+		do_softirq();
 }
 
 bool in_interrupt(void)
@@ -136,15 +134,18 @@ bool in_interrupt(void)
 */
 void irq_routing_set(uint8_t cpu,uint8_t IPx,uint8_t source_num)
 {
-    int intenset;
+    int intenset,ioentry;
     if (source_num < 32) {
         intenset = INTENSET_0;
+        ioentry = IO_ENTRY_0;
     } else {
         intenset = INTENSET_1;
+        ioentry = IO_ENTRY_1;
     }
-    *(unsigned int*)(0x8000000000000000 | INTENSET_0) |= (1 << source_num);
-    *(unsigned char*)(0x8000000000000000 |IO_ENTTER + source_num) |= ((1 << (4+IPx)) | (1 << cpu));
-    //printk("irq_routing_set\n");
+    *(unsigned int*)(0x8000000000000000 | intenset) |= (1 << source_num);
+    *(unsigned char*)(0x8000000000000000 |ioentry + source_num) = ((0x1<<IPx)<<4 | (1 << cpu)<<0);
+    printk("%x", *(unsigned char*)(0x8000000000000000 | ioentry + source_num));
+    // printk("irq_routing_set\n");
 }
 
 void irq_init(void)

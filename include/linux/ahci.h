@@ -277,7 +277,7 @@ struct hba_command_header {
 	uint8_t bist:1;					//指示是否执行内建自检
 	uint8_t clear_busy_upon_r_ok:1;	//指示是否在读操作完成时清除繁忙位
 	uint8_t reserved0:1;
-	uint8_t pmport:4;				//指示端口多路复用的值
+	uint8_t pmport:3;				//指示端口多路复用的值
 	
 	uint16_t prdt_len;
 	
@@ -291,17 +291,16 @@ struct hba_command_header {
 struct hba_prdt_entry {
 	uint64_t data_base;// 数据基址
 	uint32_t reserved0;// 保留字段
-	
+	uint8_t interrupt_on_complete:1;// 完成时中断位，占用1位
+	uint16_t reserved1:9;// 保留字段，占用9位
 	uint32_t byte_count:22;// 字节计数字段，占用22位
-	uint32_t reserved1:9;// 保留字段，占用9位
-	uint32_t interrupt_on_complete:1;// 完成时中断位，占用1位
 }__attribute__ ((packed));
 
 struct hba_command_table {
 	uint8_t command_fis[64];// 64字节的命令FIS（帧信息结构）数组
 	uint8_t acmd[16]; // 16字节的ATAPI命令数组
 	uint8_t reserved[48];// 48字节的保留空间数组
-	struct hba_prdt_entry prdt_entries[1];// 物理区域描述符表（PRDT）条目的数组
+	struct hba_prdt_entry prdt_entries[(4096UL-0x80U)/sizeof(struct hba_prdt_entry)];// 物理区域描述符表（PRDT）条目的数组
 }__attribute__ ((packed));
 
 struct ata_identify {

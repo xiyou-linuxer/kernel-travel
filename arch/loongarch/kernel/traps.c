@@ -85,7 +85,7 @@ void do_vint(struct pt_regs *regs, unsigned long sp)
 {
 	unsigned long hwirq = *(unsigned long *)regs;
 	unsigned long virq;
-
+	printk("hwirq %x\n",hwirq);
 	virq = hwirq_to_virq(hwirq);
 	do_irq(regs, virq);
 }
@@ -160,6 +160,26 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 	local_flush_icache_range(eentry + offset, eentry + offset + size);
 }
 
+/*初始化io中断环境
+*/
+static void io_irq_init(void)
+{
+	/*clr*/
+	*(unsigned int*)(0x8000000000000000 | 0x1fe0142c) = ~0x0U;
+	*(unsigned int*)(0x8000000000000000 | 0x1fe0146c) = ~0x0U;
+	/*pol*/
+	*(unsigned int*)(0x8000000000000000 | 0x1fe01430) = 0x0U;
+	*(unsigned int*)(0x8000000000000000 | 0x1fe01470) = 0x0U;
+	/*edge*/
+	*(unsigned int*)(0x8000000000000000 | 0x1fe01434) = 0x0U;
+	*(unsigned int*)(0x8000000000000000 | 0x1fe01474) = 0x0U;
+	/*bou*/
+	*(unsigned int*)(0x8000000000000000 | 0x1fe01438) = 0x0U;
+	*(unsigned int*)(0x8000000000000000 | 0x1fe01478) = 0x0U;
+	/*auto*/
+	*(unsigned int*)(0x8000000000000000 | 0x1fe0143c) = 0x0U;
+	*(unsigned int*)(0x8000000000000000 | 0x1fe0147c) = 0x0U;
+}
 /**
  * trap_init - 例外与中断处理初始化
  */
@@ -188,7 +208,6 @@ void trap_init(void)
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器
 	write_csr_tcfg(tcfg);
-	ecfg = read_csr_ecfg();
+	io_irq_init();
 	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 11);
-
 }
