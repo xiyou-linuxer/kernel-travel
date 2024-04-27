@@ -84,13 +84,16 @@ void __init __no_sanitize_address start_kernel(void)
 	page_table_add(pdir,0,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
 
 	// 模拟进入用户态
+#define USR_CODE_BASE 0x00000000
 	unsigned int crmd = read_csr_crmd();
 	printk("%x\n",crmd&PLV_MASK);
 	asm volatile(
 	"csrwr %0, %1\n"
+	"csrwr %4, %2\n"
+	"li.d $sp, %3\n"
+	"ertn\n"
 	:
-	: "r"(crmd | 3), "i"(LOONGARCH_CSR_CRMD));
-	crmd = read_csr_crmd();
+	: "r"(CSR_PRMD_PPLV | CSR_PRMD_PIE), "i"(LOONGARCH_CSR_PRMD), "i"(0x6), "i"(VMEM_SIZE), "i"(USR_CODE_BASE));
 
 	printk("%x\n",crmd&PLV_MASK);
 	while (1) {
