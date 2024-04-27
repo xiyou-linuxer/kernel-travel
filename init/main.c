@@ -14,13 +14,13 @@
 #include <asm/boot_param.h>
 #include <asm/timer.h>
 #include <asm/page.h>
+#include <asm/tlb.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
 #include <sync.h>
 #include <process.h>
 #include <linux/memory.h>
 #include <linux/string.h>
-
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -72,7 +72,7 @@ void __init __no_sanitize_address start_kernel(void)
 	timer_init();
 	//thread_start("thread_a",31,thread_a,NULL);
 	//process_execute(proc_1,"proc_1");
-
+	__update_tlb();
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 
@@ -82,18 +82,19 @@ void __init __no_sanitize_address start_kernel(void)
 
 	memcpy((void*)page,proc0_code,sizeof(proc0_code));
 	page_table_add(pdir,0,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
+	printk("proc_1 : %p",proc_1);
+
 
 	// 模拟进入用户态
-#define USR_CODE_BASE 0x00000000
 	unsigned int crmd = read_csr_crmd();
 	printk("%x\n",crmd&PLV_MASK);
 	asm volatile(
 	"csrwr %0, %1\n"
-	"csrwr %4, %2\n"
+	"csrwr $r0, %2\n"
 	"li.d $sp, %3\n"
 	"ertn\n"
 	:
-	: "r"(CSR_PRMD_PPLV | CSR_PRMD_PIE), "i"(LOONGARCH_CSR_PRMD), "i"(0x6), "i"(VMEM_SIZE), "i"(USR_CODE_BASE));
+	: "r"(CSR_PRMD_PPLV | CSR_PRMD_PIE), "i"(LOONGARCH_CSR_PRMD), "i"(0x6), "i"(VMEM_SIZE));
 
 	printk("%x\n",crmd&PLV_MASK);
 	while (1) {
