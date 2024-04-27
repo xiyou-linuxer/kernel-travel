@@ -13,6 +13,7 @@
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
 #include <asm/timer.h>
+#include <asm/page.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
 #include <sync.h>
@@ -33,21 +34,21 @@ char proc0_code[] = {0x00, 0x00, 0x00, 0x50};
 
 void thread_a(void* unused)
 {
-    printk("enter thread_a\n");
-    while (1) {
-        unsigned long crmd = read_csr_crmd();
-        printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
-    }
+	printk("enter thread_a\n");
+	while (1) {
+		unsigned long crmd = read_csr_crmd();
+		printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
+	}
 }
 
 void proc_1(void* unused)
 {
-    printk("enter proc_1\n");
-    while(1) {
-        unsigned long crmd = read_csr_crmd();
-        printk("oo");
-        printk("proc_1:at pri %d  ",crmd&PLV_MASK);
-    }
+	printk("enter proc_1\n");
+	while(1) {
+	unsigned long crmd = read_csr_crmd();
+	printk("oo");
+	printk("proc_1:at pri %d  ",crmd&PLV_MASK);
+	}
 }
 
 void __init __no_sanitize_address start_kernel(void)
@@ -66,34 +67,35 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 	local_irq_enable();
 	//pci_init();
-    //disk_init();
-    thread_init();
-    timer_init();
-    mm_init();
+	//disk_init();
+	thread_init();
+	timer_init();
 	//thread_start("thread_a",31,thread_a,NULL);
-    //process_execute(proc_1,"proc_1");
-	
+	//process_execute(proc_1,"proc_1");
+
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 
-    uint64_t pdir = get_page();
-    uint64_t page = get_page();
-    write_csr_pgdl(pdir & ~DMW_MASK);
+	uint64_t pdir = get_page();
+	uint64_t page = get_page();
+	write_csr_pgdl(pdir & ~DMW_MASK);
 
-    memcpy((void*)page,proc0_code,sizeof(proc0_code));
-    page_table_add(pdir,0,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
+	memcpy((void*)page,proc0_code,sizeof(proc0_code));
+	page_table_add(pdir,0,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
 
-    asm volatile(
-    "csrwr %0, %1\n"
-    "csrwr $r0, %2\n"
-    "li.d $sp, %3\n"
-    "ertn\n"
-    :
-    : "r"(CSR_PRMD_PPLV | CSR_PRMD_PIE), "i"(LOONGARCH_CSR_PRMD), "i"(0x6), "i"(VMEM_SIZE));
+	// 模拟进入用户态
+	unsigned int crmd = read_csr_crmd();
+	printk("%x\n",crmd&PLV_MASK);
+	asm volatile(
+	"csrwr %0, %1\n"
+	:
+	: "r"(crmd | 3), "i"(LOONGARCH_CSR_CRMD));
+	crmd = read_csr_crmd();
 
+	printk("%x\n",crmd&PLV_MASK);
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-        printk("m ");
+		printk("m ");
 	}
 }
