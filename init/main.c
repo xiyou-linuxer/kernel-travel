@@ -13,6 +13,7 @@
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
 #include <asm/timer.h>
+#include <asm/page.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
 #include <sync.h>
@@ -31,11 +32,11 @@ extern void trap_init(void);
 
 void thread_a(void* unused)
 {
-    printk("enter thread_a\n");
-    while (1) {
-        unsigned long crmd = read_csr_crmd();
-        printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
-    }
+	printk("enter thread_a\n");
+	while (1) {
+		unsigned long crmd = read_csr_crmd();
+		printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
+	}
 }
 
 void proc_1(void* unused)
@@ -62,7 +63,6 @@ void __init __no_sanitize_address start_kernel(void)
     disk_init();
     thread_init();
     timer_init();
-    mm_init();
 	thread_start("thread_a",31,thread_a,NULL);
     process_execute(proc_1,"proc_1");
 	
@@ -72,6 +72,6 @@ void __init __no_sanitize_address start_kernel(void)
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-        printk("m ");
+		printk("m ");
 	}
 }

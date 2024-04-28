@@ -1,5 +1,6 @@
 #include <asm/bootinfo.h>
 #include <asm/setup.h>
+#include <asm/page.h>
 
 unsigned long fw_arg0, fw_arg1, fw_arg2;
 unsigned long kernelsp;
@@ -13,5 +14,7 @@ void setup_arch(void)
 	// init_environ();
 
 	memblock_init();
+	phy_pool_init();
+	page_setting_init();
 	
 }
