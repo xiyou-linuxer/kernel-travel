@@ -38,6 +38,17 @@
 	jirl	zero, \temp1, 0xc
 	.endm
 
+	.macro	get_saved_sp docfi=0
+	la.abs	  t1, kernelsp
+	LONG_L	  sp, t1, 0
+	.endm
+
+	.macro	set_saved_sp stackp temp
+	la.abs	  \temp, kernelsp
+	LONG_S	  \stackp, \temp, 0
+	.endm
+
+
 	.macro BACKUP_T0T1
 	csrwr	t0, EXCEPTION_KS0
 	csrwr	t1, EXCEPTION_KS1
@@ -79,7 +90,7 @@
 	move	t0, sp
 	beqz	t1, 8f
 	/* Called from user mode, new stack. */
-	/* get_saved_sp docfi=\docfi */
+	get_saved_sp docfi=\docfi
 8:
 	PTR_ADDI sp, sp, -PT_SIZE
 	.if \docfi

@@ -4,6 +4,8 @@
 #include <asm/bootinfo.h>
 #include <linux/compiler_attributes.h>
 
+#define USER_STACK (1 << (9+9+12))
+
 union task_page {
     struct task_struct task;
     char padding[KERNEL_STACK_SIZE];
@@ -14,6 +16,6 @@ struct user_stack_page {
 }__aligned(KERNEL_STACK_SIZE);
 
 struct task_struct *task_alloc(void);
-void* userstk_alloc(void);
+void* userstk_alloc(uint64_t pdir);
 
 #endif

@@ -66,6 +66,7 @@ struct task_struct {
     uint32_t elapsed_ticks;
     struct list_elem general_tag;
     struct list_elem all_list_tag;
+    uint64_t pgdir;
     uint32_t stack_magic;
 };
 

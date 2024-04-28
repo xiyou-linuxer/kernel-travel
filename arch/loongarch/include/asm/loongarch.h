@@ -1349,6 +1349,11 @@ static inline void write_csr_pwcl(unsigned long x)
 	asm volatile ("csrwr %0, 0x1c"::"r"(x));
 }
 
+static inline void write_csr_pwch(unsigned long x)
+{
+	asm volatile ("csrwr %0, 0x1d"::"r"(x));
+}
+
 static inline void write_csr_pgdl(unsigned long x)
 {
 	asm volatile ("csrwr %0, 0x19"::"r"(x));
