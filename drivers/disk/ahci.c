@@ -10,201 +10,285 @@
 #include <linux/block_device.h>
 #include <debug.h>
 #include <trap/irq.h>
-#define IO_BASE 0x8000000000000000
-#define SOLT_NR 32
-struct HbaMemReg *_hba_mem_reg = NULL;
-struct HbaPortReg *_hba_port_reg[32];
-struct HbaCmdList *_port_cmd_lst_base[ 32 ];
-struct HbaRevFis* _port_rec_fis_base[32];
-uint32_t hba_cmd_lst_len = 0x400U;
-uint32_t hba_rec_fis_len = 0x100U;
-char page[4096*32];
+struct port port_table[PORT_NR];
+unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
+char ahci_port_base_vaddr[1048576];
 struct block_device_request_queue ahci_req_queue;
 
-struct HbaCmdHeader* get_cmd_header( uint32_t port, uint32_t head_index )
+struct HbaCmdList* _port_cmd_lst_base[32];
+
+/*启动命令引擎*/
+static void start_cmd(unsigned long prot_base)
 {
-	
-	struct HbaCmdHeader *head = ( struct HbaCmdHeader*) (( uint64_t )_port_cmd_lst_base[port]|IO_BASE);
-	head += head_index;
-	return head;
+	*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_IE)) |= 1;
+	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) |= HBA_PxCMD_FRE;// 开启端口的接收
+	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) |= HBA_PxCMD_ST;//开启向端口输入命令
 }
 
-struct HbaCmdTbl* get_cmd_table( uint32_t port, uint32_t slot_index )
+/*停止命令引擎*/ 
+static void stop_cmd(unsigned int prot_base)
 {
-	struct HbaCmdHeader *head = get_cmd_header( port, slot_index );
-	uint64_t addr = ( uint64_t ) ( head->ctba );
-	addr |= ( uint64_t ) ( head->ctbau ) << 32;
-	addr |= IO_BASE;
-	struct HbaCmdTbl *tbl = ( struct HbaCmdTbl * ) addr;
-	return tbl;
-}
+    // Clear ST (bit0)
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) &= ~HBA_PxCMD_ST;
 
-void fill_fis_h2d_lba( struct FisRegH2D *fis, uint64_t lba )
-{
-	fis->lba_low = ( uint8_t ) ( ( lba >> 0 ) & 0xFF );
-	fis->lba_mid = ( uint8_t ) ( ( lba >> 8 ) & 0xFF );
-	fis->lba_high = ( uint8_t ) ( ( lba >> 16 ) & 0xFF );
-	fis->lba_low_exp = ( uint8_t ) ( ( lba >> 24 ) & 0xFF );
-	fis->lba_mid_exp = ( uint8_t ) ( ( lba >> 32 ) & 0xFF );
-	fis->lba_high_exp = ( uint8_t ) ( ( lba >> 40 ) & 0xFF );
-}
+    // Clear FRE (bit4)
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) &= ~HBA_PxCMD_FRE;
 
-void send_cmd(uint32_t port, uint32_t cmd_slot )
-{
-	_hba_port_reg[ port ]->ci = 0x1U << cmd_slot;
-}
-
-int ahci_read(unsigned int port,unsigned int lba, unsigned int count, unsigned long buf)
-{
-	struct HbaCmdTbl *cmd_tbl = get_cmd_table( port, 0 );
-	//assert( ( uint64_t ) cmd_tbl != 0x0UL );
-	// 命令表使用的 FIS 为 H2D
-	struct FisRegH2D *fis_h2d = ( struct FisRegH2D * ) cmd_tbl->cmd_fis;
-	fis_h2d->fis_type = FIS_TYPE_REG_H2D;
-	fis_h2d->pm_port = 0;		// 端口复用使用的值，这里写0就可以了，不涉及端口复用
-	fis_h2d->c = 1;				// 表示这是一个主机发给设备的uint64 lba 命令帧
-	fis_h2d->command = ATA_CMD_READ_DMA_EXT;
-	fis_h2d->features = fis_h2d->features_exp = 0;		// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'indentify' 
-	fis_h2d->device = 1 << 6;							// similar to above 
-	fill_fis_h2d_lba( fis_h2d, lba );
-	fis_h2d->sector_cnt = fis_h2d->sector_cnt_exp = count;
-	fis_h2d->control = 0;
-
-	// 暂时直接引用 0 号命令槽
-	uint32_t cmd_slot_num = 0;
-	struct HbaCmdHeader* head = get_cmd_header( port, cmd_slot_num );
-	// log_trace( "head address: %p", head );
-
-	// 设置命令头 
-	head->prdtl = 1;
-	head->pmp = 0;
-	head->c = 1;		// 传输结束清除忙状态
-	head->b = 0;
-	head->r = 0;
-	head->p = 0;
-	head->w = 0;
-	head->a = 0;
-	head->cfl = 5;
-	head->prdbc = 0;	// should be set 0 before issue command 
-
-	// head->ctba = ( uint32 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl );
-	// head->ctbau = ( uint32 ) ( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl ) >> 32 );
-
-	// 设置数据区 
-	struct HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
-	prd0->dba = buf;
-	prd0->interrupt = 1;
-	prd0->dbc = (count << 9);
-	send_cmd( port, cmd_slot_num );
-	while (1)
+    // Wait until FR (bit14), CR (bit15) are cleared
+   while (1)
     {
-        if (!_hba_port_reg[port]->ci & 1) {
+        if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_FR)
+            continue;
+        if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_CR)
+            continue;
+        break;
+    }
+}
+
+/*寻找可用的命令槽位*/
+static int ahci_find_cmdslot(unsigned long prot_base)
+{
+    // If not set in SACT and CI, the slot is free
+    uint32_t slots = (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_SACT)) | *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)));
+    int num_of_cmd_clots =((*(unsigned int*)(SATA_ABAR_BASE | HBA_CAP)) & 0x0f00) >> 8;  // bit 12-8
+    for (int i = 0; i < num_of_cmd_clots; i++)
+    {
+        if ((slots & 1) == 0)
+            return i;
+        slots >>= 1;
+    }
+    printk("Cannot find free command list entry\n");
+    return -1;
+}
+
+/*构建command_table
+*cmdheader：结构体hba_command_header
+*count：扇区数
+*buf：读写缓冲区
+*interrupt_on_complete：中断完成时占位标志，1为读0为写
+*/
+static struct hba_command_table *ahci_initialize_command_table(struct hba_command_header * cmdheader,unsigned int count,unsigned long buf)
+{
+    struct hba_command_table *cmdtbl = (struct hba_command_table *)(cmdheader->command_table_base);
+    memset(cmdtbl, 0, sizeof(struct hba_command_table) + (cmdheader->prdt_len - 1) * sizeof(struct hba_prdt_entry));
+
+    // 一个表项对应16个磁盘扇区
+    int i;
+    for (i = 0; i < cmdheader->prdt_len - 1; ++i)
+    {
+        cmdtbl->prdt_entries[i].data_base = buf;
+        cmdtbl->prdt_entries[i].byte_count = 8 * 1024 - 1; // 8K bytes (this value should always be set to 1 less than the actual value)
+        cmdtbl->prdt_entries[i].interrupt_on_complete = 1;
+        buf += 4 * 1024; // 4K uint16_ts
+        count -= 16;     // 16 sectors
+    }
+
+    // Last entry
+    cmdtbl->prdt_entries[i].data_base = buf;
+    cmdtbl->prdt_entries[i].byte_count = (count << 9) -1; // 512 bytes per sector
+    cmdtbl->prdt_entries[i].interrupt_on_complete = 1;
+    return cmdtbl;
+}
+
+/*构建command_header
+*prot_base：端口基址
+*slot：命令槽位
+*count：扇区数
+*write：读/写命令
+*/
+static struct hba_command_header *ahci_initialize_command_header(unsigned long prot_base,int slot,unsigned int count,int write)
+{
+	struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long*)(SATA_ABAR_BASE|(prot_base+PORT_CLB)));
+	cmdheader += slot;
+	cmdheader->fis_length = sizeof(struct fis_reg_host_to_device) / sizeof(uint32_t); // 帧结构大小
+	cmdheader->write = 0;                                        //0为读，1为写
+	cmdheader->prdt_len = (uint16_t)((count - 1) >> 4) + 1;     // PRDT entries count
+	cmdheader->atapi = 0;
+	cmdheader->prefetchable = 0;
+	cmdheader->pmport = 0;
+	cmdheader->clear_busy_upon_r_ok = 1;  // 传输结束清除忙状态
+	cmdheader->bist = 0;
+	cmdheader->reset = 0;
+	cmdheader->prdb_count = 1;	
+	return cmdheader;
+}
+
+/*打包h2d类型的fis
+*cmdtbl：hba_command_table结构
+*startl starth：磁盘的高32位和低32位
+*ata_command：磁盘命令，读写
+*/
+static struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct hba_command_table *cmdtbl,unsigned int startl, unsigned int starth,int ata_command,unsigned int count)
+{
+    struct fis_reg_host_to_device *cmdfis = (struct fis_reg_host_to_device *)(&cmdtbl->command_fis);
+    cmdfis->fis_type = FIS_TYPE_REG_H2D;
+    cmdfis->c = 1; // Command
+    cmdfis->command = ata_command;
+
+    cmdfis->lba0 = (uint8_t)startl;
+    cmdfis->lba1 = (uint8_t)(startl >> 8);
+    cmdfis->lba2 = (uint8_t)(startl >> 16);
+    cmdfis->device = 1 << 6; // LBA mode
+
+    cmdfis->lba3 = (uint8_t)(startl >> 24);
+    cmdfis->lba4 = (uint8_t)starth;
+    cmdfis->lba5 = (uint8_t)(starth >> 8);
+
+    cmdfis->count_l = count & 0xFF;
+    cmdfis->count_h = (count >> 8) & 0xFF;
+    return cmdfis;
+}
+
+
+int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
+{
+	//ASSERT(port_table[port_num].flag == 1);
+	int prot_base = port_num * PORT_OFFEST + PORT_BASE;
+	//*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0; // Clear pending interrupt bits
+	int spin = 0;            // Spin lock timeout counter
+	int slot = ahci_find_cmdslot(prot_base);//寻找是否有空出的命令槽位
+	if (slot == -1)
+		return E_NOEMPTYSLOT;	
+	struct hba_command_header* cmdheader = ahci_initialize_command_header(prot_base, slot, count,0);
+	struct hba_command_table* cmdtbl = ahci_initialize_command_table(cmdheader, count, buf);
+	struct fis_reg_host_to_device* cmdfis = ahci_initialize_fis_host_to_device(cmdtbl, startl, starth, ATA_CMD_READ_DMA_EXT, count);
+	int tfd = *(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_TFD));
+	while ((tfd & (BIT_STAT_BSY | BIT_STAT_DRQ)) && spin < 1000000) {
+		spin++;
+	}
+	if (spin == 1000000)
+	{
+		printk("Port is hung");
+		return E_PORT_HUNG;
+	}
+	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot; // Issue command
+	sema_down(&port_table[port_num].disk_done);
+	//等待命令发送
+	while (1)
+	{
+		printk("");
+        if (!(*(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_CI)) &(1 << slot))) {
            
             break;
         }
-        if (_hba_port_reg[port]->is & HBA_PxIS_TFES) // 如果HBA_PxIS_TFES被置位则说明访问异常
+        if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) // 如果HBA_PxIS_TFES被置位则说明访问异常
         {
             printk("Read disk error");
             return E_TASK_FILE_ERROR;
         } 
     }
-	return AHCI_SUCCESS;	
+    // Check again
+    if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
+    {
+        printk("Read disk error");
+        return E_TASK_FILE_ERROR;
+    }
+    return AHCI_SUCCESS;
 }
 
-int ahci_write(unsigned int port,unsigned int lba, unsigned int count, unsigned long buf)
+ int ahci_write(unsigned int port_num, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
-	struct HbaCmdTbl *cmd_tbl = get_cmd_table( port, 0 );
-	//assert( ( uint64_t ) cmd_tbl != 0x0UL );
-	// 命令表使用的 FIS 为 H2D
-	struct FisRegH2D *fis_h2d = ( struct FisRegH2D * ) cmd_tbl->cmd_fis;
-	fis_h2d->fis_type = FIS_TYPE_REG_H2D;// 表示这是一个主机发给设备的uint64 lba 命令帧
-	fis_h2d->pm_port = 0;		// 端口复用使用的值，这里写0就可以了，不涉及端口复用
-	fis_h2d->command = ATA_CMD_WRITE_DMA_EXT;
-	fis_h2d->features = fis_h2d->features_exp = 0;		// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'indentify' 
-	fill_fis_h2d_lba( fis_h2d, lba );
-	fis_h2d->sector_cnt = 1;
-	fis_h2d->sector_cnt_exp = 0;
-	fis_h2d->c = 1;	
-	fis_h2d->device = 1 << 6;		
 
-	// 暂时直接引用 0 号命令槽
-	uint32_t cmd_slot_num = 0;
-	struct HbaCmdHeader* head = get_cmd_header( port, cmd_slot_num );
-	// log_trace( "head address: %p", head );
+    int prot_base = port_num*PORT_OFFEST+PORT_BASE;
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0xffff; // Clear pending interrupt bits
+    int slot = ahci_find_cmdslot(prot_base);
+    if (slot == -1)
+        return E_NOEMPTYSLOT;
 
-	// 设置命令头 
-	head->prdtl = 1;
-	head->c = 1;		// 传输结束清除忙状态
-	head->b = 0;
-	head->r = 0;
-	head->p = 0;
-	head->w = 0;
-	head->a = 0;
-	head->cfl = 5;
-	head->prdbc = 0;	// should be set 0 before issue command 
-
-	// head->ctba = ( uint32 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl );
-	// head->ctbau = ( uint32 ) ( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl ) >> 32 );
-
-	// 设置数据区 
-	struct HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
-	prd0->dba = ( uint64_t ) buf;
-	prd0->interrupt = 1;
-	prd0->dbc = 512 - 1;
-	// 发布命令
-	send_cmd( port, cmd_slot_num );
-	while (1)
-    {
-        if (!_hba_port_reg[port]->ci & 1) {
-           
-            break;
-        }
-        if (_hba_port_reg[port]->is & HBA_PxIS_TFES) // 如果HBA_PxIS_TFES被置位则说明访问异常
-        {
-            printk("Read disk error");
-            return E_TASK_FILE_ERROR;
-        } 
-    }
+    struct hba_command_header* cmdheader = ahci_initialize_command_header(prot_base, 0, count,1);
+    struct hba_command_table* cmdtbl = ahci_initialize_command_table(cmdheader, count, buf);
+    struct fis_reg_host_to_device *cmdfis = ahci_initialize_fis_host_to_device(cmdtbl,startl,starth,ATA_CMD_WRITE_DMA_EXT,count);
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 /*<< slot */; // Issue command
+    port_table[port_num].slots = 0;
+    while (1) {
+	printk("");
+		if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 <<slot)) == 0) 
+			break; 
+		if (*(unsigned int*)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) { // Task file error
+			printk("Write disk error");
+			return E_TASK_FILE_ERROR;
+		}
+	}
+	if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
+	{
+		printk("Write disk error");
+		return E_TASK_FILE_ERROR;
+	}
 	return AHCI_SUCCESS;
 }
 
-static void port_rebase(int port_num)
+static int ahci_identify(unsigned long prot_base)
 {
-	printk("port_rebase\n");
-	// 配置 command list 地址
-	_hba_port_reg[ port_num ]->clb = ( ( uint32_t ) ( uint64_t ) _port_cmd_lst_base[ port_num ] );
-	_hba_port_reg[ port_num ]->clbu = ( uint32_t ) ( ( uint64_t ) _port_cmd_lst_base[ port_num ] >> 32 );
-	// 分配 command table 
-	struct HbaCmdHeader *head;
-	uint64_t page;
-	for (int j = 0; j < SOLT_NR; j++ )
-	{
-		head = get_cmd_header(port_num, j);
-		/*page = ( uint64_t ) mm::k_pmm.alloc_page();
-		page = loongarch::qemuls2k::virt_to_phy_address( page );*/
-		head->ctba = (uint32_t)page;
-		head->ctbau = ( uint32_t )(( uint32_t )page >> 32 );
-		page+=4096;
-	}
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0xffff; // Clear pending interrupt bits
+    int slot = ahci_find_cmdslot(prot_base);
+    if (slot == -1)
+        return E_NOEMPTYSLOT;
+    int spin = 0;
+    struct hba_command_header* cmdheader = ahci_initialize_command_header(prot_base, slot, 1,1);//identify信息占据了一个扇区
+    struct ata_identify buf;
+    struct hba_command_table* cmdtbl = ahci_initialize_command_table(cmdheader, 1, (unsigned long)&buf);
+    struct fis_reg_host_to_device *cmdfis = ahci_initialize_fis_host_to_device(cmdtbl,0,0,ATA_CMD_IDENTIFY,1);//从磁盘的第0扇区中读取出mbr
+    int tfd = *(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_TFD));
+    while ((tfd & (BIT_STAT_BSY | BIT_STAT_DRQ)) && spin < 1000000) {
+        spin++;
+    }
+    if (spin == 1000000)
+    {
+        printk("Port is hung");
+        return E_PORT_HUNG;
+    }
+    printk("slot=%d", slot);
+    *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) = 1 << slot; // Issue command
+    
+    // 等待命令发送
+    while (1)
+    {
+        if ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)) & (1 << slot)) == 0)//等待命令槽位清零
+            break;
+        if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES) // 如果HBA_PxIS_TFES被置位则说明访问异常
+        {
+            printk("Read disk error");
+            return E_TASK_FILE_ERROR;
+        }
+    }
 
-	// 配置 receive FIS 地址 
-	_hba_port_reg[ port_num ]->fb = ( ( uint32_t ) ( uint64_t ) _port_rec_fis_base[ port_num ] );
-	_hba_port_reg[ port_num ]->fbu = ( uint32_t ) ( ( uint64_t ) _port_rec_fis_base[ port_num ] >> 32 );
-
-	// 使能中断
-	_hba_mem_reg->ghc |= HBA_GHC_IE;
-	_hba_port_reg[ port_num ]->ie |= HBA_PORT_IE_DHRE;
-
-	// 启动设备 
-	_hba_port_reg[ port_num ]->cmd |= HBA_PxCMD_FRE;
-	_hba_port_reg[ port_num ]->cmd |= HBA_PxCMD_ST;
-			
+    // Check again
+    if (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) & HBA_PxIS_TFES)
+    {
+        printk("Read disk error");
+        return E_TASK_FILE_ERROR;
+    }
+    return AHCI_SUCCESS;
 }
 
-static int check_type(unsigned int port_num)
+//io调度函数
+// static long ahci_query_disk()
+// {
+//     while (1)
+//     {
+//         if (ahci_req_queue.request_count!=0)
+//         {
+//             /* code */
+//         }else{
+//             //若无要刷入磁盘的请求则调用线程休眠的函数
+//         }
+//     }
+// }
+
+/*将请求提交到io调度队列*/
+// void ahci_submit(struct block_device_request_packet *pack)
+// {
+//     list_append(&(ahci_req_queue.queue_list), &(pack->list));
+//     ++ahci_req_queue.request_count;
+
+//     // if (ahci_req_queue.in_service == NULL) // 当前没有正在请求的io包，立即执行磁盘请求
+//         // ahci_query_disk();
+// }
+
+static int check_type(unsigned int port)
 {
-    uint32_t ssts = _hba_port_reg[port_num]->ssts;
-    uint32_t sig = _hba_port_reg[port_num]->sig;
+    uint32_t ssts = *(unsigned int*)(SATA_ABAR_BASE | (port + PORT_SSTS));
+    uint32_t sig = *(unsigned int*)(SATA_ABAR_BASE | (port + PORT_SIG));
     uint8_t ipm = (ssts >> 8) & 0x0F;
     uint8_t det = ssts & 0x0F;
 
@@ -225,15 +309,51 @@ static int check_type(unsigned int port_num)
     }
 }
 
+static void port_rebase(int portno)
+{
+    unsigned long port = PORT_BASE + portno * PORT_OFFEST;  // 计算端口的偏移地址
+    stop_cmd(port);  // 停止命令引擎
+
+    // 命令列表偏移量：1K*portno
+    // 命令列表条目大小 = 32
+    // 命令列表条目最大数量 = 32
+    // 命令列表最大大小 = 32*32 = 每个端口 1K
+    *(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB)) = ahci_port_base_vaddr + (portno << 10);
+    memset((void *)(ahci_port_base_vaddr + (portno << 10)), 0, 1024);
+
+    // FIS 偏移量：32K+256*端口号
+    // FIS 条目大小 = 每个端口 256 字节
+    *(unsigned long *)(SATA_ABAR_BASE|(port+PORT_FB)) = ahci_port_base_vaddr + (32 << 10) + (portno << 8);
+
+    memset((void *)(ahci_port_base_vaddr + (32 << 10) + (portno << 8)), 0, 256);
+    // 命令表偏移：40K + 8K*portno
+    // 命令表大小 = 256*32 = 每个端口 8K
+    struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB)));
+    for (int i = 0; i < 32; ++i)//32个命令槽位
+    {
+        cmdheader[i].prdt_len = 8;  // 每个命令表 8 个 prdt 条目
+                                    // 256 bytes per command table, 64+16+48+16*8
+                                    // 每个命令表256字节，64+16+48+16*8
+       
+        cmdheader[i].command_table_base = ahci_port_base_vaddr + (40 << 10) + (portno << 13) + (i << 8);
+        memset((void *)cmdheader[i].command_table_base, 0, 256);
+    }
+    start_cmd(port);  // Start command engine
+    port_table[portno].flag = 1;
+    port_table[portno].port_base = port;
+    sema_init(&port_table[portno].disk_done, 0);
+    lock_init(&port_table[portno].lock);
+}
+
 static void ahci_probe_port(void)
 {
     
-    uint32_t pi = _hba_mem_reg->pi;
+    uint32_t pi = *(unsigned int*)(SATA_ABAR_BASE | HBA_PI);
     for (int i = 0; i < PORT_NR; ++i, (pi >>= 1))
     {
         if (pi & 1)
         {
-            unsigned int dt = check_type(i);
+            unsigned int dt = check_type(PORT_BASE+PORT_OFFEST*i);
             printk("ahci_probe_port dt:%d\n",dt);
             if (dt == AHCI_DEV_SATA)
             {
@@ -261,22 +381,35 @@ static void ahci_probe_port(void)
     printk("ahci_probe_port down\n");
 }
 
-void disk_init(void)
-{
-	
-	pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
-	if (pci_dev==NULL)
+/* 硬盘中断处理程序 */
+void intr_hd_handler(struct pt_regs *regs) {
+	printk("intr_hd_handler\n");
+}
+
+/*磁盘驱动初始化*/
+void disk_init(void) {
+    printk("disk_init start\n");
+    char* block_data = 0;
+    /*获取磁盘控制器的bar地址*/
+    pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
+    /*sata控制器不存在则报错*/
+    if (pci_dev==NULL)
     {
         printk(KERN_ERR "[ahci]: no AHCI controllers present!\n");
     }
-	_hba_mem_reg =(struct HbaMemReg *)(0x8000000000000000|pci_dev->bar[0].base_addr);
-	printk("%x",_hba_mem_reg);
-	    /*注册中断处理程序*/
-	irq_routing_set(0, 3, 19);
-
-	for ( int i = 0; i < 32; i++ ){
-		_hba_port_reg[ i ] = (struct HbaPortReg * )&_hba_mem_reg->ports[ i ];
+    SATA_ABAR_BASE = 0x8000000000000000|pci_dev->bar[0].base_addr;
+    for (int i = 0; i < PORT_NR; i++)
+    {
+		port_table[i].flag == 0;
 	}
-	printk("disk_init start\n");
-	ahci_probe_port();
+	*(unsigned int*)(SATA_ABAR_BASE | HBA_GHC) |= HBA_GHC_IE;  // 全局中断使能
+	ahci_probe_port();  // 扫描ahci的所有端口
+	/*io调度初始化*/
+	/*ahci_req_queue.in_service = NULL;
+	list_init(&(ahci_req_queue.queue_list));
+	ahci_req_queue.request_count = 0;*/
+	/*int ecfg = read_csr_ecfg();
+	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 2);
+	write_csr_ecfg(ecfg | 0x1 << 2);*/
+	printk("disk_init down\n");
 }

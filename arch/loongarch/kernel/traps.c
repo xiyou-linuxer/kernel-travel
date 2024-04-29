@@ -85,7 +85,7 @@ void do_vint(struct pt_regs *regs, unsigned long sp)
 {
 	unsigned long hwirq = *(unsigned long *)regs;
 	unsigned long virq;
-	printk("hwirq %x\n",hwirq);
+	//printk("hwirq %x\n",hwirq);
 	virq = hwirq_to_virq(hwirq);
 	do_irq(regs, virq);
 }
