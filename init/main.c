@@ -30,8 +30,6 @@ extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);
 
-char proc0_code[] = {0x00, 0x00, 0x00, 0x50};
-
 void thread_a(void* unused)
 {
 	printk("enter thread_a\n");
@@ -43,12 +41,7 @@ void thread_a(void* unused)
 
 void proc_1(void* unused)
 {
-	printk("enter proc_1\n");
-	while(1) {
-	unsigned long crmd = read_csr_crmd();
-	printk("oo");
-	printk("proc_1:at pri %d  ",crmd&PLV_MASK);
-	}
+    while(1);
 }
 
 void __init __no_sanitize_address start_kernel(void)
@@ -66,37 +59,16 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 	local_irq_enable();
-	//pci_init();
-	//disk_init();
-	thread_init();
-	timer_init();
-	//thread_start("thread_a",31,thread_a,NULL);
-	//process_execute(proc_1,"proc_1");
-	__update_tlb();
+	pci_init();
+    disk_init();
+    thread_init();
+    timer_init();
+	thread_start("thread_a",31,thread_a,NULL);
+    process_execute(proc_1,"proc_1");
+	
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 
-	uint64_t pdir = get_page();
-	uint64_t page = get_page();
-	write_csr_pgdl(pdir & ~DMW_MASK);
-
-	memcpy((void*)page,proc0_code,sizeof(proc0_code));
-	page_table_add(pdir,0,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
-	printk("proc_1 : %p",proc_1);
-
-
-	// 模拟进入用户态
-	unsigned int crmd = read_csr_crmd();
-	printk("%x\n",crmd&PLV_MASK);
-	asm volatile(
-	"csrwr %0, %1\n"
-	"csrwr $r0, %2\n"
-	"li.d $sp, %3\n"
-	"ertn\n"
-	:
-	: "r"(CSR_PRMD_PPLV | CSR_PRMD_PIE), "i"(LOONGARCH_CSR_PRMD), "i"(0x6), "i"(VMEM_SIZE));
-
-	printk("%x\n",crmd&PLV_MASK);
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);

@@ -12,22 +12,21 @@
 #define PTE_D (1UL << 1)
 #define PTE_PLV (3UL << 2)
 
-#define DMW_MASK CSR_DMW1_BASE
-
+#define DMW_MASK  (0x9000000000000000)
 struct pool {
 	u64 paddr_start;
 	struct bitmap btmp;
 };
 
 extern struct pool reserve_phy_pool;
-extern struct pool usr_phy_pool;
+extern struct pool phy_pool;
 
 static inline void invalidate(void)
 {
 	asm volatile("invtlb 0x0,$r0,$r0");
 }
 
-unsigned long get_page(void);
+uint64_t get_page(void);
 unsigned long get_kernel_pge(void);
 void page_table_add(uint64_t pd,uint64_t _vaddr,uint64_t _paddr,uint64_t attr);
 

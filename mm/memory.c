@@ -7,20 +7,20 @@
 #include <linux/types.h>
 #include <linux/string.h>
 
-
+#define PAGESIZE 4096
 
 struct pool reserve_phy_pool;
-struct pool usr_phy_pool;
+struct pool phy_pool;
 
-unsigned long get_page(void)
+uint64_t get_page(void)
 {
 	unsigned long page;
-	u64 bit_off = bit_scan(&usr_phy_pool.btmp,1);
+	u64 bit_off = bit_scan(&phy_pool.btmp,1);
 	if (bit_off == -1){
 		return 0;
 	}
-	bitmap_set(&usr_phy_pool.btmp,bit_off,1);
-	page = (((bit_off << 12) + usr_phy_pool.paddr_start) | CSR_DMW1_BASE);
+	bitmap_set(&phy_pool.btmp,bit_off,1);
+	page = (((bit_off << 12) + phy_pool.paddr_start) | CSR_DMW1_BASE);
 	memset((void *)page,0,(int)(PAGE_SIZE));
 	return page;
 }
@@ -38,7 +38,7 @@ u64 *pmd_ptr(u64 pd,u64 vaddr)
 		pmd = *pgd | CSR_DMW1_BASE;
 	else {
 		pmd = get_page();
-		*pgd = pmd & ~CSR_DMW1_BASE;
+		*pgd = pmd;
 	}
 	return (u64*)(pmd + PMD_IDX(vaddr) * ENTRY_SIZE);
 }
@@ -51,7 +51,7 @@ u64 *pte_ptr(u64 pd,u64 vaddr)
 		pt = *pmd | CSR_DMW1_BASE;
 	else {
 		pt = get_page();
-		*pmd = pt & ~CSR_DMW1_BASE;
+		*pmd = pt;
 	}
 	return (u64*)(pt + PTE_IDX(vaddr) * ENTRY_SIZE);
 }
@@ -81,7 +81,4 @@ unsigned long get_kernel_pge(void)
 	memset((void *)k_page,0,(int)(PAGE_SIZE));
 	return k_page;
 }
-
-
-
 

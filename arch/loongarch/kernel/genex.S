@@ -39,6 +39,7 @@ user_ret:
 tlb_handler:
     csrwr t0,LOONGARCH_CSR_TLBRSAVE
     csrrd t0,LOONGARCH_CSR_PGD
+    lddir t0,t0,3
     lddir t0,t0,1
     ldpte t0,0
     ldpte t0,1

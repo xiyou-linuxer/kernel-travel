@@ -1,4 +1,6 @@
 #include <allocator.h>
+#include <linux/memory.h>
+
 
 struct task_struct_allocator_t {
     union task_page task_pages[256];
@@ -19,33 +21,17 @@ struct user_stack_allocator_t {
 struct task_struct *task_alloc(void)
 {
     struct task_struct *task = NULL;
-    int i;
-
-    for (i = 0 ; i < 256 ; i++) {
-        if (task_struct_allocator.used[i] == false) {
-            task = &task_struct_allocator.task_pages[i].task;
-            task_struct_allocator.used[i] = true;
-            break;
-        }
-    }
-
+    task = (struct task_struct*)get_page();
     return task;
 }
 
 
-void* userstk_alloc(void)
+void* userstk_alloc(uint64_t pdir)
 {
     void *stk_ptr = NULL;
-    int i;
-
-    for (i = 0 ; i < 16 ; i++) {
-        if (user_stack_allocator.used[i] == false) {
-            stk_ptr = &user_stack_allocator.stk_pages[i];
-            stk_ptr = (void*)((uint64_t)stk_ptr + KERNEL_STACK_SIZE);
-            task_struct_allocator.used[i] = true;
-            break;
-        }
-    }
+    uint64_t stk_addr = get_page();
+    page_table_add(pdir,USER_STACK-KERNEL_STACK_SIZE,stk_addr&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
+    stk_ptr = (void*)(USER_STACK);
 
     return stk_ptr;
 }

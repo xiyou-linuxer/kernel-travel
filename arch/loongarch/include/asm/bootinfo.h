@@ -2,7 +2,8 @@
 #define _ASM_BOOTINFO_H
 
 
-#define KERNEL_STACK_SIZE	0x00004000   // 4K
+#define KERNEL_STACK_SIZE	0x00001000   // 4K
+#define THREAD_SIZE KERNEL_STACK_SIZE
 
 #ifndef __ASSEMBLY__
 

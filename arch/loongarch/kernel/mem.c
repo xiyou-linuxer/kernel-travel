@@ -49,9 +49,9 @@ void __init phy_pool_init(void)
 	reserve_phy_pool.btmp.btmp_bytes_len = (u64)((0x8000000 - 0x6000) >> 12);
 	reserve_phy_pool.btmp.bits = (u8*)(RESERVED_PHY_POOL_BASE | DMW_MASK);
 
-	usr_phy_pool.paddr_start = memblock.memory.regions[0].base;
-	usr_phy_pool.btmp.btmp_bytes_len = (memblock.memory.regions[0].size >> 12);
-	usr_phy_pool.btmp.bits = (u8*)(USR_PHY_POOL_BASE | DMW_MASK);
+	phy_pool.paddr_start = memblock.memory.regions[0].base;
+	phy_pool.btmp.btmp_bytes_len = (memblock.memory.regions[0].size >> 12);
+	phy_pool.btmp.bits = (u8*)(USR_PHY_POOL_BASE | DMW_MASK);
 }
 
 void __init page_setting_init(void)
