@@ -445,108 +445,24 @@ struct port {
     struct semaphore disk_done;
     struct lock lock;
 };
-
-struct HbaCmdHeader {
-    // DW0
-
-    uint8_t cfl : 5;  // Commmand FIS Length
-    uint8_t a : 1;    // ATAPI
-    uint8_t w : 1;    // Write
-    uint8_t p : 1;    // Prefetchable
-    uint8_t r : 1;    // Reset
-    uint8_t b : 1;    // BIST
-    uint8_t c : 1;    // Clear Busy upon R_OK
-    uint8_t rsv : 1;  // [x] reserve
-    uint8_t pmp : 3;  // Port Multiplier Port
-    uint8_t prdtl;    // Physical Region Descriptor Table Length
-
-    // DW1
-
-    uint32_t prdbc;  // PRD byte count
-
-    // DW2
-
-    uint32_t
-        ctba;  // Command Table Descriptor Base Address : aligned to 128-byte
-
-    // DW3
-
-    uint32_t ctbau;  // CTBA Upper 32-bit
-
-    // DW 4-7
-
-    uint32_t rsv_dword[4];  // [x] reserve
-} __attribute__((__packed__));
-
-struct HbaCmdList {
-    struct HbaCmdHeader headers[32];
-} __attribute__((__packed__));
-struct HbaPrd {
-    uint64_t dba;  // data base address
-    uint32_t resv1;
-    uint8_t interrupt : 1;
-    uint16_t resv2 : 9;
-    uint32_t dbc : 22;  // data byte count
-} __attribute__((__packed__));
-struct HbaCmdTbl {
-    uint8_t cmd_fis[0x40U];
-    uint8_t acmd[0x10U];
-    uint8_t resv[0x30U];
-    struct HbaPrd prdt[(4096U - 0x80U) / sizeof(struct HbaPrd)];
-} __attribute__((__packed__));
-
-struct  HbaPortReg
+struct DiskPartTableEntry
 {
-	uint32_t clb;
-	uint32_t clbu;
-	uint32_t fb;
-	uint32_t fbu;
-	uint32_t is;
-	uint32_t ie;
-	uint32_t cmd;
-	uint32_t tfd;
-	uint32_t resv0;
-	uint32_t sig;
-	uint32_t ssts;
-	uint32_t sctl;
-	uint32_t serr;
-	uint32_t sact;
-	uint32_t ci;
-	uint32_t sntf;
-	uint32_t fbs;
-	uint32_t devslp;
-	// reserved 
-	uint8_t resv1[ 0x70 - 0x48 ];
-	// vendor specific from 70h to 7fh 
-	uint8_t vendor_reg[ 0x80 - 0x70 ];
+	uint32_t  drive_attribute : 8;
+	uint32_t chs_addr_start : 24;
+	uint32_t part_type : 8;
+	uint32_t chs_addr_last : 24;
+	uint32_t lba_addr_start;
+	uint32_t sector_count;
 }__attribute__( ( __packed__ ) );
 
-struct HbaMemReg
+	/// @brief Master Boot Record 
+struct boot_sector
 {
-// generic host control 
-	uint32_t cap;
-	uint32_t ghc;
-	uint32_t is;
-	uint32_t pi;
-	uint32_t vs;
-	uint32_t ccc_ctl;
-	uint32_t ccc_ports;
-	uint32_t em_loc;
-	uint32_t em_ctl;
-	uint32_t cap2;
-	uint32_t bohc;
-
-	// reserve from 2Ch to 5Fh
-	uint8_t _resv[ 0x60 - 0x2C ];
-
-	// reserve from 60h to 9Fh for NVMHCI 
-	uint8_t _resv_nvmhci[ 0xA0 - 0x60 ];
-
-	// vendor specific register 
-	// from A0h to FFh
-	uint8_t vendor_reg[ 0x100 - 0x0A0 ];
-
-	struct HbaPortReg ports[ 32 ];
+	uint8_t  boot_code[ 440 ];
+	uint32_t disk_id;
+	uint16_t read_only_signature;			// if equal 0x5A5A, disk is read-only.
+	struct DiskPartTableEntry partition_table[ 4 ];
+	uint16_t signature;					// 0xAA55 
 }__attribute__( ( __packed__ ) );
 extern struct block_device_request_queue ahci_req_queue;  // io调度队列
 void disk_init(void);
