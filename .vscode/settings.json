@@ -29,6 +29,10 @@
         "bitsperlong.h": "c",
         "smp.h": "c",
         "switch.h": "c",
-        "bitmap.h": "c"
+        "bitmap.h": "c",
+        "random": "c",
+        "queue": "c",
+        "stack": "c",
+        "cstddef": "c"
     }
 }

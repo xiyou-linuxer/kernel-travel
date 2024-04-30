@@ -2,21 +2,29 @@
 
 PWD="`pwd`"
 
-TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
+if [ -z $ARCH ]; then
+	ARCH="loongarch"
+fi
+
+if [ $ARCH == "loongarch" ]; then
+	TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
+elif [ $ARCH == "arm64" ]; then
+	TOOLCHAINS=../toolchains/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+fi
 
 function distclean()
 {
-	make ARCH=loongarch distclean
+	make ARCH=$ARCH distclean
 }
 
 function defconfig()
 {
-	make ARCH=loongarch CROSS_COMPILE=$TOOLCHAINS defconfig
+	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS defconfig
 }
 
 function menuconfig()
 {
-	make ARCH=loongarch CROSS_COMPILE=$TOOLCHAINS menuconfig
+	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS menuconfig
 }
 
 function run()
@@ -41,18 +49,16 @@ function rungdb()
 function image()
 {
 	make ARCH=loongarch CROSS_COMPILE=$TOOLCHAINS -j1 Image
-    sudo docker cp ./arch/loongarch/boot/Image  os-contest:/srv/tftp/Image
-    sudo docker cp vmlinux os-contest:/vmlinux
 }
 
 function gdb()
 {
-	make ARCH=loongarch CROSS_COMPILE=$TOOLCHAINS -j1 Image && rungdb && exit
+	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image && rungdb && exit
 }
 
 function all()
 {
-	make ARCH=loongarch CROSS_COMPILE=$TOOLCHAINS Image && run && exit
+	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS Image && run && exit
 }
 
 #

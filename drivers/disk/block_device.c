@@ -1,5 +1,6 @@
 #include <linux/block_device.h>
 #include <linux/ahci.h>
+#include <linux/stdio.h>
 
 /*打包请求*/
  /*struct block_device_request_packet **/void block_make_request(int cmd, uint64_t base_addr, uint64_t count, uint64_t buffer,uint8_t port_num)
@@ -30,20 +31,21 @@
         break;
     }
     //return pack;*/
-    int prot_base = port_num*PORT_OFFEST+PORT_BASE;
-    int LBA_startl = base_addr&0xffff;
-    int LBA_starth = (base_addr >> 32);
-    switch (cmd)
-    {
-    case ATA_CMD_READ_DMA_EXT:
-        ahci_read(prot_base,LBA_startl,LBA_starth,count,buffer);
-        break;
-    case ATA_CMD_WRITE_DMA_EXT:
-        ahci_write(prot_base,LBA_startl,LBA_starth,count,buffer);
-        break;
-    default:        
-        break;
-    }
+	int prot_base = port_num*PORT_OFFEST+PORT_BASE;
+	int LBA_startl = base_addr&0xffff;
+	int LBA_starth = (base_addr >> 32);
+	switch (cmd)
+	{
+	case ATA_CMD_READ_DMA_EXT:
+		printk("block_make_request\n");
+		ahci_read(prot_base, LBA_startl, LBA_starth, count, buffer);
+		break;
+	case ATA_CMD_WRITE_DMA_EXT:
+		ahci_write(prot_base,LBA_startl,LBA_starth,count,buffer);
+		break;
+	default:
+		break;
+	}
 }
 /*磁盘读取
 *base_addr：磁盘起始扇区
@@ -53,7 +55,10 @@
 */
 void block_read(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t port_num)
 {
+    printk("block_read\n");
+
     /*struct block_device_request_packet * pack=*/ block_make_request(ATA_CMD_READ_DMA_EXT,base_addr, count, buffer,port_num);
+
     //ahci_submit(pack);
 }
 
