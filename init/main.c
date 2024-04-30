@@ -62,10 +62,13 @@ void __init __no_sanitize_address start_kernel(void)
 	local_irq_enable();
 	pci_init();
     disk_init();
-    thread_init();
-    timer_init();
+	char buf[512];
+	block_read(0,1,buf,1);
+	printk("buf:%s",buf);
+	thread_init();
+	timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
-    process_execute(proc_1,"proc_1");
+	process_execute(proc_1,"proc_1");
 	
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);

@@ -131,13 +131,8 @@ void irq_routing_set(uint8_t cpu, uint8_t IPx, uint8_t source_num) {
         intenset = INTENSET_1;
         ioentry = IO_ENTRY_1;
     }
-    *(unsigned int*)(0x8000000000000000 | intenset) |= (1 << source_num);
-    *(unsigned char*)(0x8000000000000000 | ioentry + source_num) =
-        ((0x1 << IPx) << 4 | (1 << cpu) << 0);
-    printk("%x", *(unsigned char*)(0x8000000000000000 | ioentry + source_num));
-    //
-    /*将对应的中断引脚打开*/
-    // printk("irq_routing_set\n");
+    *(unsigned int*)(CSR_DMW0_BASE | intenset) |= (1 << source_num);
+    *(unsigned char*)(CSR_DMW0_BASE | ioentry + source_num) = ((0x1 << IPx) << 4 | (1 << cpu) << 0);
 }
 
 void irq_init(void) {

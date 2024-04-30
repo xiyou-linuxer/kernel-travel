@@ -455,7 +455,6 @@ struct DiskPartTableEntry
 	uint32_t sector_count;
 }__attribute__( ( __packed__ ) );
 
-	/// @brief Master Boot Record 
 struct boot_sector
 {
 	uint8_t  boot_code[ 440 ];

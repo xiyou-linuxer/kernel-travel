@@ -49,8 +49,8 @@
 }
 /*磁盘读取
 *base_addr：磁盘起始扇区
-*count：要写入的扇区数
-*buffer：缓冲区函数
+*count：要读入的扇区数
+*buffer：缓冲区
 *port_num：磁盘端口号
 */
 void block_read(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t port_num)
@@ -65,7 +65,7 @@ void block_read(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t por
 /*磁盘写入
 *base_addr：磁盘起始扇区
 *count：要写入的扇区数
-*buffer：缓冲区函数
+*buffer：缓冲区
 *port_num：磁盘端口号
 */
 void block_write(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t port_num) 
