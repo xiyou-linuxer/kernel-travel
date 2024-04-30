@@ -12,6 +12,18 @@ extern void tlb_handler(void);
 extern void do_irq(struct pt_regs *regs, uint64_t virq);
 
 extern void handle_reserved(void);
+
+#define INTCLR_0 0x1fe0142c
+#define INTCLR_1 0x1fe0146c
+#define INTPOL_0 0x1fe01430
+#define INTPOL_1 0x1fe01470
+#define INTEDGE_0 0x1fe01434
+#define INTEDGE_1 0x1fe01474
+#define BOUNCE_0 0x1fe01438
+#define BOUNCE_1 0x1fe01478
+#define AUTO_0 0x1fe0143c
+#define AUTO_1 0x1fe0147c
+
 void handle_reserved(void)
 {
 	printk("have a exception happened\n");
@@ -166,20 +178,20 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 static void io_irq_init(void)
 {
 	/*clr*/
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe0142c) = ~0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe0146c) = ~0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_0) = ~0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_1) = ~0x0U;
 	/*pol*/
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe01430) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe01470) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_1) = 0x0U;
 	/*edge*/
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe01434) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe01474) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_1) = 0x0U;
 	/*bou*/
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe01438) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe01478) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_1) = 0x0U;
 	/*auto*/
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe0143c) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | 0x1fe0147c) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | AUTO_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | AUTO_1) = 0x0U;
 }
 /**
  * trap_init - 例外与中断处理初始化
