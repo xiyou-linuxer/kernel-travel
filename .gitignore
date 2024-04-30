@@ -17,3 +17,4 @@ vmlinux.lds
 quick_start.sh
 0z1.md
 .cache/
+.vscode/
