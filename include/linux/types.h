@@ -38,6 +38,7 @@ typedef u8                  uint8_t;
 typedef u16                 uint16_t;
 typedef u32                 uint32_t;
 typedef u64                 uint64_t;
+typedef s16		    int16_t;
 
 typedef unsigned long		size_t;
 typedef u64			        phys_addr_t;

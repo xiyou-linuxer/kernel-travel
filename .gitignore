@@ -1,6 +1,7 @@
 *.o
 *.cmd
 .config
+.config.old
 include/config
 include/generated
 vmlinux

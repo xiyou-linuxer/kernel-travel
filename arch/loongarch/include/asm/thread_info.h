@@ -59,7 +59,9 @@ register unsigned long current_stack_pointer __asm__("$sp");
 #endif /* !__ASSEMBLY__ */
 
 /* thread information allocation */
-#define THREAD_SIZE		SZ_16K
+#ifndef THREAD_SIZE
+#define THREAD_SIZE		SZ_4K
+#endif
 #define THREAD_MASK		(THREAD_SIZE - 1UL)
 #define THREAD_SIZE_ORDER	ilog2(THREAD_SIZE / PAGE_SIZE)
 /*
