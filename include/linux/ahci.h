@@ -466,7 +466,7 @@ struct boot_sector
 }__attribute__( ( __packed__ ) );
 extern struct block_device_request_queue ahci_req_queue;  // io调度队列
 void disk_init(void);
-int ahci_read(unsigned int port_num, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf);
+int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf);
 
- int ahci_write(unsigned int port_num, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf);
+int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf);
 #endif
