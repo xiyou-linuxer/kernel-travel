@@ -67,6 +67,7 @@ export	TEXT_OFFSET GZFLAGS
 # core-y		+= arch/loongarch/kernel/ arch/loongarch/mm/
 core-y		+= arch/loongarch/kernel/
 core-y		+= arch/loongarch/lib/
+core-y		+= arch/loongarch/mm/
 #core-$(CONFIG_NET) += arch/loongarch/net/
 #core-$(CONFIG_KVM) += arch/loongarch/kvm/
 #core-$(CONFIG_XEN) += arch/loongarch/xen/

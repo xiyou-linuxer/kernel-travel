@@ -14,13 +14,14 @@
 #include <asm/boot_param.h>
 #include <asm/timer.h>
 #include <asm/page.h>
+#include <asm/tlb.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
+#include<linux/block_device.h>
 #include <sync.h>
 #include <process.h>
 #include <linux/memory.h>
 #include <linux/string.h>
-
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -68,10 +69,9 @@ void __init __no_sanitize_address start_kernel(void)
 	
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
-
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-		printk("m ");
+        //printk("m ");
 	}
 }

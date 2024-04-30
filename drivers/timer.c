@@ -33,6 +33,7 @@ void intr_timer_handler(struct pt_regs *regs)
     ticks++;
 
     write_csr_ticlr(read_csr_ticlr() | (0x1 << 0));
+    //printk("%d",cur_thread->ticks--);
     printk("%d",cur_thread->ticks);
 
     if (cur_thread->ticks == 0) {
