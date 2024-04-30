@@ -19,13 +19,13 @@ pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];/*存储设备信息的结构�
 */
 static void pci_read_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
-    unsigned long pcie_header_base = 0x8000000000000000|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+    unsigned long pcie_header_base = CSR_DMW0_BASE|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
     *read_data = *(volatile unsigned int *)(pcie_header_base + reg_id) ; 
 }
 
 static void pci_write_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * write_data)
 {
-	unsigned long pcie_header_base = 0x8000000000000000|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+	unsigned long pcie_header_base = CSR_DMW0_BASE|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
     *(volatile unsigned int *)( pcie_header_base + reg_id) = write_data;
     
 }

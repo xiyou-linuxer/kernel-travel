@@ -178,20 +178,20 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 static void io_irq_init(void)
 {
 	/*clr*/
-	*(unsigned int*)(0x8000000000000000 | INTCLR_0) = ~0x0U;
-	*(unsigned int*)(0x8000000000000000 | INTCLR_1) = ~0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_0) = ~0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_1) = ~0x0U;
 	/*pol*/
-	*(unsigned int*)(0x8000000000000000 | INTPOL_0) = 0x0U;
-	*(unsigned int*)(0x8000000000000000 | INTPOL_1) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_1) = 0x0U;
 	/*edge*/
-	*(unsigned int*)(0x8000000000000000 | INTEDGE_0) = 0x0U;
-	*(unsigned int*)(0x8000000000000000 | INTEDGE_1) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_1) = 0x0U;
 	/*bou*/
-	*(unsigned int*)(0x8000000000000000 | BOUNCE_0) = 0x0U;
-	*(unsigned int*)(0x8000000000000000 | BOUNCE_1) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_1) = 0x0U;
 	/*auto*/
-	*(unsigned int*)(0x8000000000000000 | AUTO_0) = 0x0U;
-	*(unsigned int*)(0x8000000000000000 | AUTO_1) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | AUTO_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | AUTO_1) = 0x0U;
 }
 /**
  * trap_init - 例外与中断处理初始化

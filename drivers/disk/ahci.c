@@ -392,7 +392,7 @@ void disk_init(void) {
 	{
 		printk(KERN_ERR "[ahci]: no AHCI controllers present!\n");
 	}
-	SATA_ABAR_BASE = 0x8000000000000000|pci_dev->bar[0].base_addr;
+	SATA_ABAR_BASE = CSR_DMW0_BASE|pci_dev->bar[0].base_addr;
 	/*注册中断处理程序*/
 
 	*(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_IE;//全局中断使能
