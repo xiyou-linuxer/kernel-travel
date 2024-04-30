@@ -5,7 +5,7 @@
 #define BIT_MASK 1
 
 struct bitmap {
-    uint32_t btmp_bytes_len;
+    uint64_t btmp_bytes_len;
     uint8_t* bits;
 };
 

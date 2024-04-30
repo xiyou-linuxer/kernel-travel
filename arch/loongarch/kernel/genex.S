@@ -36,9 +36,21 @@ SYM_FUNC_END(handle_vint_\num)
 user_ret:
     RESTORE_ALL_AND_RET
 
+tlb_handler:
+    csrwr t0,LOONGARCH_CSR_TLBRSAVE
+    csrrd t0,LOONGARCH_CSR_PGD
+    lddir t0,t0,3
+    lddir t0,t0,1
+    ldpte t0,0
+    ldpte t0,1
+    tlbfill
+    csrrd t0,LOONGARCH_CSR_TLBRSAVE
+    ertn
+
 .section .data, "aw"
 	.align	3
         .globl  user_ret
+        .globl tlb_handler
         .globl  vector_table
 vector_table:
 	PTR	handle_vint_0

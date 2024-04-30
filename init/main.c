@@ -13,45 +13,37 @@
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
 #include <asm/timer.h>
+#include <asm/page.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
 #include<linux/block_device.h>
 #include <sync.h>
+#include <process.h>
+#include <linux/memory.h>
+#include <linux/string.h>
+
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
+#define VMEM_SIZE (1UL << (9 + 9 + 12))
 
 extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);
 
-
 void thread_a(void* unused)
 {
-    printk("enter thread_a\n");
-    /*while (1) {
-        unsigned long crmd = read_csr_crmd();
-        printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
-    }*/
-	while (1)
-	{
-            /*printk("slot:%x\n",
-                   *(unsigned int*)(0x80000000400e0000 | (0x180 + PORT_CI)) );
-            /*if ((*(unsigned int *)(0x80000000400e0000|(0x180+PORT_CI)) & (1 <<
-        0)) == 0) break;*/
-        }
-	
+	printk("enter thread_a\n");
+	while (1) {
+		unsigned long crmd = read_csr_crmd();
+		printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
+	}
 }
 
-//void proc_1(void* unused)
-//{
-//    printk("enter proc_1\n");
-//    while(1) {
-//        unsigned long crmd = read_csr_crmd();
-//        printk("oo");
-//        printk("proc_1:at pri %d  ",crmd&PLV_MASK);
-//    }
-//}
+void proc_1(void* unused)
+{
+    while(1);
+}
 
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -73,14 +65,7 @@ void __init __no_sanitize_address start_kernel(void)
     thread_init();
     timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
-	char buffer[512];
-    block_read(0, 1, buffer, 1);
-	for (int i = 0; i < 512; i++)
-	{
-        printk("%x", buffer[i]);
-    }
-	//local_irq_enable();
-	// local_irq_disable();
+    process_execute(proc_1,"proc_1");
 	
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);

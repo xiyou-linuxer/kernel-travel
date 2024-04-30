@@ -2,6 +2,7 @@
 #include <asm/stackframe.h>
 #include <asm/asm-offsets.h>
 #include <asm/asmmacro.h>
+#include <asm/bootinfo.h>
 
 .section ".text","ax"
 
@@ -16,6 +17,9 @@ switch_to:
 	stptr.d	ra, a0, THREAD_REG01
 
 	cpu_restore_nonscratch a1
+    li.w   t0, THREAD_SIZE
+    add.d  t0, t0, a1
+    set_saved_sp t0,t1
 
 	ldptr.d	t1, a1, THREAD_CSRPRMD
 	csrwr	t1, LOONGARCH_CSR_PRMD

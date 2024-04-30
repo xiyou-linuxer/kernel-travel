@@ -12,6 +12,7 @@
 #include <asm/asm-offsets.h>
 #include <sync.h>
 #include <allocator.h>
+#include <process.h>
 
 struct task_struct* main_thread;
 struct task_struct* idle_thread;
@@ -19,7 +20,6 @@ struct list thread_ready_list;
 struct list thread_all_list;
 
 struct list_elem* thread_tag;
-
 
 uint8_t pid_bitmap_bits[128] = {0};
 
@@ -84,12 +84,13 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
     pthread->priority = prio;
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
+    pthread->pgdir = 0;
     pthread->stack_magic = STACK_MAGIC_NUM;
 }
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg)
 {
-    pthread->self_kstack -= sizeof(struct pt_regs);
+    pthread->self_kstack = (uint64_t*)((uint64_t)pthread->self_kstack - sizeof(struct pt_regs));
     pthread->function = function;
     pthread->func_arg = func_arg;
 
@@ -156,6 +157,7 @@ void schedule()
     thread_tag = NULL;	  // thread_tag清空
     thread_tag = list_pop(&thread_ready_list);
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
+    page_dir_activate(next);
     next->status = TASK_RUNNING;
 
     switch_to(cur, next);

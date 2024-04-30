@@ -5,6 +5,7 @@
 
 
 #define pr_fmt(fmt) "memory: " fmt
+#define PHYS_ADDR_MAX (~(phys_addr_t)0x0)
 
 enum memblock_flags {
 	MEMBLOCK_NONE		= 0x0,	/* No special request */
@@ -38,6 +39,7 @@ struct memblock {
 
 void memblock_init(void);
 int memblock_add(phys_addr_t base, phys_addr_t size);
+int memblock_reserve(phys_addr_t base, phys_addr_t size);
 
 extern struct memblock memblock;
 
