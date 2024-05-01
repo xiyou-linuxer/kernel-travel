@@ -3,6 +3,8 @@
 
 #ifdef __KERNEL__
 
+#define THREAD_SIZE		0x4000
+
 #ifndef __ASSEMBLY__
 
 #include <asm/types.h>

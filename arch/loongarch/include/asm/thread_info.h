@@ -15,6 +15,8 @@
 #include <linux/types.h>
 #include <linux/preempt.h>
 
+#include <asm/processor.h>
+
 /*
  * low level task data that entry.S needs immediate access to
  * - this struct should fit entirely inside of one cache line
