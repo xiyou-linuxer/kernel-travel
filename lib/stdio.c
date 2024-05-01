@@ -3,6 +3,7 @@
 #include <linux/efi.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
+#include <asm/syscall.h>
 
 #include <asm/stdio.h>
 
@@ -36,3 +37,23 @@ int printk(const char *fmt, ...)
 
 	return printed;
 }
+
+int printf(const char *fmt, ...)
+{
+	char printf_buf[256];
+	va_list args;
+	int printed;
+
+	va_start(args, fmt);
+	printed = vsnprintf(printf_buf, sizeof(printf_buf), fmt, args);
+	va_end(args);
+
+	pstr(printf_buf);
+	if (printed >= sizeof(printf_buf)) {
+		pstr("[Message truncated]\n");
+		return -1;
+	}
+
+	return printed;
+}
+

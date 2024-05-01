@@ -126,7 +126,7 @@ struct task_struct *thread_start(char *name, int prio, thread_func function, voi
 static void make_main_thread(void)
 {
     main_thread = running_thread();
-    init_thread(main_thread, "main", 31);
+    init_thread(main_thread, "main", 10);
 
     ASSERT(!elem_find(&thread_all_list, &main_thread->all_list_tag));
     list_append(&thread_all_list, &main_thread->all_list_tag);

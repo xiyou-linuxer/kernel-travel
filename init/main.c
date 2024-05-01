@@ -20,6 +20,8 @@
 #include <process.h>
 #include <linux/memory.h>
 #include <linux/string.h>
+#include <syscall_init.h>
+#include <asm/syscall.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -41,7 +43,9 @@ void thread_a(void* unused)
 
 void proc_1(void* unused)
 {
-    while(1);
+	while(1) {
+		syscall(SYS_PSTR,"hello");
+	}
 }
 
 void __init __no_sanitize_address start_kernel(void)
@@ -60,12 +64,13 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 	local_irq_enable();
 	pci_init();
-    disk_init();
-    thread_init();
-    timer_init();
-	thread_start("thread_a",31,thread_a,NULL);
-    process_execute(proc_1,"proc_1");
-	
+	disk_init();
+	thread_init();
+	timer_init();
+	syscall_init();
+	thread_start("thread_a",10,thread_a,NULL);
+	process_execute(proc_1,"proc_1");
+
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 
