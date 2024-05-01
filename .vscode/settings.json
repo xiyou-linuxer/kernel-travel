@@ -33,6 +33,19 @@
         "random": "c",
         "queue": "c",
         "stack": "c",
-        "cstddef": "c"
+        "cstddef": "c",
+        "memory": "c",
+        "future": "c",
+        "istream": "c",
+        "functional": "c",
+        "locale": "c",
+        "tuple": "c",
+        "*.inc": "cpp",
+        "*.msg": "cpp",
+        "*.tcc": "c",
+        "*.ipp": "c",
+        "*.def": "c",
+        "optional": "c",
+        "cassert": "c"
     }
 }

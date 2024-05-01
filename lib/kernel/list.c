@@ -64,7 +64,7 @@ uint32_t list_len(struct list* plist)
     return len;
 }
 
-struct list_elem* list_traversal(struct list* plist,function func,int arg)
+struct list_elem* list_traversal(struct list* plist, function func, void *arg)
 {
     struct list_elem* ret = plist->head.next;
     while (ret != &plist->tail)

@@ -1,0 +1,117 @@
+#ifndef _FS_H
+#define _FS_H
+
+#include <linux/list.h>
+#include <linux/types.h>
+#include <asm-generic/int-ll64.h>
+#include <fs/fat32.h>
+#include <asm/page.h>
+
+#define MAX_FS_COUNT 4 //最多可挂载的文件系统数量
+#define MAX_NAME_LEN 128 //文件名的最大字数限制
+typedef struct FileSystem {
+	bool valid; // 是否有效
+	char name[8];
+	SuperBlock superBlock;					// 超级块
+	Dirent *root;						 	// root项
+	struct Dirent *image;					// mount对应的文件描述符
+	struct Dirent *mountPoint;				// 挂载点
+	int deviceNumber;						// 对应真实设备的编号
+	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 读取FS的一个Buffer
+	// 强制规定：传入的fs即为本身的fs
+	// 稍后用read返回的这个Buffer指针进行写入和释放动作
+	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层
+}FileSystem;
+
+typedef struct SuperBlock {
+	u32 first_data_sec;
+	u32 data_sec_cnt;
+	u32 data_clus_cnt;
+	u32 bytes_per_clus;
+	struct {
+		u16 bytes_per_sec;
+		u8 sec_per_clus;
+		u16 rsvd_sec_cnt;
+		u8 fat_cnt;   /* count of FAT regions */
+		u32 hidd_sec; /* count of hidden sectors */
+		u32 tot_sec;  /* total count of sectors including all regions */
+		u32 fat_sz;   /* count of sectors for a FAT region */
+		u32 root_clus;
+	} bpb;
+}SuperBlock;
+
+
+// 二级指针
+struct TwicePointer {
+	u32 cluster[PAGE_NCLUSNO];
+};
+
+// 三级指针
+struct ThirdPointer {
+	struct TwicePointer *ptr[PAGE_SIZE / sizeof(struct TwicePointer *)];
+};
+
+// 指向簇列表的指针
+typedef struct DirentPointer {
+	// 一级指针
+	// u32 first[10];
+	// 简化：只使用二级指针和三级指针
+	struct TwicePointer *second[NDIRENT_SECPOINTER];
+	struct ThirdPointer *third;
+	u16 valid;
+} DirentPointer;
+
+typedef struct Dirent {
+	FAT32Directory raw_dirent; // 原生的dirent项
+	char name[MAX_NAME_LEN];
+
+	// 文件系统相关属性
+	FileSystem *file_system; // 所在的文件系统
+	u32 first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
+	u32 file_size;		 // 文件大小
+
+	/* for OS */
+	// 操作系统相关的数据结构
+	// 仅用于是挂载点的目录，指向该挂载点所对应的文件系统。用于区分mount目录和非mount目录
+	FileSystem *head;
+
+	DirentPointer pointer;
+
+	// [暂不用] 标记此Dirent节点是否已扩展子节点，用于弹性伸缩Dirent缓存，不过一般设置此字段为1
+	// 我们会在初始化时扫描所有文件，并构建Dirent
+	// u16 is_extend;
+
+	// 在上一个目录项中的内容偏移，用于写回
+	u32 parent_dir_off;
+
+	// 标记是文件、目录还是设备文件（仅在文件系统中出现，不出现在磁盘中）
+	u16 type;
+
+	u16 is_rm;
+
+	// 文件的时间戳
+	struct file_time time;
+
+	// 设备结构体，可以通过该结构体完成对文件的读写
+	struct FileDev *dev;
+
+	// 子Dirent列表
+	struct list child_list;
+	struct list_elem dirent_tag;//链表节点，用于父目录记录
+	// 用于空闲链表和父子连接中的链接，因为一个Dirent不是在空闲链表中就是在树上
+	//LIST_ENTRY(Dirent) dirent_link;
+
+	// 父亲Dirent
+	struct Dirent *parent_dirent; // 即使是mount的目录，也指向其上一级目录。如果该字段为NULL，表示为总的根目录
+
+	u32 mode;
+
+	// 各种计数
+	u16 linkcnt; // 链接计数
+	u16 refcnt;  // 引用计数
+
+	//struct holder_info holders[DIRENT_HOLDER_CNT];
+	//int holder_cnt;
+}Dirent;
+
+#endif

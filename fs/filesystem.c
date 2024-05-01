@@ -1,3 +1,5 @@
+#include <fs/fs.h>
+#include <fs/buf.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
 // FS分配锁
@@ -12,7 +14,7 @@ static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) {
 	} else {
 		// 处理挂载了文件的情况
 		Dirent *img = fs->image;
-		FileSystem *parentFs = fs->image->file_system;
+		struct FileSystem *parentFs = fs->image->file_system;
 		int blockNo = fileBlockNo(parentFs, img->first_clus, blockNum);
 		return bufRead(parentFs->deviceNumber, blockNo, is_read);
 	}
@@ -21,17 +23,14 @@ static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) {
 /**
  * @brief 分配一个文件系统结构体
  */
-void allocFs(struct FileSystem **pFs) {
-	mtx_lock(&mtx_fs);
-
+void allocFs(FileSystem **pFs) 
+{
 	for (int i = 0; i < MAX_FS_COUNT; i++) {
 		if (fs[i].valid == 0) {
 			*pFs = &fs[i];
 			memset(&fs[i], 0, sizeof(FileSystem));
 			fs[i].valid = 1;
 			fs[i].get = getBlock;
-
-			mtx_unlock(&mtx_fs);
 			return;
 		}
 	}
