@@ -8,6 +8,7 @@
 #ifndef __ASSEMBLY__
 
 #include <asm/types.h>
+#include <asm/processor.h>
 
 /**
  * low level task data that entry.S needs immediate access to.

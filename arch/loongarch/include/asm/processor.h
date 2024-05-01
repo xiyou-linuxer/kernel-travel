@@ -1,7 +1,7 @@
 #ifndef _ASM_PROCESS_H
 #define _ASM_PROCESS_H
 
-struct thread_stack {
+struct thread_struct {
 	/* Main processor registers. */
 	unsigned long reg01, reg03, reg22; /* ra sp fp */
 	unsigned long reg23, reg24, reg25, reg26; /* s0-s3 */
