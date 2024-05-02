@@ -47,6 +47,14 @@ enum invtlb_ops {
 	INVTLB_GID_ADDR = 0x16,
 };
 
+struct tlb_entry {
+	u64 index;
+	u64 ehi;	// 表项高位
+	u64 elo0;	// 表项低位
+	u64 elo1;	
+	u64 ps;		// 存放的页表项的页大小
+};
+
 /*
  * TLB Invalidate Flush
  */
@@ -68,7 +76,7 @@ static inline void tlb_probe(void)
 	__asm__ __volatile__("tlbsrch");
 }
 
-static inline void tlb_read(void)
+static inline void __tlb_read(void)
 {
 	__asm__ __volatile__("tlbrd");
 }
@@ -95,5 +103,10 @@ static inline void invtlb(u32 op, u32 info, u64 addr)
 
 
 void __update_tlb(void);
+struct tlb_entry tlb_read(u64 index,u32 ps);
+s16 tlb_write(struct tlb_entry *entry, u8 is_valid);
+
+void test_tlb_func(void);
+
 
 #endif
