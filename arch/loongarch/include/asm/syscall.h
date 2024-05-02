@@ -1,6 +1,7 @@
 #ifndef _SYSCALL_H
 #define _SYSCALL_H
 #include <linux/thread.h>
+#include <asm/pt_regs.h>
 
 #define NR_SYSCALLS 48
 #define ENOSYS		38
@@ -17,20 +18,22 @@
         retval;             \
     })
 
-#define __syscall1(n,a0) ({       \
-		register long nr asm("a7") = n; \
-		register long retval asm("a0"); \
-		register long arg0 asm("a0"); \
-        asm volatile(             \
-        "syscall 0"               \
-        : "+r"(retval)           \
-        : "r"(n),"r"(a0)        \
-        : "$t0","$t1","$t2","$t3","$t4","$t5","$t6", \
-		  "$t7","$t8","memory");                  \
-        retval;                   \
-    })
+asmlinkage static inline long __syscall1(long n,long ag0)
+{
+	register long nr asm("a7") = n;
+	register long arg0 asm("a0") = ag0;
+	//register long retval asm("a0");
+	asm volatile(
+	"syscall 0"
+	: //"+r"(retval)
+	: "r"(nr),"r"(arg0)
+	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
+	  "$t7","$t8","memory");
+	//return retval;
+	return 1;
+}
 
-#define __syscall2(n,a0,a1) ({    \
+#define __syscall2(n,ag0,ag1) ({    \
 		register long nr asm("a7") = n; \
 		register long retval asm("a0"); \
 		register long arg0 asm("a0"); \
@@ -95,6 +98,9 @@ enum SYSCALL {
 	SYS_GETPID,
 	SYS_PSTR,
 };
+
+
+void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 pid_t getpid(void);
 void pstr(char *str);

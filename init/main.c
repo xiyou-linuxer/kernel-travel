@@ -41,13 +41,15 @@ void thread_a(void* unused)
 	}
 }
 
+char* sstr = "hello";
 void proc_1(void* unused)
 {
 	while(1) {
-		syscall(SYS_PSTR,"hello");
+		syscall(SYS_PSTR,sstr);
 	}
 }
 
+//0x9000000008040348
 void __init __no_sanitize_address start_kernel(void)
 {
 	printk("%lx\n", lalist_mem_map.map_count);
