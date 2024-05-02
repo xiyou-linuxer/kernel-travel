@@ -58,6 +58,37 @@ void __update_tlb(void)
 
 }
 
+// 找到位图中值为0的位数
+int find_free_asid() {
+    int i, j;
+    for (i = 0; i < (1 << (LOONGARCH64_ASIDBITS - 3)); i++) {
+        if (asid_bitmap[i] != 0xFF) { // 如果字节不全为1
+            for (j = 0; j < 8; j++) {
+                if (!((asid_bitmap[i] >> j) & 1)) { // 找到第一个为0的位
+                    return i * 8 + j;
+                }
+            }
+        }
+    }
+    return -1; // 如果没有找到空闲的ASID位，则返回-1
+}
+
+// 设置指定的ASID位
+void set_asid(uint32_t asid) {
+    asid_bitmap[asid / 8] |= (1 << (asid % 8));
+}
+
+// 清除指定的ASID位
+void clear_asid(uint32_t asid) {
+    asid_bitmap[asid / 8] &= ~(1 << (asid % 8));
+}
+
+// 检查指定的ASID位是否被设置
+int check_asid(uint32_t asid) {
+    return (asid_bitmap[asid / 8] & (1 << (asid % 8))) != 0;
+}
+
+// FOR TESTING
 struct tlb_entry entity;
 
 void test_tlb_func(void)

@@ -3,6 +3,7 @@
 
 #include <linux/types.h>
 
+#define LOONGARCH64_ASIDBITS 10
 
 enum invtlb_ops {
 	/* Invalid all tlb */
@@ -91,6 +92,18 @@ static inline void tlb_write_random(void)
 	__asm__ __volatile__("tlbfill");
 }
 
+/*
+op表示操作类型，下面是loongarch手册中列出的op类型：
+op=0：清除所有表项。
+op=1：清除所有表项。效果和op=0完全一致。
+op=2：清除所有G=1的表项。
+op=3：清除所有G=0的表项。
+op=4：清除所有G=0，且ASID等于寄存器指定ASID的表项。
+op=5：清除所有G=0，ASID等于寄存器指定ASID，且VA等于寄存器指定VA的表项。
+op=6：清除所有G=1或ASID等于寄存器指定ASID，且VA等于寄存器指定VA的表项。
+通用寄存器info中存放ASID信息。当op对应的操作不需要ASID时，info应设置为r0。
+通用寄存器addr中存放VA虚拟地址信息。当op对应的操作不需要VA时，rk应设置为r0。 */
+
 static inline void invtlb(u32 op, u32 info, u64 addr)
 {
 	__asm__ __volatile__(
@@ -107,6 +120,9 @@ struct tlb_entry tlb_read(u64 index,u32 ps);
 s16 tlb_write(struct tlb_entry *entry, u8 is_valid);
 
 void test_tlb_func(void);
+
+// 定义一个char类型的位图数组，数组大小为 (1024 / 8) = 128
+char asid_bitmap[1 << (LOONGARCH64_ASIDBITS - 3)];
 
 
 #endif
