@@ -52,4 +52,15 @@ typedef struct FAT32Directory {
 	u16 DIR_FstClusLO;
 	u32 DIR_FileSize;
 } __attribute__((packed)) FAT32Directory;
+
+// FAT32 文件、目录属性
+#define ATTR_READ_ONLY 0x01		//只读属性
+#define ATTR_HIDDEN 0x02		//隐藏属性
+#define ATTR_SYSTEM 0x04		//系统属性
+#define ATTR_VOLUME_ID 0x08		//卷标属性
+#define ATTR_DIRECTORY 0x10		//目录属性
+#define ATTR_ARCHIVE 0x20		//归档属性
+#define ATTR_LONG_NAME_MASK (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
+#define CHAR2LONGENT 26
+#define LAST_LONG_ENTRY 0x40
 #endif

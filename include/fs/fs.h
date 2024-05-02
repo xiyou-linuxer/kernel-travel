@@ -9,6 +9,8 @@
 
 #define MAX_FS_COUNT 4 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
+#define PAGE_NCLUSNO (PAGE_SIZE / sizeof(u32))// 一页能容纳的u32簇号个数
+#define NDIRENT_SECPOINTER 5
 typedef struct FileSystem {
 	bool valid; // 是否有效
 	char name[8];
@@ -114,4 +116,20 @@ typedef struct Dirent {
 	//int holder_cnt;
 }Dirent;
 
+enum fs_result {
+	E_NO_MAP,			//无法创建映射，用于mmap
+	E_BAD_ELF, 			//ELF 文件损坏
+	E_UNKNOWN_FS,		//未知的文件系统
+	E_DEV_ERROR,		//设备错误
+	E_NOT_FOUND,		//未找到指定的项目
+	E_BAD_PATH,			//无效的路径
+	E_FILE_EXISTS,		//文件已存在
+	E_EXCEED_FILE,		//文件大小超过限制
+};
+
+
+typedef int (*findfs_callback_t)(FileSystem *fs, void *data);
+void allocFs(struct FileSystem **pFs);
+void deAllocFs(struct FileSystem *fs);
+int partition_format(FileSystem* fs);//初始化文件系统分区
 #endif

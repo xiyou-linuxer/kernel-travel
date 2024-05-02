@@ -1,11 +1,13 @@
 #include <fs/fs.h>
 #include <fs/buf.h>
+#include <linux/stdio.h>
+#include <debug.h>
+#include <linux/string.h>
+
 static struct FileSystem fs[MAX_FS_COUNT];
 
-// FS分配锁
-struct mutex mtx_fs;
-
-static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) {
+static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
+{
 	assert(fs != NULL);
 
 	if (fs->image == NULL) {
@@ -34,15 +36,67 @@ void allocFs(FileSystem **pFs)
 			return;
 		}
 	}
-	panic("No more fs to alloc!");
+	PANIC();
 }
 
 /**
  * @brief 释放一个文件系统结构体
  */
 void deAllocFs(struct FileSystem *fs) {
-	mtx_lock(&mtx_fs);
 	fs->valid = 0;
 	memset(fs, 0, sizeof(struct FileSystem));
-	mtx_unlock(&mtx_fs);
+}
+
+/**
+ * @brief 初始化分区信息，填写文件系统结构体里面的超级块
+ */
+int partition_format(FileSystem *fs) {
+	printk("Fat32 FileSystem Init Start\n");
+	// 读取 BPB
+	ASSERT(fs != NULL);
+	ASSERT(fs->get != NULL);
+
+	Buffer *buf = fs->get(fs, 0, true);
+	if (buf == NULL) {
+		printk("buf == NULL\n");
+		return -E_DEV_ERROR;
+	}
+
+	printk("cluster DEV is ok!\n");
+
+	// 从 BPB 中读取信息
+	FAT32BootParamBlock *bpb = (FAT32BootParamBlock *)(buf->data->data);
+
+	if (bpb == NULL || strncmp((char *)bpb->BS_FilSysType, "FAT32", 5)) {
+		printk("Not FAT32 File System\n");
+		return -E_UNKNOWN_FS;
+	}
+	fs->superBlock.bpb.bytes_per_sec = bpb->BPB_BytsPerSec;
+	fs->superBlock.bpb.sec_per_clus = bpb->BPB_SecPerClus;
+	fs->superBlock.bpb.rsvd_sec_cnt = bpb->BPB_RsvdSecCnt;
+	fs->superBlock.bpb.fat_cnt = bpb->BPB_NumFATs;
+	fs->superBlock.bpb.hidd_sec = bpb->BPB_HiddSec;
+	fs->superBlock.bpb.tot_sec = bpb->BPB_TotSec32;
+	fs->superBlock.bpb.fat_sz = bpb->BPB_FATSz32;
+	fs->superBlock.bpb.root_clus = bpb->BPB_RootClus;
+
+	printk("cluster Get superblock!\n");
+
+	// 填写超级块
+	fs->superBlock.first_data_sec = bpb->BPB_RsvdSecCnt + bpb->BPB_NumFATs * bpb->BPB_FATSz32;
+	fs->superBlock.data_sec_cnt = bpb->BPB_TotSec32 - fs->superBlock.first_data_sec;
+	fs->superBlock.data_clus_cnt = fs->superBlock.data_sec_cnt / bpb->BPB_SecPerClus;
+	fs->superBlock.bytes_per_clus = bpb->BPB_SecPerClus * bpb->BPB_BytsPerSec;
+	if (BUF_SIZE != fs->superBlock.bpb.bytes_per_sec) {
+		printk("BUF_SIZE != fs->superBlock.bpb.bytes_per_sec\n");
+		return -E_DEV_ERROR;
+	}
+
+	printk("cluster ok!\n");
+
+	// 释放缓冲区
+	bufRelease(buf);
+
+	printk("buf release!\n");
+	return 0;
 }

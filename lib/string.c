@@ -70,3 +70,14 @@ uint32_t strnlen(const char* str, uint32_t max)
 	}
 	return len >= max ? max : len;
 }
+
+int strncmp(const char *p, const char *q, unsigned int n) 
+{
+	while (n > 0 && *p && *p == *q) {
+		n--, p++, q++;
+	}
+	if (n == 0 || (*p == 0 && *q == 0)) {
+		return 0;
+	}
+	return (unsigned char)*p - (unsigned char)*q;
+}

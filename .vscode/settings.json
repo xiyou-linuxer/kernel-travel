@@ -46,6 +46,7 @@
         "*.ipp": "c",
         "*.def": "c",
         "optional": "c",
-        "cassert": "c"
+        "cassert": "c",
+        "fs.h": "c"
     }
 }

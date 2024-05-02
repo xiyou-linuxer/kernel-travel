@@ -12,5 +12,5 @@ extern int memcmp(const void* a_, const void* b_, uint32_t size);
 extern char *strcpy(char *dest, const char *src);
 extern uint32_t strlen(const char *str);
 extern uint32_t strnlen(const char* str, uint32_t max);
-
+extern int strncmp(const char* p, const char* q, unsigned int n);//比较字符串p与q的内容，若不同则返回第一个不同字符的ascii码差值
 #endif /* _LINUX_STRING_H */

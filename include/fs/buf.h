@@ -7,15 +7,9 @@
 #include <linux/list.h>
 #include <sync.h>
 
-#ifdef FEATURE_LESS_MEMORY
-#define BUF_SUM_SIZE (64 * 1024 * 1024) // 64MB
-#else
-#define BUF_SUM_SIZE (256 * 1024 * 1024) // 256MB
-#endif
-
 #define BUF_SIZE (512)			// 512B
 #define BGROUP_NUM (1 << 14)		// 1024 * 8
-
+#define BUF_SUM_SIZE (64 * 1024 * 1024) // 64MB
 #define BGROUP_MASK (BGROUP_NUM - 1)			      // 0x3ff
 #define BGROUP_BUF_NUM (BUF_SUM_SIZE / BGROUP_NUM / BUF_SIZE) // 8
 #define BUF_NUM (BUF_SUM_SIZE / BUF_SIZE)
@@ -32,14 +26,14 @@ typedef struct BufferDataGroup {
 
 /*缓冲区控制块属性*/
 typedef struct Buffer {
-	unsigned long blockno;
+	unsigned long blockno;			//控制块号
 	int dev;
 	bool valid;
-	bool dirty;
+	bool dirty;						//是否被写入的标志
 	unsigned short disk;
-	unsigned short refcnt;
-	BufferData *data;
-	struct lock lock;
+	unsigned short refcnt;			//引用计数
+	BufferData *data;				//缓冲区内存
+	struct lock lock;				//缓冲控制块锁
 	struct list_elem Buffer_node; 	//链接到BufList中的节点
 } Buffer;
 

@@ -23,14 +23,42 @@ void bufInit() {
 	}
 }
 
-static int check(struct list_elem* list_elem, void* arg)
+/*list_traversal的回调函数*/
+static int check_cached(struct list_elem* list_elem, void* arg)
 {
 	unsigned long * arg1 = (unsigned long *)arg;
 	uint64_t dev = arg1[0];
 	uint64_t blockno= arg1[1];
 	Buffer* buf = elem2entry(Buffer, Buffer_node, list_elem);
 	if (buf->dev == dev && buf->blockno == blockno) {
-		buf->refcnt++;
+		buf->refcnt++;//引用计数加1
+		return 1;
+	}else
+	{
+		return 0;
+	}
+	
+}
+
+/*list_reverse的回调函数*/
+static int check_uncached(struct list_elem* list_elem, void* arg)
+{
+	unsigned long * arg1 = (unsigned long *)arg;
+	uint64_t dev = arg1[0];
+	uint64_t blockno= arg1[1];
+	Buffer* buf = elem2entry(Buffer, Buffer_node, list_elem);
+	if (buf->refcnt == 0) {
+		if (buf->valid && buf->dirty) {
+			// 如果该缓冲区已经被使用，写回磁盘
+			// 即换出时写回磁盘
+			disk_rw(buf, 1);
+		}
+		// 如果该缓冲区没有被引用，直接使用
+		buf->dev = dev;
+		buf->blockno = blockno;
+		buf->valid = 0;
+		buf->dirty = 0;
+		buf->refcnt = 1;
 		return 1;
 	}else
 	{
@@ -44,29 +72,19 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
 	unsigned long arg[2] = {dev,blockno};
 	// 检查对应块是否已经被缓存
 	Buffer *buf;
-	if(list_traversal(&bufferGroups[group].list,buf->Buffer_node,(void *)arg))
+	struct list_elem * list_elem=list_traversal(&bufferGroups[group].list,check_cached,(void *)arg);
+	if(list_elem!=NULL)//如果已经被缓存
 	{
-		Buffer* buf = elem2entry(Buffer, Buffer_node, list_elem);
-		return 
+		buf = elem2entry(Buffer, Buffer_node, list_elem);
+		return buf;
 	}
+	struct list_elem * list_elem=list_reverse(&bufferGroups[group].list,check_uncached,(void *)arg);
 	// 没有被缓存，找到最久未使用的缓冲区（LRU策略换出）
-	TAILQ_FOREACH_REVERSE(buf, &bufferGroups[group].list, BufList, link) {
-		if (buf->refcnt == 0) {
-			if (buf->valid && buf->dirty) {
-				// 如果该缓冲区已经被使用，写回磁盘
-				// 即换出时写回磁盘
-				disk_rw(buf, 1);
-			}
-			// 如果该缓冲区没有被引用，直接使用
-			buf->dev = dev;
-			buf->blockno = blockno;
-			buf->valid = 0;
-			buf->dirty = 0;
-			buf->refcnt = 1;
-			return buf;
-		}
+	if(list_elem!=NULL)
+	{
+		buf = elem2entry(Buffer, Buffer_node, list_elem);
+		return buf;
 	}
-
 	printk("No Buffer Available!\n");
 }
 
