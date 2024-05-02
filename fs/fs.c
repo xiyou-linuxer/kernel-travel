@@ -3,12 +3,12 @@
 #include <linux/stdio.h>
 #include <debug.h>
 #include <linux/string.h>
-
+#include <fs/cluster.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
 {
-	assert(fs != NULL);
+	ASSERT(fs != NULL);
 
 	if (fs->image == NULL) {
 		// 是挂载了根设备，直接读取块缓存层的数据即可
@@ -16,7 +16,7 @@ static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read)
 	} else {
 		// 处理挂载了文件的情况
 		Dirent *img = fs->image;
-		struct FileSystem *parentFs = fs->image->file_system;
+		struct FileSystem *parentFs = fs->image->file_system;//找到文件系统挂载的父节点
 		int blockNo = fileBlockNo(parentFs, img->first_clus, blockNum);
 		return bufRead(parentFs->deviceNumber, blockNo, is_read);
 	}
@@ -99,4 +99,14 @@ int partition_format(FileSystem *fs) {
 
 	printk("buf release!\n");
 	return 0;
+}
+
+/*文件系统初始化*/
+void fs_init(void)
+{
+	printk("fs_init start\n");
+	bufInit();			//初始化buf
+	bufTest(0);
+	init_root_fs();		//初始化根文件系统
+	printk("fs_init down\n");
 }

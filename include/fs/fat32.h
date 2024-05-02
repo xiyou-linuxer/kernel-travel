@@ -3,7 +3,7 @@
 
 #include <linux/block_device.h>
 #include <linux/types.h>
-
+#include <fs/fs.h>
 typedef struct FAT32BootParamBlock {
 	// 通用的引导扇区属性
 	u8 BS_jmpBoot[3];
@@ -63,4 +63,6 @@ typedef struct FAT32Directory {
 #define ATTR_LONG_NAME_MASK (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 #define CHAR2LONGENT 26
 #define LAST_LONG_ENTRY 0x40
+
+void init_root_fs(void);
 #endif

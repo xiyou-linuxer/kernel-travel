@@ -2,10 +2,13 @@
 #include <fs/buf.h>
 #include <linux/stdio.h>
 #include <debug.h>
+#include<linux/string.h>
+
 BufferDataGroup bufferData[BGROUP_NUM];
 BufferGroup bufferGroups[BGROUP_NUM];
 
 void bufInit() {
+	printk("bufInit start\n");
 	for (int i = 0; i < BGROUP_NUM; i++) {
 		// 初始化缓冲区组
 		BufferDataGroup *bdata = &bufferData[i];
@@ -21,6 +24,7 @@ void bufInit() {
 			list_append(&b->list,&buf->Buffer_node);
 		}
 	}
+	printk("bufInit down\n");
 }
 
 /*list_traversal的回调函数*/
@@ -51,7 +55,7 @@ static int check_uncached(struct list_elem* list_elem, void* arg)
 		if (buf->valid && buf->dirty) {
 			// 如果该缓冲区已经被使用，写回磁盘
 			// 即换出时写回磁盘
-			disk_rw(buf, 1);
+			block_write(blockno,1,buf->data,1);;
 		}
 		// 如果该缓冲区没有被引用，直接使用
 		buf->dev = dev;
@@ -72,26 +76,27 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
 	unsigned long arg[2] = {dev,blockno};
 	// 检查对应块是否已经被缓存
 	Buffer *buf;
-	struct list_elem * list_elem=list_traversal(&bufferGroups[group].list,check_cached,(void *)arg);
-	if(list_elem!=NULL)//如果已经被缓存
+	struct list_elem * elem=list_traversal(&bufferGroups[group].list,check_cached,(void *)arg);
+	if(elem!=NULL)//如果已经被缓存
 	{
-		buf = elem2entry(Buffer, Buffer_node, list_elem);
+		buf = elem2entry(Buffer, Buffer_node, elem);
 		return buf;
 	}
-	struct list_elem * list_elem=list_reverse(&bufferGroups[group].list,check_uncached,(void *)arg);
+	struct list_elem * elem1=list_reverse(&bufferGroups[group].list,check_uncached,(void *)arg);
 	// 没有被缓存，找到最久未使用的缓冲区（LRU策略换出）
-	if(list_elem!=NULL)
+	if(elem1!=NULL)
 	{
-		buf = elem2entry(Buffer, Buffer_node, list_elem);
+		buf = elem2entry(Buffer, Buffer_node, elem1);
 		return buf;
 	}
+	return NULL;
 	printk("No Buffer Available!\n");
 }
 
 /**
  * @brief 当is_read为1时，首次获取时，只获取buffer，而不读取buffer，适合于clusterAlloc
  */
-Buffer *bufRead(u32 dev, u64 blockno, bool is_read) {
+Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
 	Buffer *buf = bufAlloc(dev, blockno);
 	if (!buf->valid) {
 		if (is_read) block_read(blockno,1,buf->data,1);
@@ -106,6 +111,7 @@ void bufWrite(Buffer *buf) {
 	return;
 }
 
+/*释放缓冲区*/
 void bufRelease(Buffer *buf) {
 	buf->refcnt--;
 	if (buf->refcnt == 0) {
@@ -116,9 +122,10 @@ void bufRelease(Buffer *buf) {
 	}
 }
 
-void bufTest(u64 blockno) {
+void bufTest(unsigned long blockno) {
+	printk("bufTest start\n");
 	// 测试写入0号扇区（块）
-	Buffer *b0 = bufRead(0, blockno, true);
+	Buffer* b0 = bufRead(0, blockno, true);	
 	for (int i = 0; i < BUF_SIZE; i++) {
 		b0->data->data[i] = (u8)(blockno % 0xff) + i % 10;
 	}
@@ -131,12 +138,13 @@ void bufTest(u64 blockno) {
 	b0 = bufRead(0, blockno, true);
 	ASSERT(strncmp((const char *)b0->data, (const char *)b0_copy.data, BUF_SIZE) == 0);
 	bufRelease(b0);
+	printk("bufTest down\n");
 }
 
 /**
  * @brief 同步buf中所有的页到磁盘，同时把所有buf中的页都标记为非脏页
  */
-void bufSync() {
+void bufSync(void) {
 	// 可以作为后台任务，由内核线程运行
 	// 为了运行速度暂时关闭
 	/*

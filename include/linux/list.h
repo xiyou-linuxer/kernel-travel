@@ -16,7 +16,7 @@ struct list {
    struct list_elem tail;
 };
 
-typedef int (function) (struct list_elem* ,int arg);
+typedef int (function) (struct list_elem* ,void* arg);
 
 void list_init(struct list*);
 void list_insert_before(struct list_elem* before,struct list_elem* elm);

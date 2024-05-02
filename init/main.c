@@ -22,7 +22,7 @@
 #include <process.h>
 #include <linux/memory.h>
 #include <linux/string.h>
-
+#include <fs/fs.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -69,8 +69,9 @@ void __init __no_sanitize_address start_kernel(void)
 	disk_init();
 	thread_init();
 	timer_init();
-	thread_start("thread_a",31,thread_a,NULL);
-	process_execute(proc_1,"proc_1");
+	fs_init();
+	/*thread_start("thread_a",31,thread_a,NULL);
+	process_execute(proc_1,"proc_1");*/
 	
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);

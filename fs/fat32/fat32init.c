@@ -2,6 +2,10 @@
 #include <linux/types.h>
 #include <linux/stdio.h>
 #include <debug.h>
+#include <linux/string.h>
+#include <fs/fat32.h>
+FileSystem *fatFs;
+
 /**
  * @brief 递归建立树结构，需要保证parent的child_list已经初始化过
  */
@@ -36,10 +40,11 @@
 /**
  * @brief 用fat32初始化一个文件系统，根目录记录在fs->root中
  */
-void fat32_init(FileSystem *fs) {
+void fat32_init(FileSystem* fs) 
+{
 	// 1. 以fs为单位初始化簇管理器
 	printk("fat32 is initing...\n");
-	strncpy(fs->name, "FAT32", 8);
+	strcpy(fs->name, "FAT32");
 	ASSERT(partition_format(fs));
 	printk("cluster Init Finished!\n");
 
@@ -64,9 +69,9 @@ void fat32_init(FileSystem *fs) {
 
 	fs->root->linkcnt = 1;
 
-	/* 不需要初始化fs->root的锁，因为在分配时即初始化了 
+	/* 不需要初始化fs->root的锁，因为在分配时即初始化了 */
 
-	log(LEVEL_GLOBAL, "root directory init finished!\n");
+	/*log(LEVEL_GLOBAL, "root directory init finished!\n");
 	assert(sizeof(FAT32Directory) == DIRENT_SIZE);
 
 	// 3. 递归建立Dirent树
@@ -75,8 +80,9 @@ void fat32_init(FileSystem *fs) {
 	log(LEVEL_GLOBAL, "fat32 init finished!\n");*/
 }
 
-void init_root_fs() {
-	extern FileSystem *fatFs;
+void init_root_fs(void) 
+{
+	//extern FileSystem *fatFs;
 
 	allocFs(&fatFs);
 

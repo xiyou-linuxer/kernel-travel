@@ -6,24 +6,12 @@
 #include <asm-generic/int-ll64.h>
 #include <fs/fat32.h>
 #include <asm/page.h>
+#include <fs/file_time.h>
 
 #define MAX_FS_COUNT 4 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
 #define PAGE_NCLUSNO (PAGE_SIZE / sizeof(u32))// 一页能容纳的u32簇号个数
 #define NDIRENT_SECPOINTER 5
-typedef struct FileSystem {
-	bool valid; // 是否有效
-	char name[8];
-	SuperBlock superBlock;					// 超级块
-	Dirent *root;						 	// root项
-	struct Dirent *image;					// mount对应的文件描述符
-	struct Dirent *mountPoint;				// 挂载点
-	int deviceNumber;						// 对应真实设备的编号
-	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 读取FS的一个Buffer
-	// 强制规定：传入的fs即为本身的fs
-	// 稍后用read返回的这个Buffer指针进行写入和释放动作
-	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层
-}FileSystem;
 
 typedef struct SuperBlock {
 	u32 first_data_sec;
@@ -42,6 +30,19 @@ typedef struct SuperBlock {
 	} bpb;
 }SuperBlock;
 
+typedef struct FileSystem {
+	bool valid; // 是否有效
+	char name[8];
+	struct SuperBlock superBlock;					// 超级块
+	struct Dirent *root;						 	// root项
+	struct Dirent *image;					// mount对应的文件描述符
+	struct Dirent *mountPoint;				// 挂载点
+	int deviceNumber;						// 对应真实设备的编号
+	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 读取FS的一个Buffer
+	// 强制规定：传入的fs即为本身的fs
+	// 稍后用read返回的这个Buffer指针进行写入和释放动作
+	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层
+}FileSystem;
 
 // 二级指针
 struct TwicePointer {
@@ -127,9 +128,12 @@ enum fs_result {
 	E_EXCEED_FILE,		//文件大小超过限制
 };
 
+extern FileSystem* fatFs;
 
 typedef int (*findfs_callback_t)(FileSystem *fs, void *data);
 void allocFs(struct FileSystem **pFs);
 void deAllocFs(struct FileSystem *fs);
 int partition_format(FileSystem* fs);//初始化文件系统分区
+void fat32_init(struct FileSystem* fs) ;
+void fs_init(void);
 #endif

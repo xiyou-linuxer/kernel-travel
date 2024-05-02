@@ -1,9 +1,8 @@
-#ifndef _BUF_H
-#define _BUF_H
+#ifndef _FS_BUF_H
+#define _FS_BUF_H
 
 
 #include <linux/types.h>
-#include <param.h>
 #include <linux/list.h>
 #include <sync.h>
 
@@ -28,7 +27,7 @@ typedef struct BufferDataGroup {
 typedef struct Buffer {
 	unsigned long blockno;			//控制块号
 	int dev;
-	bool valid;
+	bool valid;						//缓冲区的有效标志
 	bool dirty;						//是否被写入的标志
 	unsigned short disk;
 	unsigned short refcnt;			//引用计数
@@ -44,12 +43,12 @@ typedef struct BufferGroup {
 	struct lock lock;
 } BufferGroup;
 
-void bufInit();
+void bufInit(void);
 void bufTest(unsigned long blockno);
 
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) __attribute__((warn_unused_result));
 void bufWrite(Buffer *buf);
 void bufRelease(Buffer *buf);
-void bufSync();
+void bufSync(void);
 
 #endif
