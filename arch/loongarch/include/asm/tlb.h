@@ -81,7 +81,7 @@ static inline void __tlb_read(void)
 	__asm__ __volatile__("tlbrd");
 }
 
-static inline void tlb_write_indexed(void)
+static inline void __tlb_write_indexed(void)
 {
 	__asm__ __volatile__("tlbwr");
 }

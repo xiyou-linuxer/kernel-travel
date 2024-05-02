@@ -20,7 +20,7 @@ struct tlb_entry tlb_read(u64 index,u32 ps)
 		printk("invalid TLB");
 		// 后续进行错误处理
 	} else {
-		entry.index = tlbidx;
+		entry.index = index;
 		entry.ehi = csr_read64(LOONGARCH_CSR_TLBEHI);
 		entry.elo0 = csr_read64(LOONGARCH_CSR_TLBELO0);
 		entry.elo1 = csr_read64(LOONGARCH_CSR_TLBELO1);
@@ -42,7 +42,7 @@ s16 tlb_write(struct tlb_entry *entry, u8 is_valid)
 		(is_valid << CSR_TLBIDX_EHINV_SHIFT)		|
 		(entry->ps << CSR_TLBIDX_PS_SHIFT);
 	csr_write64(tlbidx,LOONGARCH_CSR_TLBIDX);
-
+	__tlb_write_indexed();
 	printk("index = 0x%x \nehi = 0x%x \nelo0 = 0x%x \nelo1 = 0x%x\n",entry->index,entry->ehi,entry->elo0,entry->elo1);
 	
 	return 0;
@@ -68,7 +68,7 @@ void test_tlb_func(void)
 	entity.elo1 = 0x1 | 0x3 << 2 | 0x1 <<6;
 	entity.ps = 12;
 	s16 label = tlb_write(&entity,0);
-	
+
 	struct tlb_entry read_tlb = tlb_read(1,12);
 	printk("index = 0x%x \nehi = 0x%x \nelo0 = 0x%x \nelo1 = 0x%x",read_tlb.index,read_tlb.ehi,read_tlb.elo0,read_tlb.elo1);
 }
