@@ -1,6 +1,6 @@
 #include <linux/string.h>
 #include <linux/printk.h>
-
+#include <debug.h>
 void memset(void* dst_, uint8_t value, uint32_t size) {
 	uint8_t* dst = (uint8_t*)dst_;
 	if(dst_ == NULL) {
@@ -80,4 +80,45 @@ int strncmp(const char *p, const char *q, unsigned int n)
 		return 0;
 	}
 	return (unsigned char)*p - (unsigned char)*q;
+}
+
+/* 从后往前查找字符串str中首次出现字符ch的地址(不是下标,是地址) */
+char* strrchr(const char* str, const uint8_t ch) 
+{
+	ASSERT(str != NULL);
+	const char* last_char = NULL;
+	/* 从头到尾遍历一次,若存在ch字符,last_char总是该字符最后一次出现在串中的地址(不是下标,是地址)*/
+	while (*str != 0) {
+		if (*str == ch) {
+			last_char = str;
+		}
+		str++;
+	}
+	return (char*)last_char;
+}
+
+/* 将字符串src_拼接到dst_后,将回拼接的串地址 */
+char* strcat(char* dst_, const char* src_) 
+{
+	ASSERT(dst_ != NULL && src_ != NULL);
+	char* str = dst_;
+	while (*str++);
+	--str;
+	while((*str++ = *src_++));	//1、*str=*src  2、判断*str     3、str++与src++，这一步不依赖2
+	return dst_;
+}
+
+/* 在字符串str中查找指定字符ch出现的次数 */
+uint32_t strchrs(const char* str, uint8_t ch) 
+{
+	ASSERT(str != NULL);
+	uint32_t ch_cnt = 0;
+	const char* p = str;
+	while(*p != 0) {
+		if (*p == ch) {
+			ch_cnt++;
+		}
+		p++;
+	}
+	return ch_cnt;
 }

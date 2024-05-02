@@ -13,4 +13,7 @@ extern char *strcpy(char *dest, const char *src);
 extern uint32_t strlen(const char *str);
 extern uint32_t strnlen(const char* str, uint32_t max);
 extern int strncmp(const char* p, const char* q, unsigned int n);//比较字符串p与q的内容，若不同则返回第一个不同字符的ascii码差值
+char* strrchr(const char* str, const uint8_t ch);
+char* strcat(char* dst_, const char* src_);
+uint32_t strchrs(const char* str, uint8_t ch);
 #endif /* _LINUX_STRING_H */
