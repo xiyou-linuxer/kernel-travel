@@ -14,6 +14,7 @@
 #include <asm/boot_param.h>
 #include <asm/timer.h>
 #include <asm/page.h>
+#include <asm/tlb.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
 #include<linux/block_device.h>
@@ -31,28 +32,32 @@ extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);
 
-void thread_a(void* unused)
+void thread_a(void *unused);
+#ifdef CONFIG_LOONGARCH
+void thread_a(void *unused)
 {
 	printk("enter thread_a\n");
 	while (1) {
 		unsigned long crmd = read_csr_crmd();
-		printk("thread_a at:at pri %d  ",crmd&PLV_MASK);
+		printk("thread_a at:at pri %d  ",crmd & PLV_MASK);
 	}
 }
+#endif /* CONFIG_LOONGARCH */
 
-void proc_1(void* unused)
+void proc_1(void *unused);
+void proc_1(void *unused)
 {
-    while(1);
+	while(1);
 }
 
 void __init __no_sanitize_address start_kernel(void)
 {
+	char str[] = "xkernel";
+	int cpu = smp_processor_id();
+
 	printk("%lx\n", lalist_mem_map.map_count);
 	printk("%lx\n", lalist_mem_map.map->mem_type);
 	printk("%lx\n", lalist_mem_map.map->mem_start);
-	char str[] = "xkernel";
-	int cpu = smp_processor_id();
-	unsigned long time;
 	// serial_ns16550a_init(9600);
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
@@ -61,10 +66,7 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 	local_irq_enable();
 	pci_init();
-    disk_init();
-	char buf[512];
-	block_read(0,1,buf,1);
-	printk("buf:%s",buf);
+	disk_init();
 	thread_init();
 	timer_init();
 	thread_start("thread_a",31,thread_a,NULL);
@@ -75,6 +77,6 @@ void __init __no_sanitize_address start_kernel(void)
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-        //printk("m ");
+		//printk("m ");
 	}
 }

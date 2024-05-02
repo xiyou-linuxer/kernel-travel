@@ -94,8 +94,8 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
     pthread->function = function;
     pthread->func_arg = func_arg;
 
-    struct thread_stack *kthread_stack = &pthread->thread;
-    memset(kthread_stack, 0, sizeof(struct thread_stack));
+    struct thread_struct *kthread_stack = &pthread->thread;
+    memset(kthread_stack, 0, sizeof(struct thread_struct));
     kthread_stack->reg01 = (uint64_t)kernel_thread;
     printk("thread reg01=%x\n",kthread_stack->reg01);
     kthread_stack->csr_crmd = read_csr_crmd();

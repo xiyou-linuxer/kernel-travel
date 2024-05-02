@@ -1,6 +1,7 @@
 *.o
 *.cmd
 .config
+.config.old
 include/config
 include/generated
 vmlinux
@@ -17,3 +18,4 @@ vmlinux.lds
 quick_start.sh
 0z1.md
 .cache/
+.vscode/
