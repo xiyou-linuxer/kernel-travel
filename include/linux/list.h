@@ -16,7 +16,7 @@ struct list {
    struct list_elem tail;
 };
 
-typedef bool (function) (struct list_elem* ,int arg);
+typedef int (function) (struct list_elem* ,void* arg);
 
 void list_init(struct list*);
 void list_insert_before(struct list_elem* before,struct list_elem* elm);
@@ -24,9 +24,11 @@ void list_push(struct list* plist,struct list_elem* elm);
 void list_append(struct list* plist,struct list_elem* elm);
 void list_remove(struct list_elem* elm);
 struct list_elem* list_pop(struct list* plist);
+struct list_elem* list_tail(struct list* plist);
 bool list_empty(struct list* plist);
 uint32_t list_len(struct list* plist);
-struct list_elem* list_traversal(struct list* plist,function func,int arg);
+struct list_elem* list_traversal(struct list* plist,function func,void * arg);
+struct list_elem* list_reverse(struct list* plist,function func,void * arg);
 bool elem_find(struct list* plist,struct list_elem* obj_elem);
 
 

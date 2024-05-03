@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "fs.h": "c",
+        "debug.h": "c",
+        "thread.h": "c",
+        "timer.h": "c",
+        "param.h": "c",
+        "string.h": "c",
+        "stdio.h": "c",
+        "cstdint": "c",
+        "list.h": "c"
+    }
+}

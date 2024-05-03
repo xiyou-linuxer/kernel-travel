@@ -25,7 +25,7 @@
 #include <syscall_init.h>
 #include <asm/syscall.h>
 #include <asm/stdio.h>
-
+#include <fs/fs.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -73,9 +73,11 @@ void __init __no_sanitize_address start_kernel(void)
 	disk_init();
 	thread_init();
 	timer_init();
+	fs_init();
 	syscall_init();
-	//thread_start("thread_a",10,thread_a,NULL);
-	process_execute(proc_1,"proc_1");
+	//fs_init();
+	/*thread_start("thread_a",10,thread_a,NULL);
+	process_execute(proc_1,"proc_1");*/
 
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);

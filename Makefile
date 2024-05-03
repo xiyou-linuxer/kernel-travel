@@ -494,7 +494,7 @@ export mod_strip_cmd
 
 # 要编译的核心目录文件
 # core-y		+= mm/ fs/
-core-y		+= mm/
+core-y		+= mm/ fs/
 # vmlinux需要编译的目录
 vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(blk-y) $(blk-m) \
