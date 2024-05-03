@@ -75,7 +75,8 @@ SYM_FUNC_START(syscall_handler)
 	SAVE_STATIC
 
 	move	a0,sp
-	bl	do_syscall
+	la.abs	t0, do_syscall
+	jirl	ra, t0, 0
 	RESTORE_ALL_AND_RET
 SYM_FUNC_END(syscall_handler)
 

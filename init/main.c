@@ -46,10 +46,11 @@ void thread_a(void *unused)
 }
 #endif /* CONFIG_LOONGARCH */
 
+char* sstr = "hello\n";
 void proc_1(void *unused)
 {
 	while(1) {
-		syscall(SYS_PSTR,"hello");
+		syscall(SYS_PSTR,0x9000000008040378);
 	}
 }
 
@@ -74,7 +75,7 @@ void __init __no_sanitize_address start_kernel(void)
 	thread_init();
 	timer_init();
 	syscall_init();
-	thread_start("thread_a",10,thread_a,NULL);
+	//thread_start("thread_a",10,thread_a,NULL);
 	process_execute(proc_1,"proc_1");
 
 	// early_boot_irqs_disabled = true;
