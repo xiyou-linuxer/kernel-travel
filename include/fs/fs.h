@@ -13,21 +13,23 @@
 #define PAGE_NCLUSNO (PAGE_SIZE / sizeof(u32))// 一页能容纳的u32簇号个数
 #define NDIRENT_SECPOINTER 5
 
+struct bpb{
+	u16 bytes_per_sec;
+	u8 sec_per_clus;
+	u16 rsvd_sec_cnt;
+	u8 fat_cnt;   /* count of FAT regions */
+	u32 hidd_sec; /* count of hidden sectors */
+	u32 tot_sec;  /* total count of sectors including all regions */
+	u32 fat_sz;   /* count of sectors for a FAT region */
+	u32 root_clus;
+};
+
 typedef struct SuperBlock {
 	u32 first_data_sec;
 	u32 data_sec_cnt;
 	u32 data_clus_cnt;
 	u32 bytes_per_clus;
-	struct {
-		u16 bytes_per_sec;
-		u8 sec_per_clus;
-		u16 rsvd_sec_cnt;
-		u8 fat_cnt;   /* count of FAT regions */
-		u32 hidd_sec; /* count of hidden sectors */
-		u32 tot_sec;  /* total count of sectors including all regions */
-		u32 fat_sz;   /* count of sectors for a FAT region */
-		u32 root_clus;
-	} bpb;
+	struct bpb bpb;
 }SuperBlock;
 
 typedef struct FileSystem {

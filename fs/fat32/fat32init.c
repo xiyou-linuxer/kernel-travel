@@ -45,7 +45,7 @@ void fat32_init(FileSystem* fs)
 	// 1. 以fs为单位初始化簇管理器
 	printk("fat32 is initing...\n");
 	strcpy(fs->name, "FAT32");
-	ASSERT(partition_format(fs));
+	ASSERT(partition_format(fs) == 0);
 	printk("cluster Init Finished!\n");
 
 	// 2. 初始化根目录

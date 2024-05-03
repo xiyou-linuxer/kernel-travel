@@ -33,10 +33,11 @@ typedef struct FAT32BootParamBlock {
 	u8 BS_BootSig;			// 固定的数字签名，必须是 0x28 或 0x29 
 	u32 BS_VolID;			// 分区的序列号，可以忽略
 	u8 BS_VolLab[11];		// 卷标 
-	u8 BS_FilSysType[8];	// 文件系统 ID，通常是"FAT32 "
+	u8 BS_FilSysType[8];	// 文件系统 ID，通常是"FAT32"
 	u8 BS_CodeReserved[420];// 引导代码
 	u8 BS_Signature[2];		// 可引导分区签名，0xAA55
 } __attribute__((packed)) FAT32BootParamBlock;
+
 /*fat32文件系统中的目录项*/
 typedef struct FAT32Directory {
 	u8 DIR_Name[11];

@@ -61,7 +61,11 @@ int partition_format(FileSystem *fs) {
 		printk("buf == NULL\n");
 		return -E_DEV_ERROR;
 	}
-
+	/*for (int i = 0; i < 512; i++)
+	{
+		printk("%x",buf->data->data[i]);
+	}*/
+	
 	printk("cluster DEV is ok!\n");
 
 	// 从 BPB 中读取信息
@@ -106,7 +110,7 @@ void fs_init(void)
 {
 	printk("fs_init start\n");
 	bufInit();			//初始化buf
-	bufTest(0);
+	//bufTest(0);
 	init_root_fs();		//初始化根文件系统
 	printk("fs_init down\n");
 }

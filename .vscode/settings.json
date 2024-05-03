@@ -7,6 +7,7 @@
         "param.h": "c",
         "string.h": "c",
         "stdio.h": "c",
-        "cstdint": "c"
+        "cstdint": "c",
+        "list.h": "c"
     }
 }
