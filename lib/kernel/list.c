@@ -44,6 +44,14 @@ struct list_elem* list_pop(struct list* plist)
 	return ret;
 }
 
+/*返回队尾的节点*/
+struct list_elem* list_tail(struct list* plist)
+{
+	struct list_elem* ret = plist->tail.prev;
+	list_remove(plist->tail.prev);
+	return ret;
+}
+
 bool list_empty(struct list* plist)
 {
 	if (plist->head.next == &plist->tail)

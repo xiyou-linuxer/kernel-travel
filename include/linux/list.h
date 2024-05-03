@@ -24,6 +24,7 @@ void list_push(struct list* plist,struct list_elem* elm);
 void list_append(struct list* plist,struct list_elem* elm);
 void list_remove(struct list_elem* elm);
 struct list_elem* list_pop(struct list* plist);
+struct list_elem* list_tail(struct list* plist);
 bool list_empty(struct list* plist);
 uint32_t list_len(struct list* plist);
 struct list_elem* list_traversal(struct list* plist,function func,void * arg);
