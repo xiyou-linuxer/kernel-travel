@@ -44,6 +44,7 @@ struct task_struct {
 	struct list_elem general_tag;
 	struct list_elem all_list_tag;
 	uint64_t pgdir;
+	u32 asid;
 	uint32_t stack_magic;
 };
 

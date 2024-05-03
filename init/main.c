@@ -17,7 +17,7 @@
 #include <asm/tlb.h>
 #include <linux/thread.h>
 #include <linux/ahci.h>
-#include<linux/block_device.h>
+#include <linux/block_device.h>
 #include <sync.h>
 #include <process.h>
 #include <linux/memory.h>
@@ -54,7 +54,6 @@ void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-
 	printk("%lx\n", lalist_mem_map.map_count);
 	printk("%lx\n", lalist_mem_map.map->mem_type);
 	printk("%lx\n", lalist_mem_map.map->mem_start);
@@ -65,7 +64,6 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 	local_irq_enable();
-	test_tlb_func();
 	pci_init();
 	disk_init();
 	thread_init();

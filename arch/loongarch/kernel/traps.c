@@ -217,7 +217,6 @@ void trap_init(void)
 		vector_start = vector_table[i - EXCCODE_INT_START];
 		set_handler(i * VECSIZE, vector_start, VECSIZE);
 	}
-	set_handler(80*VECSIZE,tlb_handler,VECSIZE);
 
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器

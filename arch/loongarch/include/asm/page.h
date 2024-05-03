@@ -25,7 +25,6 @@
 
 #define PGD_BASE_ADD 0x9000000000010000
 
-void page_setting_init(void);
 void phy_pool_init(void);
 
 
