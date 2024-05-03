@@ -89,6 +89,7 @@ void __update_tlb(void)
 
 // 找到位图中值为0的位数
 int find_free_asid(void) {
+int find_free_asid(void) {
     int i, j;
     for (i = 0; i < (1 << (LOONGARCH64_ASIDBITS - 3)); i++) {
         if (asid_bitmap[i] != 0xFF) { // 如果字节不全为1

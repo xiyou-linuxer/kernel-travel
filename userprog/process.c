@@ -28,9 +28,10 @@ void start_process(void* filename)
     regs->csr_prmd = prmd;
 
     regs->regs[3] = (uint64_t)userstk_alloc(cur->pgdir);
+	regs->regs[22] = regs->regs[3];
 
     uint64_t page = get_page();
-    memcpy((void*)page,func,96);
+    memcpy((void*)page,func,128);
     page_table_add(cur->pgdir,0,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
     regs->csr_era = 0;
 

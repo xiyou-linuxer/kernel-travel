@@ -19,6 +19,7 @@ obj-y += genex.o
 obj-y += env.o
 obj-y += ../../../mm/memblock.o
 obj-y += mem.o
+obj-y += syscall.o
 
 
 head-y			:= head.o
