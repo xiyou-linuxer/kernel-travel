@@ -22,6 +22,7 @@
 #include <linux/string.h>
 #include <syscall_init.h>
 #include <asm/syscall.h>
+#include <asm/stdio.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -41,15 +42,15 @@ void thread_a(void* unused)
 	}
 }
 
-char* sstr = "hello";
+char* sstr = "hello\n";
+
 void proc_1(void* unused)
 {
 	while(1) {
-		syscall(SYS_PSTR,sstr);
+		pstr((char*)0x9000000008040378);
 	}
 }
 
-//0x9000000008040348
 void __init __no_sanitize_address start_kernel(void)
 {
 	printk("%lx\n", lalist_mem_map.map_count);
@@ -70,7 +71,7 @@ void __init __no_sanitize_address start_kernel(void)
 	thread_init();
 	timer_init();
 	syscall_init();
-	thread_start("thread_a",10,thread_a,NULL);
+	//thread_start("thread_a",10,thread_a,NULL);
 	process_execute(proc_1,"proc_1");
 
 	// early_boot_irqs_disabled = true;
@@ -79,6 +80,6 @@ void __init __no_sanitize_address start_kernel(void)
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-		printk("m ");
+		//printk("m ");
 	}
 }

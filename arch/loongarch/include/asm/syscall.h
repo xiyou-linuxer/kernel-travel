@@ -6,76 +6,82 @@
 #define NR_SYSCALLS 48
 #define ENOSYS		38
 
-#define __syscall0(n) ({    \
-		register long nr asm("a7") = n; \
-		register long retval asm("a0"); \
-        asm volatile(       \
-        "syscall 0"         \
-        : "=r"(retval)     \
-        : "r"(n)           \
-        : "$t0","$t1","$t2","$t3","$t4","$t5","$t6", \
-		  "$t7","$t8","memory");                  \
-        retval;             \
-    })
+static inline long __syscall0(long n)
+{
+	register long nr asm("a7") = n;
+	register long retval asm("a0");
+	asm volatile(
+	"syscall 0"
+	: "+r"(retval)
+	: "r"(nr)
+	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
+	  "$t7","$t8","memory");
+	return retval;
+}
 
-asmlinkage static inline long __syscall1(long n,long ag0)
+
+static inline long __syscall1(long n,long ag0)
 {
 	register long nr asm("a7") = n;
 	register long arg0 asm("a0") = ag0;
-	//register long retval asm("a0");
+	register long retval asm("a0");
 	asm volatile(
 	"syscall 0"
-	: //"+r"(retval)
+	: "+r"(retval)
 	: "r"(nr),"r"(arg0)
 	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
 	  "$t7","$t8","memory");
-	//return retval;
-	return 1;
+	return retval;
 }
 
-#define __syscall2(n,ag0,ag1) ({    \
-		register long nr asm("a7") = n; \
-		register long retval asm("a0"); \
-		register long arg0 asm("a0"); \
-		register long arg1 asm("a1"); \
-        asm volatile(             \
-        "syscall 0"               \
-        : "+r"(retval)           \
-        : "r"(n),"r"(arg0),"r"(arg1)        \
-        : "$t0","$t1","$t2","$t3","$t4","$t5","$t6", \
-		  "$t7","$t8","memory");                  \
-        retval;                   \
-    })
+static inline long __syscall2(long n,long ag0,long ag1)
+{
+	register long nr asm("a7") = n;
+	register long arg0 asm("a0") = ag0;
+	register long arg1 asm("a1") = ag1;
+	register long retval asm("a0");
+	asm volatile(
+	"syscall 0"
+	: "+r"(retval)
+	: "r"(nr),"r"(arg0),"r"(arg1)
+	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
+	  "$t7","$t8","memory");
+	return retval;
+}
 
-#define __syscall3(n,a0,a1,a2) ({    \
-		register long nr asm("a7") = n; \
-		register long retval asm("a0"); \
-		register long arg0 asm("a0"); \
-		register long arg1 asm("a1"); \
-		register long arg2 asm("a2"); \
-        : "+r"(retval)              \
-        : "r"(n),"r"(arg0),"r"(arg1),"r"(arg2)  \
-        : "$t0","$t1","$t2","$t3","$t4","$t5","$t6", \
-		  "$t7","$t8","memory");                  \
-        retval;                   \
-    })
 
-#define __syscall4(n,a0,a1,a2,a3) ({            \
-		register long nr asm("a7") = n; \
-		register long retval asm("a0"); \
-		register long arg0 asm("a0"); \
-		register long arg1 asm("a1"); \
-		register long arg2 asm("a2"); \
-		register long arg3 asm("a3"); \
-        asm volatile(                        \
-        "syscall 0"                          \
-        : "+r"(retval)                      \
-        : "r"(n),"r"(arg0),"r"(arg1),"r"(arg2),"r"(arg3) \
-        : "$t0","$t1","$t2","$t3","$t4","$t5","$t6", \
-		  "$t7","$t8","memory");                  \
-        retval;                              \
-    })
+static inline long __syscall3(long n,long ag0,long ag1,long ag2)
+{
+	register long nr asm("a7") = n;
+	register long arg0 asm("a0") = ag0;
+	register long arg1 asm("a1") = ag1;
+	register long arg2 asm("a2") = ag2;
+	register long retval asm("a0");
+	asm volatile(
+	"syscall 0"
+	: "+r"(retval)
+	: "r"(nr),"r"(arg0),"r"(arg1),"r"(arg2)
+	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
+	  "$t7","$t8","memory");
+	return retval;
+}
 
+static inline long __syscall4(long n,long ag0,long ag1,long ag2,long ag3)
+{
+	register long nr asm("a7") = n;
+	register long arg0 asm("a0") = ag0;
+	register long arg1 asm("a1") = ag1;
+	register long arg2 asm("a2") = ag2;
+	register long arg3 asm("a3") = ag3;
+	register long retval asm("a0");
+	asm volatile(
+	"syscall 0"
+	: "+r"(retval)
+	: "r"(nr),"r"(arg0),"r"(arg1),"r"(arg2),"r"(arg3)
+	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
+	  "$t7","$t8","memory");
+	return retval;
+}
 
 #define _tl(x) ((long)x)
 #define _syscall0(n) __syscall0(_tl(n))
@@ -102,8 +108,13 @@ enum SYSCALL {
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
-pid_t getpid(void);
-void pstr(char *str);
+static inline pid_t getpid(void) {
+	return syscall(SYS_GETPID);
+}
+
+static inline void pstr(char *str) {
+	syscall(SYS_PSTR,str);
+}
 
 
 #endif
