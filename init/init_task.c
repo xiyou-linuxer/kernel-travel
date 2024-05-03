@@ -7,8 +7,8 @@
 struct task_struct init_task
 	__aligned(L1_CACHE_BYTES)
 = {
-	.__state = 0,
-	.stack = init_stack,
+	// .__state = 0,
+	// .stack = init_stack,
 };
 
 #ifndef CONFIG_THREAD_INFO_IN_TASK

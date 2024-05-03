@@ -13,6 +13,18 @@ extern void syscall_handler(void);
 extern void do_irq(struct pt_regs *regs, uint64_t virq);
 
 extern void handle_reserved(void);
+
+#define INTCLR_0 0x1fe0142c
+#define INTCLR_1 0x1fe0146c
+#define INTPOL_0 0x1fe01430
+#define INTPOL_1 0x1fe01470
+#define INTEDGE_0 0x1fe01434
+#define INTEDGE_1 0x1fe01474
+#define BOUNCE_0 0x1fe01438
+#define BOUNCE_1 0x1fe01478
+#define AUTO_0 0x1fe0143c
+#define AUTO_1 0x1fe0147c
+
 void handle_reserved(void)
 {
 	printk("have a exception happened\n");
@@ -87,7 +99,7 @@ void do_vint(struct pt_regs *regs, unsigned long sp)
 {
 	unsigned long hwirq = *(unsigned long *)regs;
 	unsigned long virq;
-
+	//printk("hwirq %x\n",hwirq);
 	virq = hwirq_to_virq(hwirq);
 	do_irq(regs, virq);
 }
@@ -162,6 +174,26 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 	local_flush_icache_range(eentry + offset, eentry + offset + size);
 }
 
+/*初始化io中断环境
+*/
+static void io_irq_init(void)
+{
+	/*clr*/
+	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_0) = ~0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_1) = ~0x0U;
+	/*pol*/
+	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_1) = 0x0U;
+	/*edge*/
+	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_1) = 0x0U;
+	/*bou*/
+	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_1) = 0x0U;
+	/*auto*/
+	*(unsigned int*)(CSR_DMW0_BASE | AUTO_0) = 0x0U;
+	*(unsigned int*)(CSR_DMW0_BASE | AUTO_1) = 0x0U;
+}
 /**
  * trap_init - 例外与中断处理初始化
  */
@@ -192,6 +224,6 @@ void trap_init(void)
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器
 	write_csr_tcfg(tcfg);
-	ecfg = read_csr_ecfg();
+	io_irq_init();
 	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 11);
 }
