@@ -65,6 +65,7 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 	local_irq_enable();
+	test_tlb_func();
 	pci_init();
 	disk_init();
 	thread_init();
