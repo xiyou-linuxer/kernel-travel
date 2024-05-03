@@ -89,7 +89,6 @@ void __update_tlb(void)
 
 // 找到位图中值为0的位数
 int find_free_asid(void) {
-int find_free_asid(void) {
     int i, j;
     for (i = 0; i < (1 << (LOONGARCH64_ASIDBITS - 3)); i++) {
         if (asid_bitmap[i] != 0xFF) { // 如果字节不全为1
@@ -167,7 +166,7 @@ static void setup_tlb_handler(int cpu)
 	page_setting_init();
 	// 刷新当前TLB
 	invtlb(INVTLB_ALL,0,0);
-	if(cpu == 0) {
+	// if(cpu == 0) {
 		// memcpy((void*)tlbrentry,handle_tlb_refill,0x80);
 		// local_flush_icache_range(tlbrentry, tlbrentry + 0x80);
 		// // TLB加载、TLB读取、TLB写入和TLB修改异常处理程序
@@ -182,7 +181,7 @@ static void setup_tlb_handler(int cpu)
 		// // TLB权限异常处理程序
 		// set_handler(EXCCODE_TLBPE * VECSIZE, handle_tlb_protect, VECSIZE);
 
-	}
+	// }
 }
 
 void tlb_init(int cpu)

@@ -115,6 +115,7 @@ static inline void invtlb(u32 op, u32 info, u64 addr)
 }
 
 
+
 void __update_tlb(void);
 struct tlb_entry tlb_read(u64 index,u32 ps);
 s16 tlb_write(struct tlb_entry *entry, u8 is_valid);
