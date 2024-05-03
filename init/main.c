@@ -22,6 +22,9 @@
 #include <process.h>
 #include <linux/memory.h>
 #include <linux/string.h>
+#include <syscall_init.h>
+#include <asm/syscall.h>
+#include <asm/stdio.h>
 #include <fs/fs.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -44,10 +47,12 @@ void thread_a(void *unused)
 }
 #endif /* CONFIG_LOONGARCH */
 
-void proc_1(void *unused);
+char* sstr = "hello\n";
 void proc_1(void *unused)
 {
-	while(1);
+	while(1) {
+		syscall(SYS_PSTR,0x9000000008040378);
+	}
 }
 
 void __init __no_sanitize_address start_kernel(void)
@@ -71,9 +76,11 @@ void __init __no_sanitize_address start_kernel(void)
 	thread_init();
 	timer_init();
 	fs_init();
-	/*thread_start("thread_a",31,thread_a,NULL);
+	syscall_init();
+	//fs_init();
+	/*thread_start("thread_a",10,thread_a,NULL);
 	process_execute(proc_1,"proc_1");*/
-	
+
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 	while (1) {

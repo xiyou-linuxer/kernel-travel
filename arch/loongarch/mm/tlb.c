@@ -4,6 +4,9 @@
 #include <asm/loongarch.h>
 #include <asm/tlb.h>
 
+// 定义一个char类型的位图数组，数组大小为 (1024 / 8) = 128
+char asid_bitmap[1 << (LOONGARCH64_ASIDBITS - 3)];
+
 struct tlb_entry tlb_read(u64 index,u32 ps)
 {
 	struct tlb_entry entry;
@@ -59,7 +62,7 @@ void __update_tlb(void)
 }
 
 // 找到位图中值为0的位数
-int find_free_asid() {
+int find_free_asid(void) {
     int i, j;
     for (i = 0; i < (1 << (LOONGARCH64_ASIDBITS - 3)); i++) {
         if (asid_bitmap[i] != 0xFF) { // 如果字节不全为1

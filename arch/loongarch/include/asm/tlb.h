@@ -121,10 +121,9 @@ s16 tlb_write(struct tlb_entry *entry, u8 is_valid);
 
 void test_tlb_func(void);
 
-// 定义一个char类型的位图数组，数组大小为 (1024 / 8) = 128
-char asid_bitmap[1 << (LOONGARCH64_ASIDBITS - 3)];
+extern char asid_bitmap[];
 
-int find_free_asid();
+int find_free_asid(void);
 void set_asid(uint32_t asid);
 void clear_asid(uint32_t asid);
 int check_asid(uint32_t asid);
