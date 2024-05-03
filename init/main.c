@@ -24,6 +24,7 @@
 #include <linux/string.h>
 #include <syscall_init.h>
 #include <asm/syscall.h>
+#include <asm/stdio.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 

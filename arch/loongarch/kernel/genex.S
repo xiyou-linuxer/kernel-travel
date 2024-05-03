@@ -40,6 +40,8 @@ user_ret:
     RESTORE_ALL_AND_RET
 
 
+
+	.align	5
 SYM_FUNC_START(syscall_handler)
 	la.abs	sp, kernelsp
 
