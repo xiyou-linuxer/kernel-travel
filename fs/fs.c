@@ -95,7 +95,6 @@ int partition_format(FileSystem *fs) {
 		printk("BUF_SIZE != fs->superBlock.bpb.bytes_per_sec\n");
 		return -E_DEV_ERROR;
 	}
-
 	printk("cluster ok!\n");
 
 	// 释放缓冲区

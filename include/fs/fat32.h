@@ -1,6 +1,8 @@
 #ifndef _FS_FAT32_H
 #define _FS_FAT32_H
 
+#define DIRENT_SIZE 32
+
 #include <linux/block_device.h>
 #include <linux/types.h>
 #include <fs/fs.h>
@@ -53,6 +55,22 @@ typedef struct FAT32Directory {
 	u16 DIR_FstClusLO;
 	u32 DIR_FileSize;
 } __attribute__((packed)) FAT32Directory;
+
+//长文件名
+typedef struct FAT32LongDirectory {
+	u8 LDIR_Ord;
+	unsigned short LDIR_Name1[5];
+	u8 LDIR_Attr;
+	u8 LDIR_Type;
+	u8 LDIR_Chksum;
+	unsigned short LDIR_Name2[6];
+	u16 LDIR_FstClusLO;
+	unsigned short LDIR_Name3[2];
+} __attribute__((packed)) FAT32LongDirectory;
+
+#define DIR_SIZE sizeof(FAT32Directory)
+// 如果DIR_Name[0] == 0xE5，则表示该目录项已经被删除
+#define FAT32_INVALID_ENTRY 0xE5
 
 // FAT32 文件、目录属性
 #define ATTR_READ_ONLY 0x01		//只读属性

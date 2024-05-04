@@ -66,14 +66,21 @@ typedef struct DirentPointer {
 	u16 valid;
 } DirentPointer;
 
+#define MAX_LONGENT 8
+
+typedef struct longEntSet {
+	FAT32LongDirectory *longEnt[MAX_LONGENT];
+	int cnt;
+} longEntSet;
+
 typedef struct Dirent {
 	FAT32Directory raw_dirent; // 原生的dirent项
 	char name[MAX_NAME_LEN];
 
 	// 文件系统相关属性
 	FileSystem *file_system; // 所在的文件系统
-	u32 first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
-	u32 file_size;		 // 文件大小
+	unsigned int first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
+	unsigned int file_size;		 // 文件大小
 
 	/* for OS */
 	// 操作系统相关的数据结构
@@ -87,12 +94,12 @@ typedef struct Dirent {
 	// u16 is_extend;
 
 	// 在上一个目录项中的内容偏移，用于写回
-	u32 parent_dir_off;
+	unsigned int parent_dir_off;
 
 	// 标记是文件、目录还是设备文件（仅在文件系统中出现，不出现在磁盘中）
-	u16 type;
+	unsigned short type;
 
-	u16 is_rm;
+	unsigned short is_rm;
 
 	// 文件的时间戳
 	struct file_time time;
@@ -109,11 +116,11 @@ typedef struct Dirent {
 	// 父亲Dirent
 	struct Dirent *parent_dirent; // 即使是mount的目录，也指向其上一级目录。如果该字段为NULL，表示为总的根目录
 
-	u32 mode;
+	unsigned int mode;
 
 	// 各种计数
-	u16 linkcnt; // 链接计数
-	u16 refcnt;  // 引用计数
+	unsigned short linkcnt; // 链接计数
+	unsigned short refcnt;  // 引用计数
 
 	//struct holder_info holders[DIRENT_HOLDER_CNT];
 	//int holder_cnt;
@@ -128,6 +135,36 @@ enum fs_result {
 	E_BAD_PATH,			//无效的路径
 	E_FILE_EXISTS,		//文件已存在
 	E_EXCEED_FILE,		//文件大小超过限制
+};
+
+enum dirent_type
+{ 
+	DIRENT_DIR, 
+	DIRENT_FILE, 
+	DIRENT_CHARDEV, 
+	DIRENT_BLKDEV 
+};
+
+struct kstat {
+	dev_t st_dev;
+	ino_t st_ino;
+	mode_t st_mode;
+	nlink_t st_nlink;
+	uid_t st_uid;
+	gid_t st_gid;
+	dev_t st_rdev;
+	unsigned long __pad;
+	off_t st_size;
+	blksize_t st_blksize;
+	int __pad2;
+	blkcnt_t st_blocks;
+	long st_atime_sec;
+	long st_atime_nsec;
+	long st_mtime_sec;
+	long st_mtime_nsec;
+	long st_ctime_sec;
+	long st_ctime_nsec;
+	unsigned __unused[2];
 };
 
 extern FileSystem* fatFs;

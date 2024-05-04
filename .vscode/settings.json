@@ -8,6 +8,15 @@
         "string.h": "c",
         "stdio.h": "c",
         "cstdint": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "cstdlib": "c",
+        "chardev.h": "c",
+        "fat32.h": "c",
+        "types.h": "c",
+        "typeindex": "c",
+        "typeinfo": "c",
+        "*.ipp": "c",
+        "*.inc": "c",
+        "chrono": "c"
     }
 }

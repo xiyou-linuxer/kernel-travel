@@ -9,7 +9,7 @@ FileSystem *fatFs;
 /**
  * @brief 递归建立树结构，需要保证parent的child_list已经初始化过
  */
-/*static void build_dirent_tree(Dirent *parent) {
+static void build_dirent_tree(Dirent *parent) {
 	Dirent *child;
 	int off = 0; // 当前读到的偏移位置
 	int ret;
@@ -28,14 +28,14 @@ FileSystem *fatFs;
 		    strncmp(child->name, "..         ", 11) == 0) {
 			continue;
 		}
-		LIST_INSERT_HEAD(&parent->child_list, child, dirent_link);
+		list_append(&parent->child_list,&child->dirent_tag);
 
 		// 如果为目录，就向下一层递归
 		if (child->type == DIRENT_DIR) {
 			build_dirent_tree(child);
 		}
 	}
-}*/
+}
 
 /**
  * @brief 用fat32初始化一个文件系统，根目录记录在fs->root中
@@ -49,13 +49,13 @@ void fat32_init(FileSystem* fs)
 	printk("cluster Init Finished!\n");
 
 	// 2. 初始化根目录
-	/*fs->root = dirent_alloc();
+	fs->root = dirent_alloc();
 	strncpy(fs->root->name, "/", 2);
 	fs->root->file_system = fs; // 此句必须放在countCluster之前，用于设置fs
 
 	// 设置Dirent属性
 	fs->root->first_clus = fs->superBlock.bpb.root_clus;
-	log(LEVEL_GLOBAL, "first clus of root is %d\n", fs->root->first_clus);
+	printf("first clus of root is %d\n", fs->root->first_clus);
 	fs->root->raw_dirent.DIR_Attr = ATTR_DIRECTORY;
 	fs->root->raw_dirent.DIR_FileSize = 0; // 目录的Dirent的size都是0
 	fs->root->type = DIRENT_DIR;
@@ -71,13 +71,13 @@ void fat32_init(FileSystem* fs)
 
 	/* 不需要初始化fs->root的锁，因为在分配时即初始化了 */
 
-	/*log(LEVEL_GLOBAL, "root directory init finished!\n");
-	assert(sizeof(FAT32Directory) == DIRENT_SIZE);
+	printf("root directory init finished!\n");
+	ASSERT(sizeof(FAT32Directory) == DIRENT_SIZE);
 
 	// 3. 递归建立Dirent树
 	build_dirent_tree(fs->root);
-	log(LEVEL_GLOBAL, "build dirent tree succeed!\n");
-	log(LEVEL_GLOBAL, "fat32 init finished!\n");*/
+	printf("build dirent tree succeed!\n");
+	printf("fat32 init finished!\n");
 }
 
 void init_root_fs(void) 

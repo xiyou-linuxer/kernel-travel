@@ -18,5 +18,6 @@ void clusterFree(FileSystem *fs, unsigned long cluster, unsigned long prevCluste
 unsigned int fatRead(FileSystem *fs, unsigned long cluster);
 void fatWrite(FileSystem *fs, unsigned long cluster, unsigned int content);
 long fileBlockNo(FileSystem *fs, unsigned long firstclus, unsigned long fblockno);
-
+int countClusters(struct Dirent* file);
+unsigned char checkSum(unsigned char* pFcbName);
 #endif

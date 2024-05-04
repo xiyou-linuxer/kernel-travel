@@ -16,4 +16,9 @@ extern int strncmp(const char* p, const char* q, unsigned int n);//比较字符�
 char* strrchr(const char* str, const uint8_t ch);
 char* strcat(char* dst_, const char* src_);
 uint32_t strchrs(const char* str, uint8_t ch);
+int wstrlen(const unsigned short* s);
+void wstrnins(unsigned short* buf, const unsigned short* str, int len);
+int wstr2str(char* dst, const unsigned short* src);
+int str2wstr(unsigned short* dst, const char* src);
+int strn2wstr(unsigned short* dst, const char* src, int n);
 #endif /* _LINUX_STRING_H */
