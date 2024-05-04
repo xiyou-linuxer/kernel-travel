@@ -18,6 +18,10 @@ struct pool {
 	struct bitmap btmp;
 };
 
+struct mm_struct {
+	u64 pgd;
+};
+
 extern struct pool reserve_phy_pool;
 extern struct pool phy_pool;
 
@@ -30,5 +34,6 @@ uint64_t get_page(void);
 unsigned long get_kernel_pge(void);
 void page_table_add(uint64_t pd,uint64_t _vaddr,uint64_t _paddr,uint64_t attr);
 
+void * kmalloc(u64 size);
 
 #endif

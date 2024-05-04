@@ -3,7 +3,8 @@
 #include <asm/loongarch.h>
 #include <asm/page.h>
 #include <asm/tlb.h>
-#include "linux/stdio.h"
+#include <linux/smp.h>
+#include <linux/stdio.h>
 
 unsigned long fw_arg0, fw_arg1, fw_arg2;
 unsigned long kernelsp;
@@ -23,5 +24,5 @@ void setup_arch(void)
 
 	memblock_init();
 	phy_pool_init();
-	tlb_init(0);
+	tlb_init(smp_processor_id());
 }

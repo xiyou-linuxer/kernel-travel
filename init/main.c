@@ -78,7 +78,8 @@ void __init __no_sanitize_address start_kernel(void)
 	//fs_init();
 	/*thread_start("thread_a",10,thread_a,NULL);
 	process_execute(proc_1,"proc_1");*/
-
+	char * tmp = (char * )kmalloc(10);
+	tmp = "hello,kmalloc";
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 	while (1) {

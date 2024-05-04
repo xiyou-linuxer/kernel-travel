@@ -3,6 +3,7 @@
 
 #include <linux/types.h>
 #include <linux/list.h>
+#include <linux/memory.h>
 #include <asm/thread_info.h>
 
 #define TASK_NAME_LEN 16
@@ -45,6 +46,7 @@ struct task_struct {
 	struct list_elem all_list_tag;
 	uint64_t pgdir;
 	u32 asid;
+	struct mm_struct *mm;
 	uint32_t stack_magic;
 };
 

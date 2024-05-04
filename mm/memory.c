@@ -6,6 +6,8 @@
 #include <linux/stdio.h>
 #include <linux/types.h>
 #include <linux/string.h>
+#include "linux/sched.h"
+#include "linux/thread.h"
 
 #define PAGESIZE 4096
 
@@ -82,3 +84,9 @@ unsigned long get_kernel_pge(void)
 	return k_page;
 }
 
+void * kmalloc(u64 size)
+{
+	struct task_struct * curr =  running_thread();
+	struct mm_struct * mm = curr->mm;
+	return (void *)get_kernel_pge();
+}
