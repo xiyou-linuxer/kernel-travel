@@ -51,9 +51,11 @@ char* sstr = "hello\n";
 void proc_1(void *unused)
 {
 	while(1) {
-		syscall(SYS_PSTR,0x9000000008040378);
+		syscall(SYS_PSTR,sstr);
 	}
 }
+
+char usrprog[30000];
 
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -75,11 +77,10 @@ void __init __no_sanitize_address start_kernel(void)
 	timer_init();
 	fs_init();
 	syscall_init();
-	//fs_init();
-	/*thread_start("thread_a",10,thread_a,NULL);
-	process_execute(proc_1,"proc_1");*/
-	char * tmp = (char * )kmalloc(10);
-	tmp = "hello,kmalloc";
+	//thread_start("thread_a",10,thread_a,NULL);
+	block_read(5,50,(uint64_t)usrprog,1);
+	process_execute(usrprog,"proc_1");
+
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 	while (1) {

@@ -17,6 +17,7 @@ struct task_struct *thread_start(char *name, int prio, thread_func function, voi
 void schedule(void);
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct *thread);
+pid_t fork_pid(void);
 void release_pid(pid_t pid);
 
 #endif
