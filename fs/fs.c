@@ -113,3 +113,21 @@ void fs_init(void)
 	init_root_fs();		//初始化根文件系统
 	printk("fs_init down\n");
 }
+
+int get_entry_count_by_name(char *name) 
+{
+	int len = (strlen(name) + 1);
+
+	if (len > 11) {
+		int cnt = 1; // 包括短文件名项
+		if (len % BYTES_LONGENT == 0) {
+			cnt += len / BYTES_LONGENT;
+		} else {
+			cnt += len / BYTES_LONGENT + 1;
+		}
+		return cnt;
+	} else {
+		// 自己一个，自己的长目录项一个
+		return 2;
+	}
+}

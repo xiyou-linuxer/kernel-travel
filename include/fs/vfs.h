@@ -2,7 +2,7 @@
 #define _SYSFS_H
 
 #include <fs/fs.h>
-#include <types.h>
+#include <linux/types.h>
 
 int countClusters(struct Dirent *file);
 int get_entry_count_by_name(char *name);
@@ -13,8 +13,8 @@ int get_file_raw(struct Dirent *baseDir, char *path, Dirent **file);
 int getFile(struct Dirent *baseDir, char *path, Dirent **file);
 int createFile(struct Dirent *baseDir, char *path, Dirent **file);
 int create_file_and_close(char *path);
-int file_read(struct Dirent *file, int user, u64 dst, uint off, uint n);
-int file_write(struct Dirent *file, int user, u64 src, uint off, uint n);
+int file_read(struct Dirent *file, int user, u64 dst, unsigned int off, unsigned int n);
+int file_write(struct Dirent *file, int user, u64 src, unsigned int off, unsigned int n);
 void file_shrink(Dirent *file, u64 newsize);
 void file_extend(struct Dirent *file, int newSize);
 void file_close(Dirent *file);

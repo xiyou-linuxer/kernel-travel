@@ -5,7 +5,7 @@
 #include <fs/filedev.h>
 #include <fs/file_time.h>
 #include <fs/fs.h>
-#include <fs/sysfs.h>
+#include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/buf.h>
 #include <linux/stdio.h>
@@ -16,7 +16,7 @@
  * 每次我们携带dirent指针进入文件系统层对文件进行操作，都需要获取这个锁，以保证对dirent的
  * 读、写、删除等是互斥的。之前曾设计过更细粒度的锁（对每个Dirent加锁），但因太复杂而使用此粗粒度的锁。
  */
-mutex_t mtx_file;
+extern struct lock mtx_file;
 
 /**
  * 管理文件相关事务
@@ -39,7 +39,7 @@ struct FileDev file_dev_file = {
  * @return 负数表示出错
  */
 int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
-	mtx_lock_sleep(&mtx_file);
+	lock_acquire(&mtx_file);
 
 	Dirent *file;
 	longEntSet longSet;
@@ -56,27 +56,26 @@ int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
 	if (path == NULL) {
 		if (baseDir == NULL) {
 			// 一般baseDir都是以类似dirFd的形式解析出来的，所以如果baseDir为NULL，表示归属的fd无效
-			warn("get_file_raw: baseDir is NULL and path == NULL, may be the fd "
-			     "associate with it is invalid\n");
-			mtx_unlock_sleep(&mtx_file);
-			return -EBADF;
+			printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
+			lock_release(&mtx_file);
+			return -1;
 		} else {
 			// 如果path为NULL，则直接返回baseDir（即上层的dirfd解析出的Dirent）
 			*pfile = baseDir;
 			dget_path(baseDir); // 此时复用一次，也需要加引用
-			mtx_unlock_sleep(&mtx_file);
+			lock_release(&mtx_file);
 			return 0;
 		}
 	}
 
 	int r = walk_path(fs, path, baseDir, 0, &file, 0, &longSet);
 	if (r < 0) {
-		mtx_unlock_sleep(&mtx_file);
+		lock_release(&mtx_file);
 		return r;
 	} else {
 		// 首次打开，更新pointer
 		filepnt_init(file);
-		mtx_unlock_sleep(&mtx_file);
+		lock_release(&mtx_file);
 		*pfile = file;
 		return 0;
 	}
@@ -122,13 +121,13 @@ int getFile(Dirent *baseDir, char *path, Dirent **pfile) {
  * @brief 关闭Dirent，使其引用计数减一
  */
 void file_close(Dirent *file) {
-	mtx_lock_sleep(&mtx_file);
+	lock_acquire(&mtx_file);
 	dput_path(file);
 	if (file->is_rm && file->refcnt == 0) {
-		warn("file close and is_rm is set, rm file %s\n", file->name);
+		printk("file close and is_rm is set, rm file %s\n", file->name);
 		rm_unused_file(file);
 	}
-	mtx_unlock_sleep(&mtx_file);
+	lock_release(&mtx_file);
 }
 
 // 补充两个不获取锁的_file_read_nolock和_file_write_nolock，以供连续写入时使用
@@ -139,13 +138,13 @@ void file_close(Dirent *file) {
  * @brief 如果遇到文件结束，返回0
  * @return 返回读取文件的字节数
  */
-int file_read(struct Dirent *file, int user, u64 dst, uint off, uint n) {
-	mtx_lock_sleep(&mtx_file);
+int file_read(struct Dirent *file, int user, u64 dst, unsigned int off, unsigned int n) {
+	lock_acquire(&mtx_file);
 
 	printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
-		mtx_unlock_sleep(&mtx_file);
+		lock_release(&mtx_file);
 		return 0;
 	} else if (off + n > file->file_size) {
 		printk("read too much. shorten read length from %d to %d!\n", n,
@@ -153,7 +152,7 @@ int file_read(struct Dirent *file, int user, u64 dst, uint off, uint n) {
 		n = file->file_size - off;
 	}
 	if (n == 0) {
-		mtx_unlock_sleep(&mtx_file);
+		lock_release(&mtx_file);
 		return 0;
 	}
 
@@ -179,8 +178,7 @@ int file_read(struct Dirent *file, int user, u64 dst, uint off, uint n) {
 		len += MIN(clusSize, n - len);
 	}
 
-	mtx_unlock_sleep(&mtx_file);
-
+	lock_release(&mtx_file);
 	return n;
 }
 
@@ -230,8 +228,8 @@ void file_extend(struct Dirent *file, int newSize) {
  * @note 允许写入的内容超出文件，此时将扩展文件
  * @return 返回写入文件的字节数
  */
-int file_write(struct Dirent *file, int user, u64 src, uint off, uint n) {
-	mtx_lock_sleep(&mtx_file);
+int file_write(struct Dirent *file, int user, u64 src, unsigned int off, unsigned int n) {
+	lock_acquire(&mtx_file);
 
 	printk("write file: %s\n", file->name);
 	ASSERT(n != 0);
@@ -274,7 +272,7 @@ int file_write(struct Dirent *file, int user, u64 src, uint off, uint n) {
  * 在ftruncate之前首先需要将文件最后一个簇的多余部分清零
  */
 void file_shrink(Dirent *file, u64 newsize) {
-	mtx_lock_sleep(&mtx_file);
+	lock_acquire(&mtx_file);
 
 	ASSERT(file != NULL);
 	ASSERT(file->file_size >= newsize);
@@ -287,6 +285,7 @@ void file_shrink(Dirent *file, u64 newsize) {
 	memset(buf, 0, sizeof(buf));
 	if (oldsize % PAGE_SIZE != 0) {
 		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
+			
 			file_write(file, 0, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
 		}
 	}
@@ -316,17 +315,17 @@ void file_shrink(Dirent *file, u64 newsize) {
 
 	// 3. 写回
 	sync_dirent_rawdata_back(file);
-	mtx_unlock_sleep(&mtx_file);
+	lock_release(&mtx_file);
 }
 
 static mode_t get_file_mode(struct Dirent *file) {
 	// 默认给予RWX权限
 	mode_t mode = file->mode;
 
-	if (strncmp(file->name, "ssh_host_", 9) == 0) {
+	if (strcmp(file->name, "ssh_host_") == 0) {
 		// ssh_host_*文件的权限为600
 		mode = 0600;
-	} else if (strncmp(file->name, "empty", 5) == 0) {
+	} else if (strcmp(file->name, "empty") == 0) {
 		mode = 0711;
 	}
 
@@ -365,7 +364,7 @@ static mode_t get_file_mode(struct Dirent *file) {
  * @param kstat 内核态指针，指向文件信息结构体
  */
 void fileStat(struct Dirent *file, struct kstat *pKStat) {
-	mtx_lock_sleep(&mtx_file);
+	lock_acquire(&mtx_file);
 
 	memset(pKStat, 0, sizeof(struct kstat));
 	// P262 Linux-Unix系统编程手册
@@ -386,7 +385,7 @@ void fileStat(struct Dirent *file, struct kstat *pKStat) {
 	// 时间相关
 	file_get_timestamp(file, pKStat);
 
-	mtx_unlock_sleep(&mtx_file);
+	lock_release(&mtx_file);
 }
 
 // 检查文件的用户权限，暂时忽略flags
@@ -409,7 +408,7 @@ int faccessat(Dirent *dir, char *path, int mode, int flags) {
  * @brief 同步文件系统到磁盘
  */
 void fs_sync() {
-	mtx_lock_sleep(&mtx_file);
-	bufSync();
-	mtx_unlock_sleep(&mtx_file);
+	lock_acquire(&mtx_file);
+	//bufSync();
+	lock_release(&mtx_file);
 }

@@ -1,17 +1,14 @@
-/**
- * 字符设备
- */
-
 #include <fs/chardev.h>
 #include <fs/filedev.h>
 #include <fs/fs.h>
-#include <fs/sysfs.h>
+#include <fs/vfs.h>
 #include <linux/printk.h>
 #include <linux/string.h>
 #include <sys/errno.h>
 
 // reference: file_read
-static int chardev_read(struct Dirent *file, int user, u64 dst, unsigned int off, unsigned int n) {
+static int chardev_read(struct Dirent *file, int user, u64 dst, unsigned int off, unsigned int n) 
+{
 	chardev_data_t *pdata = file->dev->data;
 	// 预读数据
 	if (pdata->read) {
@@ -35,7 +32,8 @@ static int chardev_read(struct Dirent *file, int user, u64 dst, unsigned int off
 	return n;
 }
 
-static int chardev_write(struct Dirent *file, int user, u64 src, unsigned int off, unsigned int n) {
+static int chardev_write(struct Dirent *file, int user, u64 src, unsigned int off, unsigned int n) 
+{
 	return -EINVAL;
 }
 
@@ -46,7 +44,8 @@ static int chardev_write(struct Dirent *file, int user, u64 src, unsigned int of
  * @param write
  * 写入数据之后会调用的函数，用于同步因为数据更改而产生的变更（比如执行一些内核动作），可以为空
  */
-static struct FileDev *create_chardev(char *str, chardev_read_fn_t read, chardev_write_fn_t write) {
+static struct FileDev *create_chardev(char *str, chardev_read_fn_t read, chardev_write_fn_t write) 
+{
 	struct FileDev *dev = (struct FileDev *)kmalloc(sizeof(struct FileDev));
 	if (dev == NULL) {
 		return NULL;
@@ -69,7 +68,8 @@ static struct FileDev *create_chardev(char *str, chardev_read_fn_t read, chardev
 	return dev;
 }
 
-void create_chardev_file(char *path, char *str, chardev_read_fn_t read, chardev_write_fn_t write) {
+void create_chardev_file(char *path, char *str, chardev_read_fn_t read, chardev_write_fn_t write) 
+{
 	extern FileSystem *fatFs;
 
 	Dirent *file;

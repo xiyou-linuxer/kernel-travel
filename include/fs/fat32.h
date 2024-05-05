@@ -2,6 +2,7 @@
 #define _FS_FAT32_H
 
 #define DIRENT_SIZE 32
+#define BYTES_LONGENT 13//长文件名每项的长度
 
 #include <linux/block_device.h>
 #include <linux/types.h>
@@ -68,6 +69,8 @@ typedef struct FAT32LongDirectory {
 	unsigned short LDIR_Name3[2];
 } __attribute__((packed)) FAT32LongDirectory;
 
+#define MAX_DIRENT 160000
+
 #define DIR_SIZE sizeof(FAT32Directory)
 // 如果DIR_Name[0] == 0xE5，则表示该目录项已经被删除
 #define FAT32_INVALID_ENTRY 0xE5
@@ -79,9 +82,20 @@ typedef struct FAT32LongDirectory {
 #define ATTR_VOLUME_ID 0x08		//卷标属性
 #define ATTR_DIRECTORY 0x10		//目录属性
 #define ATTR_ARCHIVE 0x20		//归档属性
+#define ATTR_LINK 0x40
 #define ATTR_LONG_NAME_MASK (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 #define CHAR2LONGENT 26
 #define LAST_LONG_ENTRY 0x40
+#define IS_LINK(raw_dirent) ((raw_dirent)->DIR_Attr & ATTR_LINK)
+#define PGROUNDUP(a) (((a) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+
+#define MIN(_a,_b)                                                                                \
+	({                                                                                         \
+		typeof(_a) __a = (_a);                                                             \
+		typeof(_b) __b = (_b);                                                             \
+		__a <= __b ? __a : __b;                                                            \
+	})
 
 void init_root_fs(void);
+int is_mount_dir(Dirent* dirent);
 #endif

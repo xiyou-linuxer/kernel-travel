@@ -17,6 +17,16 @@
         "typeinfo": "c",
         "*.ipp": "c",
         "*.inc": "c",
-        "chrono": "c"
+        "chrono": "c",
+        "*.def": "c",
+        "*.tcc": "c",
+        "cstdio": "c",
+        "console.h": "c",
+        "ns16550a.h": "c",
+        "sync.h": "c",
+        "type_traits": "c",
+        "dirent.h": "c",
+        "errno.h": "c",
+        "memory.h": "c"
     }
 }

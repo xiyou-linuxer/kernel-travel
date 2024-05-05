@@ -26,6 +26,7 @@
 #include <asm/syscall.h>
 #include <asm/stdio.h>
 #include <fs/fs.h>
+#include <linux/console.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -73,6 +74,7 @@ void __init __no_sanitize_address start_kernel(void)
 	test_tlb_func();
 	pci_init();
 	disk_init();
+	console_init();
 	thread_init();
 	timer_init();
 	fs_init();

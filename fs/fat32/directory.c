@@ -3,18 +3,19 @@
 #include <fs/dirent.h>
 #include <fs/fat32.h>
 #include <fs/fs.h>
-#include <fs/sysfs.h>
+#include <fs/vfs.h>
 #include <linux/stdio.h>
 #include <linux/string.h>
+#include <sync.h>
+#include <debug.h>
 
+extern struct lock mtx_file;
 
-extern mutex_t mtx_file;
-
-/**
- * 概要：专门管理目录相关的底层事务，交互的对象是raw_dirent
- * 功能：读取、写入和分配FAT32目录项
- * TODO：需要引入删除目录项的内容
- */
+/*判断是否是目录项*/
+int is_directory(FAT32Directory *f)
+{
+	return f->DIR_Attr & ATTR_DIRECTORY;
+}
 
 /**
  * @brief 从offset偏移开始，查询一个目录项
@@ -23,15 +24,13 @@ extern mutex_t mtx_file;
  * @note 目前设计为仅在初始化时使用，因此使用file_read读取，无需外部加锁
  * @return 读取的内容长度。若为0，表示读到末尾
  */
-int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offset,
-		   longEntSet *longSet) {
-	mtx_lock_sleep(&mtx_file);
-
+int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offset, longEntSet *longSet) {
+	lock_acquire(&mtx_file);
 	char direntBuf[DIRENT_SIZE];
-	assert(offset % DIR_SIZE == 0);
+	ASSERT(offset % DIR_SIZE == 0);
 
 	FileSystem *fs = dir->file_system;
-	u32 j;
+	unsigned int j;
 	FAT32Directory *f;
 	FAT32LongDirectory *longEnt;
 	int clusSize = CLUS_SIZE(fs);
@@ -46,7 +45,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 
 	// 1. 跳过dir中的无效项目
 	for (j = offset; j < dir->file_size; j += DIR_SIZE) {
-		file_read(dir, 0, (u64)direntBuf, j, DIR_SIZE);
+		file_read(dir, 0, (unsigned long)direntBuf, j, DIR_SIZE);//读取目录项
 		f = ((FAT32Directory *)direntBuf);
 
 		// 跳过空项（FAT32_INVALID_ENTRY表示已删除）
@@ -97,9 +96,9 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 			dirent->first_clus = f->DIR_FstClusHI * 65536 + f->DIR_FstClusLO;
 			dirent->file_size = f->DIR_FileSize;
 			dirent->parent_dir_off = j; // 父亲目录内偏移
-			dirent->type = IS_DIRECTORY(f) ? DIRENT_DIR : DIRENT_FILE;
+			dirent->type = is_directory(f) ? DIRENT_DIR : DIRENT_FILE;
 			dirent->parent_dirent = dir; // 设置父级目录项
-			LIST_INIT(&dirent->child_list);
+			list_init(&dirent->child_list);
 			dirent->linkcnt = 1;
 
 			// 对于目录文件的大小，我们将其重置为其簇数乘以簇大小，不再是0
@@ -110,12 +109,12 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 			*file = dirent;
 			*next_offset = j + DIR_SIZE;
 
-			mtx_unlock_sleep(&mtx_file);
+			lock_release(&mtx_file);
 			return DIR_SIZE;
 		}
 	}
 
-	warn("no more dents in dir: %s\n", dir->name);
+	printk("no more dents in dir: %s\n", dir->name);
 	*next_offset = dir->file_size;
 
 	mtx_unlock_sleep(&mtx_file);
@@ -140,7 +139,7 @@ void sync_dirent_rawdata_back(Dirent *dirent) {
 		return;
 	}
 
-	file_write(parentDir, 0, (u64)&dirent->raw_dirent, dirent->parent_dir_off, DIRENT_SIZE);
+	file_write(parentDir, 0, (unsigned long)&dirent->raw_dirent, dirent->parent_dir_off, DIRENT_SIZE);
 }
 
 /**
@@ -151,10 +150,10 @@ void sync_dirent_rawdata_back(Dirent *dirent) {
  * @update 从clusterRead/clusterWrite的写法改为file_read/file_write，以减少代码量，提高复用度
  */
 static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
-	assert(cnt >= 1); // 要求分配的个数不能小于1
-	mtx_lock_sleep(&mtx_file);
+	ASSERT(cnt >= 1); // 要求分配的个数不能小于1
+	lock_acquire(&mtx_file);
 
-	u32 offset = 0;
+	unsigned int offset = 0;
 	int curN = 0;
 	int start_off = 0, end_off = 0; // 分配的终止目录项的偏移
 	FAT32Directory fat32_dirent;
@@ -162,7 +161,7 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 
 	// 1. 分配若干连续的目录项
 	while (offset < prev_size) {
-		file_read(dir, 0, (u64)&fat32_dirent, offset, DIR_SIZE);
+		file_read(dir, 0, (unsigned long)&fat32_dirent, offset, DIR_SIZE);
 		if (fat32_dirent.DIR_Name[0] == 0) {
 			// 表示为空闲目录项
 			curN += 1;
@@ -180,7 +179,7 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	}
 
 	// 2. 若目录现存磁盘块中无连续目录项，则在文件尾部分配
-	assert(prev_size % DIR_SIZE == 0);
+	ASSERT(prev_size % DIR_SIZE == 0);
 	if (curN != cnt) {
 		start_off = prev_size;
 		end_off = prev_size + DIR_SIZE * (cnt - 1);
@@ -190,7 +189,7 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	memset(&fat32_dirent, 0, DIR_SIZE);
 	fat32_dirent.DIR_Name[0] = FAT32_INVALID_ENTRY;
 	for (offset = start_off; offset <= end_off; offset += DIR_SIZE) {
-		file_write(dir, 0, (u64)&fat32_dirent, offset, DIR_SIZE);
+		file_write(dir, 0, (unsigned long)&fat32_dirent, offset, DIR_SIZE);
 	}
 
 	// 4. 记录尾部目录项（即记录文件元信息的目录项）的偏移
@@ -198,7 +197,7 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	dirent->parent_dir_off = offset + DIR_SIZE * (cnt - 1);
 	*ent = dirent;
 
-	mtx_unlock_sleep(&mtx_file);
+	lock_release(&mtx_file);
 	return 0;
 }
 
@@ -238,12 +237,12 @@ static char *fill_long_entry(FAT32LongDirectory *longDir, char *raw_name) {
  * 分配一个目录项，其中填入文件名（已支持长文件名）。无需获取dir的锁，因为程序内将自动获取锁。出函数将携带file的锁
  */
 int dir_alloc_file(Dirent *dir, Dirent **file, char *name) {
-	Dirent *dirent = dirent_alloc();
 
+	Dirent *dirent = dirent_alloc();//在缓存中分配目录项
 	printk("create a file using long Name! name is %s\n", name);
-	int cnt = get_entry_count_by_name(name);
-
-	unwrap(dir_alloc_entry(dir, &dirent, cnt));
+	int cnt = get_entry_count_by_name(name);//计算需要几个目录
+	int ret = dir_alloc_entry(dir, &dirent, cnt);//在磁盘上为目录项分配空间
+	ASSERT(ret == 0);
 	strncpy(dirent->name, name, MAX_NAME_LEN);
 	strncpy((char *)dirent->raw_dirent.DIR_Name, name, 10);
 	dirent->raw_dirent.DIR_Name[10] = 0;
@@ -260,7 +259,7 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *name) {
 			longDir.LDIR_Ord = LAST_LONG_ENTRY;
 
 		// 写入到目录中
-		file_write(dir, 0, (u64)&longDir, dirent->parent_dir_off - i * DIR_SIZE, DIR_SIZE);
+		file_write(dir, 0, (unsigned long)&longDir, dirent->parent_dir_off - i * DIR_SIZE, DIR_SIZE);
 
 		if (name == NULL) {
 			break;

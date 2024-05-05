@@ -1,11 +1,14 @@
 #include <fs/fs.h>
+#include <fs/dirent.h>
+#include <fs/fat32.h>
+#include <fs/filepnt.h>
+#include <debug.h>
 #include <linux/types.h>
 #include <linux/stdio.h>
-#include <debug.h>
 #include <linux/string.h>
-#include <fs/fat32.h>
+#include <sync.h>
 FileSystem *fatFs;
-
+struct lock mtx_file;
 /**
  * @brief 递归建立树结构，需要保证parent的child_list已经初始化过
  */
@@ -21,7 +24,7 @@ static void build_dirent_tree(Dirent *parent) {
 			// 读到末尾
 			break;
 		}
-		// printf("get child: %s, parent: %s\n", child->name, parent->name);
+		printk("get child: %s, parent: %s\n", child->name, parent->name);
 
 		// 跳过.和..
 		if (strncmp(child->name, ".          ", 11) == 0 ||
@@ -50,7 +53,7 @@ void fat32_init(FileSystem* fs)
 
 	// 2. 初始化根目录
 	fs->root = dirent_alloc();
-	strncpy(fs->root->name, "/", 2);
+	strcpy(fs->root->name, "/");
 	fs->root->file_system = fs; // 此句必须放在countCluster之前，用于设置fs
 
 	// 设置Dirent属性
@@ -65,7 +68,7 @@ void fat32_init(FileSystem* fs)
 
 	// 设置树状结构
 	fs->root->parent_dirent = NULL; // 父节点为空，表示已经到达根节点
-	LIST_INIT(&fs->root->child_list);
+	list_init(&fs->root->child_list);
 
 	fs->root->linkcnt = 1;
 
@@ -83,7 +86,7 @@ void fat32_init(FileSystem* fs)
 void init_root_fs(void) 
 {
 	//extern FileSystem *fatFs;
-
+	lock_init(&mtx_file);
 	allocFs(&fatFs);
 
 	fatFs->image = NULL;

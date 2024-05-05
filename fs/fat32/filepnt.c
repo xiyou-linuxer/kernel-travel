@@ -1,7 +1,11 @@
 #include <fs/cluster.h>
 #include <linux/stdio.h>
 #include <fs/fs.h>
+#include <fs/fat32.h>
 #include <linux/types.h>
+#include <linux/memory.h>
+#include <debug.h>
+#include <linux/string.h>
 /**
  * @brief 更新pointer值
  */
@@ -11,17 +15,17 @@ void filepnt_setval(DirentPointer* fileptr, int i, int value) {
 	if (index1 >= NDIRENT_SECPOINTER) {
 		// 导入三级指针
 		if (fileptr->third == NULL) {
-			fileptr->third = (struct ThirdPointer *)kvmAlloc();
+			fileptr->third = (struct ThirdPointer *)get_page();
 		}
 		index1 = index1 - NDIRENT_SECPOINTER;
 		if (fileptr->third->ptr[index1] == NULL) {
-			fileptr->third->ptr[index1] = (struct TwicePointer *)kvmAlloc();
+			fileptr->third->ptr[index1] = (struct TwicePointer *)get_page();
 		}
 		struct TwicePointer *twicep = fileptr->third->ptr[index1];
 		twicep->cluster[index2] = value;
 	} else {
 		if (fileptr->second[index1] == NULL) {
-			fileptr->second[index1] = (struct TwicePointer *)kvmAlloc();
+			fileptr->second[index1] = (struct TwicePointer *)get_page();
 		}
 		struct TwicePointer *twicep = fileptr->second[index1];
 		twicep->cluster[index2] = value;
@@ -58,16 +62,16 @@ void filepnt_clear(Dirent *file) {
 	if (fileptr->valid) {
 		for (int i = 0; i < NDIRENT_SECPOINTER; i++) {
 			if (fileptr->second[i]) {
-				kvmFree((u64)fileptr->second[i]);
+				memset((unsigned long)fileptr->second[i],0,PAGE_SIZE);/*已经将内核空间全部映射，只需将使用过的内存清零即可*/
 			}
 		}
 		if (fileptr->third) {
 			for (int i = 0; i < PAGE_SIZE / sizeof(long); i++) {
 				if (fileptr->third->ptr[i]) {
-					kvmFree((u64)fileptr->third->ptr[i]);
+					memset((unsigned long)fileptr->third->ptr[i],0,PAGE_SIZE);
 				}
 			}
-			kvmFree((u64)fileptr->third);
+			memset((unsigned long)fileptr->third,0,PAGE_SIZE);
 		}
 	}
 }
@@ -86,13 +90,13 @@ unsigned int filepnt_getclusbyno(Dirent *file, int fileClusNo) {
 		twicep = fileptr->second[ind1];
 	} else {
 		ind1 -= NDIRENT_SECPOINTER;
-		assert(ind1 < PAGE_SIZE / sizeof(long));
-		assert(fileptr->third != NULL);
+		ASSERT(ind1 < PAGE_SIZE / sizeof(long));
+		ASSERT(fileptr->third != NULL);
 		twicep = fileptr->third->ptr[ind1];
 	}
-	assert(twicep != NULL);
+	ASSERT(twicep != NULL);
 	u32 ret = twicep->cluster[ind2];
-	assert(ret != 0); // 假设要查找的文件肯定有第fileClusNo个簇
+	ASSERT(ret != 0); // 假设要查找的文件肯定有第fileClusNo个簇
 	return ret;
 }
 

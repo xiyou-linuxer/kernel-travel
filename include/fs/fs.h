@@ -10,8 +10,10 @@
 
 #define MAX_FS_COUNT 4 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
-#define PAGE_NCLUSNO (PAGE_SIZE / sizeof(u32))// 一页能容纳的u32簇号个数
+#define PAGE_NCLUSNO (PAGE_SIZE / sizeof(unsigned int))// 一页能容纳的u32簇号个数
 #define NDIRENT_SECPOINTER 5
+#define DIRENT_HOLDER_CNT 256
+extern struct lock mtx_file;
 
 struct bpb{
 	u16 bytes_per_sec;
@@ -25,10 +27,10 @@ struct bpb{
 };
 
 typedef struct SuperBlock {
-	u32 first_data_sec;
-	u32 data_sec_cnt;
-	u32 data_clus_cnt;
-	u32 bytes_per_clus;
+	unsigned int first_data_sec;
+	unsigned int data_sec_cnt;
+	unsigned int data_clus_cnt;
+	unsigned int bytes_per_clus;
 	struct bpb bpb;
 }SuperBlock;
 
@@ -73,6 +75,8 @@ typedef struct longEntSet {
 	int cnt;
 } longEntSet;
 
+struct file_time;
+
 typedef struct Dirent {
 	FAT32Directory raw_dirent; // 原生的dirent项
 	char name[MAX_NAME_LEN];
@@ -109,8 +113,8 @@ typedef struct Dirent {
 
 	// 子Dirent列表
 	struct list child_list;
-	struct list_elem dirent_tag;//链表节点，用于父目录记录
-	// 用于空闲链表和父子连接中的链接，因为一个Dirent不是在空闲链表中就是在树上
+	struct list_elem dirent_tag;//链表节点，用于父目录记录,tag要么被链接的到dirent_free_list要么链接到child_list
+
 	//LIST_ENTRY(Dirent) dirent_link;
 
 	// 父亲Dirent
@@ -121,9 +125,6 @@ typedef struct Dirent {
 	// 各种计数
 	unsigned short linkcnt; // 链接计数
 	unsigned short refcnt;  // 引用计数
-
-	//struct holder_info holders[DIRENT_HOLDER_CNT];
-	//int holder_cnt;
 }Dirent;
 
 enum fs_result {
@@ -175,4 +176,5 @@ void deAllocFs(struct FileSystem *fs);
 int partition_format(FileSystem* fs);//初始化文件系统分区
 void fat32_init(struct FileSystem* fs) ;
 void fs_init(void);
+int get_entry_count_by_name(char* name);
 #endif
