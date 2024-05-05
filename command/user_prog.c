@@ -1,9 +1,8 @@
-#include <asm/syscall.h>
+#include "printf.h"
 
 int main(void)
 {
-	char* str = "hello world\n";
 	while(1){
-		pstr(str);
+		myprintf("hello%d\n",123);
 	}
 }
