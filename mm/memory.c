@@ -7,7 +7,6 @@
 #include <linux/types.h>
 #include <linux/string.h>
 
-#define PAGESIZE 4096
 
 struct pool reserve_phy_pool;
 struct pool phy_pool;
@@ -56,7 +55,9 @@ u64 *pte_ptr(u64 pd,u64 vaddr)
 	return (u64*)(pt + PTE_IDX(vaddr) * ENTRY_SIZE);
 }
 
-
+//pgd:0x9000000008010000 -> 0x9000000090003000
+//pmd:0x9000000090003200 -> 0x9000000090006000
+//pt: 0x9000000090006080  -> 0x90005000
 void page_table_add(u64 pd,u64 _vaddr,u64 _paddr,u64 attr)
 {
     u64 *pte = pte_ptr(pd,_vaddr);
@@ -67,6 +68,12 @@ void page_table_add(u64 pd,u64 _vaddr,u64 _paddr,u64 attr)
     *pte = _paddr | attr;
     // 刷新 TLB
     invalidate();
+}
+
+void malloc_usrpage(u64 pd,u64 vaddr)
+{
+	unsigned long paddr = get_page();
+	page_table_add(pd,vaddr,paddr,PTE_V | PTE_PLV | PTE_D);
 }
 
 unsigned long get_kernel_pge(void)

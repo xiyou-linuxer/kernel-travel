@@ -43,6 +43,7 @@ user_ret:
 
 	.align	5
 SYM_FUNC_START(syscall_handler)
+	move	t2, sp
 	la.abs	sp, kernelsp
 
 	addi.d	sp, sp, -PT_SIZE

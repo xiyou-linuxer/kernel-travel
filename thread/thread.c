@@ -45,6 +45,10 @@ static pid_t allocate_pid(void) {
    return (bit_idx + pid_pool.pid_start);
 }
 
+pid_t fork_pid(void) {
+	return allocate_pid();
+}
+
 void release_pid(pid_t pid) {
    lock_acquire(&pid_pool.pid_lock);
    int32_t bit_idx = pid - pid_pool.pid_start;
