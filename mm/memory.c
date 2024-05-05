@@ -91,9 +91,20 @@ unsigned long get_kernel_pge(void)
 	return k_page;
 }
 
+void free_kernel_pge(void* k_page)
+{
+	u64 bit_off = (((unsigned long)k_page & ~CSR_DMW1_BASE) >> 12) - 0x6;
+	bitmap_set(&reserve_phy_pool.btmp, bit_off, 1);
+	memset((void *)k_page,0,(int)(PAGE_SIZE));
+}
+
 void * kmalloc(u64 size)
 {
-	struct task_struct * curr =  running_thread();
-	struct mm_struct * mm = curr->mm;
-	return (void *)get_kernel_pge();
+	// struct task_struct * curr =  running_thread();
+	// struct mm_struct * mm = curr->mm;
+	// return (void *)get_kernel_pge();
+	if(__builtin_constant_p(size) && size) {
+		unsigned long index;
+		if(size > KMALLOC_MAX_CACHE_SIZE)
+	}
 }
