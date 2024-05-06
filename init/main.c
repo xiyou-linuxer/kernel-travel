@@ -37,15 +37,14 @@ extern void trap_init(void);
 
 void thread_a(void *unused);
 #ifdef CONFIG_LOONGARCH
+#endif /* CONFIG_LOONGARCH */
 void thread_a(void *unused)
 {
 	printk("enter thread_a\n");
 	while (1) {
-		unsigned long crmd = read_csr_crmd();
-		printk("thread_a at:at pri %d  ",crmd & PLV_MASK);
+		printk("thread_a pid=%d\n",sys_getpid());
 	}
 }
-#endif /* CONFIG_LOONGARCH */
 
 char* sstr = "hello\n";
 void proc_1(void *unused)
@@ -77,7 +76,7 @@ void __init __no_sanitize_address start_kernel(void)
 	timer_init();
 	fs_init();
 	syscall_init();
-	//thread_start("thread_a",10,thread_a,NULL);
+	thread_start("thread_a",10,thread_a,NULL);
 	block_read(5,50,(uint64_t)usrprog,1);
 	process_execute(usrprog,"proc_1");
 
@@ -86,6 +85,6 @@ void __init __no_sanitize_address start_kernel(void)
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-		//printk("m ");
+		printk("main pid=%d\n ",sys_getpid());
 	}
 }

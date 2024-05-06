@@ -5,6 +5,7 @@
 #include <linux/list.h>
 #include <linux/memory.h>
 #include <asm/thread_info.h>
+#include <linux/memory.h>
 
 #define TASK_NAME_LEN 16
 #define MAX_FILES_OPEN_PER_PROC 8
@@ -42,6 +43,7 @@ struct task_struct {
 	uint8_t priority;
 	uint8_t ticks;
 	uint32_t elapsed_ticks;
+	struct virt_addr usrprog_vaddr;
 	struct list_elem general_tag;
 	struct list_elem all_list_tag;
 	uint64_t pgdir;

@@ -1,9 +1,15 @@
+#include "printf.h"
 #include <asm/syscall.h>
 
 int main(void)
 {
-	char* str = "hello world\n";
+	int pid = fork();
 	while(1){
-		pstr(str);
+		if (pid == 0){
+			myprintf("this is child here\n");
+		}
+		else {
+			myprintf("this is father here\n");
+		}
 	}
 }

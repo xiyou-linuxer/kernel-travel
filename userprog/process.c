@@ -9,9 +9,17 @@
 #include <linux/string.h>
 #include <exec.h>
 
-char proc0_code[] = {0x00, 0x00, 0x00, 0x50};
 extern char usrprog[];
 extern void user_ret(void);
+
+void create_user_vaddr_bitmap(struct task_struct* user_prog) {
+   user_prog->usrprog_vaddr.vaddr_start = USER_VADDR_START;
+   uint32_t bitmap_pg_cnt = DIV_ROUND_UP((USER_STACK - USER_VADDR_START) / PAGESIZE / 8 , PAGESIZE);
+   user_prog->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(bitmap_pg_cnt);
+   user_prog->usrprog_vaddr.btmp.btmp_bytes_len = (USER_STACK - USER_VADDR_START) / PAGESIZE / 8;
+   bitmap_init(&user_prog->usrprog_vaddr.btmp);
+}
+
 
 void start_process(void* filename)
 {
@@ -31,12 +39,6 @@ void start_process(void* filename)
 	regs->regs[3] = (uint64_t)userstk_alloc(cur->pgdir);
 	regs->regs[22] = regs->regs[3];
 
-	//printk("proc_1 at:%llx",proc_1);
-	//uint64_t page = get_page();
-	//memcpy((void*)page,func,128);
-	//page_table_add(cur->pgdir,(unsigned long)proc_1&~DMW_MASK,page&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
-
-	
 	int entry = sys_execv(filename);
 	regs->csr_era = (unsigned long)entry;
 
@@ -44,10 +46,10 @@ void start_process(void* filename)
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 }
 
-void process_execute(void* filename, char* name) { 
+void process_execute(void* filename, char* name) {
    struct task_struct* pcb = task_alloc();
-   init_thread(pcb, name, 31);
-   //create_user_vaddr_bitmap(thread);
+   init_thread(pcb, name, 10);
+   create_user_vaddr_bitmap(pcb);
    thread_create(pcb, start_process, filename);
    pcb->pgdir = get_page();
    enum intr_status old_status = intr_disable();
@@ -62,8 +64,9 @@ void process_execute(void* filename, char* name) {
 
 void page_dir_activate(struct task_struct* pcb)
 {
-    if (pcb->pgdir != 0) {
-        write_csr_pgdl(pcb->pgdir);
-    }
+	if (pcb->pgdir != 0) {
+		write_csr_pgdl(pcb->pgdir);
+		invalidate();
+	}
 }
 
