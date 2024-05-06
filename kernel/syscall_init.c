@@ -2,6 +2,7 @@
 #include <linux/thread.h>
 #include <linux/stdio.h>
 #include <asm/stdio.h>
+#include <fork.h>
 
 pid_t sys_getpid(void)
 {
@@ -19,6 +20,7 @@ void syscall_init(void)
 	printk("syscall init start\n");
 	syscall_table[SYS_GETPID]   = sys_getpid;
 	syscall_table[SYS_PSTR]     = sys_pstr;
+	syscall_table[SYS_FORK]     = sys_fork;
 
 	printk("syscall init done\n");
 }
