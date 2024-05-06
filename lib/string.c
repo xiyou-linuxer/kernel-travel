@@ -183,3 +183,16 @@ int strn2wstr(unsigned short *dst, const char *src, int n)
 	}
 	return i;
 }
+void strins(char *buf, const char *str) 
+{
+	int lbuf = strlen(buf);
+	int i;
+	int len = strlen(str);
+	for (i = lbuf; i >= 0; i--) {
+		buf[i + len] = buf[i];
+	}
+	for (i = 0; i < len; i++) {
+		buf[i] = str[i];
+	}
+}
+

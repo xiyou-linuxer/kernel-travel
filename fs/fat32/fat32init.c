@@ -2,6 +2,8 @@
 #include <fs/dirent.h>
 #include <fs/fat32.h>
 #include <fs/filepnt.h>
+#include <fs/cluster.h>
+#include <fs/vfs.h>
 #include <debug.h>
 #include <linux/types.h>
 #include <linux/stdio.h>

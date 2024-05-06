@@ -1,8 +1,8 @@
 #ifndef _FS_CHARDEV_H
 #define _FS_CHARDEV_H
 
-#include <types.h>
-
+#include <linux/types.h>
+#include <asm/page.h>
 typedef struct chardev_data chardev_data_t;
 
 // 读数据之前会调用的函数，用于获取数据

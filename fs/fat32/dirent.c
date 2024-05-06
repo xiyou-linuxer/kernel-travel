@@ -27,9 +27,10 @@ struct list dirent_free_list ;
 #define PEEK sizeof(dirents)
 
 // 管理dirent分配和释放的互斥锁
-struct mutex mtx_dirent;
+struct lock mtx_dirent;
 
-void dirent_init() {
+void dirent_init(void) 
+{
 	lock_init(&mtx_dirent);
 	list_init(&dirent_free_list);
 	for (int i = 0; i < MAX_DIRENT; i++) {
@@ -39,10 +40,12 @@ void dirent_init() {
 }
 
 // Dirent的分配和释放属于对Dirent整体的操作，需要加锁
-Dirent *dirent_alloc() {
+Dirent *dirent_alloc(void) 
+{
 	lock_acquire(&mtx_dirent);
 	ASSERT(list_empty(&dirent_free_list));
-	Dirent *dirent = list_pop(&dirent_free_list);
+	struct list_elem* node = list_pop(&dirent_free_list);
+	Dirent *dirent = elem2entry(struct Dirent,dirent_tag,node);
 	// TODO: 需要初始化dirent的睡眠锁
 	list_remove(&dirent->dirent_tag);
 	memset(dirent, 0, sizeof(Dirent));
@@ -52,7 +55,8 @@ Dirent *dirent_alloc() {
 	return dirent;
 }
 
-void dirent_dealloc(Dirent *dirent) {
+void dirent_dealloc(Dirent *dirent) 
+{
 	lock_acquire(&mtx_dirent);
 
 	memset(dirent, 0, sizeof(Dirent));
@@ -65,7 +69,8 @@ void dirent_dealloc(Dirent *dirent) {
 /**
  * @brief 跳过左斜线。unix传统，允许路径上有连续的多个左斜线，解析时看作一条
  */
-static char *skip_slash(char *p) {
+static char *skip_slash(char *p) 
+{
 	while (*p == '/') {
 		p++;
 	}
@@ -75,7 +80,8 @@ static char *skip_slash(char *p) {
 /**
  * @brief 将dirent的引用计数加一
  */
-void dget(Dirent *dirent) {
+void dget(Dirent *dirent) 
+{
 	int is_filled = 0;
 	int i;
 	dirent->refcnt += 1;
@@ -84,14 +90,16 @@ void dget(Dirent *dirent) {
 /**
  * @brief 将dirent的引用数减一
  */
-void dput(Dirent *dirent) {
+void dput(Dirent *dirent) 
+{
 	dirent->refcnt -= 1;
 }
 
 /**
  * @brief 获取某个Dirent的父级Dirent，需要考虑mount的情形
  */
-static Dirent *get_parent_dirent(Dirent *dirent) {
+static Dirent *get_parent_dirent(Dirent *dirent)
+{
 
 	FileSystem *fs = dirent->file_system;
 	Dirent *ans = NULL;
@@ -117,7 +125,8 @@ static Dirent *get_parent_dirent(Dirent *dirent) {
  * @brief 在dir中找一个名字为name的文件，找到后获取其引用
  * @note 只需要遍历Dirent树即可，无需实际访问磁盘
  */
-static int dir_lookup(FileSystem *fs, Dirent *dir, char *name, struct Dirent **file) {
+static int dir_lookup(FileSystem *fs, Dirent *dir, char *name, struct Dirent **file) 
+{
 	Dirent *child;
 	struct list_elem* ret = dir->child_list.head.next;
 	while (ret!=&dir->child_list.tail)
@@ -136,26 +145,26 @@ static int dir_lookup(FileSystem *fs, Dirent *dir, char *name, struct Dirent **f
 /**
  * @brief 尝试将dirent从当前的mountPoint转移到mountFs内部的root目录项
  */
-static Dirent *try_enter_mount_dir(Dirent *dir) {
-	// Note: 处理mount的目录
-
-	if (is_mount_dir(dir)) {
-		FileSystem *fs = find_fs_by(find_fs_of_dir, dir);
+static Dirent *try_enter_mount_dir(Dirent *dir) 
+{
+	struct Dirent * dir1 = dir;
+	if (dir1->head != NULL) {
+		FileSystem *fs = find_fs_by(find_fs_of_dir, dir1);
 		if (fs == NULL) {
-			printk("load mount fs error on dir %s!\n", dir->name);
+			printk("load mount fs error on dir %s!\n", dir1->name);
 		}
-		dir = fs->root;
+		dir1 = fs->root;
 
-		return dir;
+		return dir1;
 	}
-
-	return dir;
+	return dir1;
 }
 
 /**
  * @brief 顺序获取路径上（包括自己）的所有目录引用
  */
-void dget_path(Dirent *file) {
+void dget_path(Dirent *file) 
+{
 	if (file == NULL) {
 		printk("dget_path: file is NULL!\n");
 	}
@@ -174,7 +183,8 @@ void dget_path(Dirent *file) {
 /**
  * @brief 逆序释放路径上（包括自己）的所有目录引用
  */
-void dput_path(Dirent *file) {
+void dput_path(Dirent *file) 
+{
 	while (1) {
 		dput(file);
 		if (file == file->file_system->root) {
@@ -195,7 +205,8 @@ void dput_path(Dirent *file) {
  * @param pfile 文件本身
  * @param lastelem 如果恰好找到了文件的上一级目录的位置，则返回最后未匹配的那个项目的名称(legacy)
  */
-int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent **pfile, char *lastelem, longEntSet *longSet) {
+int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent **pfile, char *lastelem, longEntSet *longSet) 
+{
 	char *p;
 	char name[MAX_NAME_LEN];
 	Dirent *dir, *file, *tmp;
@@ -282,7 +293,7 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 				}
 
 				if (lastelem) {
-					strncpy(lastelem, name, MAX_NAME_LEN);
+					strcpy(lastelem, name);
 				}
 
 				*pfile = 0;
@@ -310,7 +321,8 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 /**
  * @brief 传入一个Dirent，获取其绝对路径
  */
-void dirent_get_path(Dirent *dirent, char *path) {
+void dirent_get_path(Dirent *dirent, char *path) 
+{
 	ASSERT(dirent->refcnt > 0);
 
 	Dirent *tmp = dirent;
@@ -353,7 +365,7 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 	// 1. 寻找要创建的文件
 	if ((r = walk_path(fs, path, baseDir, &dir, &f, lastElem, &longSet)) == 0) {
 		file_close(f);
-		warn("file or directory exists: %s\n", path);
+		printk("file or directory exists: %s\n", path);
 
 		lock_release(&mtx_file);
 		return -1;
@@ -414,7 +426,8 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
  * @brief 在dir目录下新建一个名为path的目录。忽略mode参数
  * @return 0成功，-1失败
  */
-int makeDirAt(Dirent *baseDir, char *path, int mode) {
+int makeDirAt(Dirent *baseDir, char *path, int mode) 
+{
 	Dirent *dir = NULL;
 	int ret = createItemAt(baseDir, path, &dir, 1);
 	if (ret < 0) {
@@ -429,11 +442,13 @@ int makeDirAt(Dirent *baseDir, char *path, int mode) {
  * @brief 创建一个文件
  */
 int r;
-int createFile(struct Dirent *baseDir, char *path, Dirent **file) {
+int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
+{
 	return createItemAt(baseDir, path, file, 0);
 }
 
-int create_file_and_close(char *path) {
+int create_file_and_close(char *path) 
+{
 	Dirent *file = NULL;
 	r = createFile(NULL, path, &file);
 	if (r < 0) {

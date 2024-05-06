@@ -138,7 +138,7 @@ void file_close(Dirent *file) {
  * @brief 如果遇到文件结束，返回0
  * @return 返回读取文件的字节数
  */
-int file_read(struct Dirent *file, int user, u64 dst, unsigned int off, unsigned int n) {
+int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
 	printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
@@ -228,7 +228,7 @@ void file_extend(struct Dirent *file, int newSize) {
  * @note 允许写入的内容超出文件，此时将扩展文件
  * @return 返回写入文件的字节数
  */
-int file_write(struct Dirent *file, int user, u64 src, unsigned int off, unsigned int n) {
+int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
 	printk("write file: %s\n", file->name);
@@ -263,7 +263,7 @@ int file_write(struct Dirent *file, int user, u64 src, unsigned int off, unsigne
 		len += MIN(clusSize, n - len);
 	}
 
-	mtx_unlock_sleep(&mtx_file);
+	lock_release(&mtx_file);
 	return n;
 }
 
@@ -322,10 +322,10 @@ static mode_t get_file_mode(struct Dirent *file) {
 	// 默认给予RWX权限
 	mode_t mode = file->mode;
 
-	if (strcmp(file->name, "ssh_host_") == 0) {
+	if (strncmp(file->name, "ssh_host_", 9) == 0) {
 		// ssh_host_*文件的权限为600
 		mode = 0600;
-	} else if (strcmp(file->name, "empty") == 0) {
+	} else if (strncmp(file->name, "empty", 5) == 0) {
 		mode = 0711;
 	}
 
@@ -339,7 +339,7 @@ static mode_t get_file_mode(struct Dirent *file) {
 	} else if (file->type == DIRENT_BLKDEV) {
 		mode |= __S_IFBLK;
 	} else {
-		warn("unknown file type: %x\n", file->type);
+		printk("unknown file type: %x\n", file->type);
 		mode |= __S_IFREG; // 暂时置为REGULAR FILE
 	}
 
@@ -383,7 +383,7 @@ void fileStat(struct Dirent *file, struct kstat *pKStat) {
 	pKStat->st_blocks = ROUNDUP(file->file_size, pKStat->st_blksize);
 
 	// 时间相关
-	file_get_timestamp(file, pKStat);
+	//file_get_timestamp(file, pKStat);
 
 	lock_release(&mtx_file);
 }
@@ -407,7 +407,7 @@ int faccessat(Dirent *dir, char *path, int mode, int flags) {
 /**
  * @brief 同步文件系统到磁盘
  */
-void fs_sync() {
+void fs_sync(void) {
 	lock_acquire(&mtx_file);
 	//bufSync();
 	lock_release(&mtx_file);

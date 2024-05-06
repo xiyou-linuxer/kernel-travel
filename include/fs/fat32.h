@@ -42,20 +42,6 @@ typedef struct FAT32BootParamBlock {
 } __attribute__((packed)) FAT32BootParamBlock;
 
 /*fat32文件系统中的目录项*/
-typedef struct FAT32Directory {
-	u8 DIR_Name[11];
-	u8 DIR_Attr;
-	u8 DIR_NTRes;
-	u8 DIR_CrtTimeTenth;
-	u16 DIR_CrtTime;
-	u16 DIR_CrtDate;
-	u16 DIR_LstAccDate;
-	u16 DIR_FstClusHI;
-	u16 DIR_WrtTime;
-	u16 DIR_WrtDate;
-	u16 DIR_FstClusLO;
-	u32 DIR_FileSize;
-} __attribute__((packed)) FAT32Directory;
 
 //长文件名
 typedef struct FAT32LongDirectory {
@@ -88,7 +74,7 @@ typedef struct FAT32LongDirectory {
 #define LAST_LONG_ENTRY 0x40
 #define IS_LINK(raw_dirent) ((raw_dirent)->DIR_Attr & ATTR_LINK)
 #define PGROUNDUP(a) (((a) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
-
+#define ROUNDUP(a, x) (((a) + (x)-1) & ~((x)-1))
 #define MIN(_a,_b)                                                                                \
 	({                                                                                         \
 		typeof(_a) __a = (_a);                                                             \
@@ -97,5 +83,4 @@ typedef struct FAT32LongDirectory {
 	})
 
 void init_root_fs(void);
-int is_mount_dir(Dirent* dirent);
 #endif

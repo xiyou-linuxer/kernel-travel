@@ -78,7 +78,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 			if (wstrlen(fullName) != 0) {
 				wstr2str(tmpName, fullName);
 			} else {
-				strncpy(tmpName, (const char *)f->DIR_Name, 11);
+				strcpy(tmpName, (const char *)f->DIR_Name);
 				tmpName[11] = 0;
 			}
 
@@ -86,7 +86,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 
 			// 2. 设置找出的dirent的信息（为NULL的无需设置）
 			Dirent *dirent = dirent_alloc();
-			strncpy(dirent->name, tmpName, MAX_NAME_LEN);
+			strcpy(dirent->name, tmpName);
 
 			extern struct FileDev file_dev_file;
 			dirent->dev = &file_dev_file; // 赋值设备指针
@@ -117,7 +117,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 	printk("no more dents in dir: %s\n", dir->name);
 	*next_offset = dir->file_size;
 
-	mtx_unlock_sleep(&mtx_file);
+	lock_release(&mtx_file);
 	return 0; // 读到结尾
 }
 
@@ -243,8 +243,8 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *name) {
 	int cnt = get_entry_count_by_name(name);//计算需要几个目录
 	int ret = dir_alloc_entry(dir, &dirent, cnt);//在磁盘上为目录项分配空间
 	ASSERT(ret == 0);
-	strncpy(dirent->name, name, MAX_NAME_LEN);
-	strncpy((char *)dirent->raw_dirent.DIR_Name, name, 10);
+	strcpy(dirent->name, name);
+	strcpy((char *)dirent->raw_dirent.DIR_Name, name);
 	dirent->raw_dirent.DIR_Name[10] = 0;
 	dget(dirent);
 

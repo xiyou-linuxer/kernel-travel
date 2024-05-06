@@ -21,4 +21,5 @@ void wstrnins(unsigned short* buf, const unsigned short* str, int len);
 int wstr2str(char* dst, const unsigned short* src);
 int str2wstr(unsigned short* dst, const char* src);
 int strn2wstr(unsigned short* dst, const char* src, int n);
+void strins(char* buf, const char* str);
 #endif /* _LINUX_STRING_H */

@@ -1,4 +1,5 @@
 #include <fs/fs.h>
+#include <fs/fat32.h>
 #include <fs/buf.h>
 #include <linux/stdio.h>
 #include <debug.h>
@@ -45,6 +46,25 @@ void allocFs(FileSystem **pFs)
 void deAllocFs(struct FileSystem *fs) {
 	fs->valid = 0;
 	memset(fs, 0, sizeof(struct FileSystem));
+}
+
+
+FileSystem *find_fs_by(findfs_callback_t findfs, void *data) {
+	for (int i = 0; i < MAX_FS_COUNT; i++) {
+		if (findfs(&fs[i], data)) {
+			return &fs[i];
+		}
+	}
+	return NULL;
+}
+
+int find_fs_of_dir(FileSystem *fs, void *data) {
+	Dirent *dir = (Dirent *)data;
+	if (fs->mountPoint == NULL) {
+		return 0;
+	} else {
+		return fs->mountPoint->first_clus == dir->first_clus;
+	}
 }
 
 /**

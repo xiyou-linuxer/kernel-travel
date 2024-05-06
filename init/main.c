@@ -78,6 +78,7 @@ void __init __no_sanitize_address start_kernel(void)
 	thread_init();
 	timer_init();
 	fs_init();
+	fat32Test();
 	syscall_init();
 	//fs_init();
 	/*thread_start("thread_a",10,thread_a,NULL);

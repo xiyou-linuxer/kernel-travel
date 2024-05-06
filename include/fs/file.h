@@ -2,7 +2,7 @@
 #define _FILE_H
 
 #include <fs/fat32.h>
-#include <types.h>
+#include <linux/types.h>
 
 #define NAME_MAX_LEN 256
 

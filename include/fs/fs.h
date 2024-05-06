@@ -1,10 +1,9 @@
 #ifndef _FS_H
 #define _FS_H
 
+#include <fs/fat32.h>
 #include <linux/list.h>
 #include <linux/types.h>
-#include <asm-generic/int-ll64.h>
-#include <fs/fat32.h>
 #include <asm/page.h>
 #include <fs/file_time.h>
 
@@ -14,6 +13,22 @@
 #define NDIRENT_SECPOINTER 5
 #define DIRENT_HOLDER_CNT 256
 extern struct lock mtx_file;
+
+typedef struct FAT32Directory {
+	u8 DIR_Name[11];
+	u8 DIR_Attr;
+	u8 DIR_NTRes;
+	u8 DIR_CrtTimeTenth;
+	u16 DIR_CrtTime;
+	u16 DIR_CrtDate;
+	u16 DIR_LstAccDate;
+	u16 DIR_FstClusHI;
+	u16 DIR_WrtTime;
+	u16 DIR_WrtDate;
+	u16 DIR_FstClusLO;
+	u32 DIR_FileSize;
+} __attribute__((packed)) FAT32Directory;
+
 
 struct bpb{
 	u16 bytes_per_sec;
@@ -71,7 +86,7 @@ typedef struct DirentPointer {
 #define MAX_LONGENT 8
 
 typedef struct longEntSet {
-	FAT32LongDirectory *longEnt[MAX_LONGENT];
+	struct FAT32LongDirectory *longEnt[MAX_LONGENT];
 	int cnt;
 } longEntSet;
 
@@ -168,6 +183,26 @@ struct kstat {
 	unsigned __unused[2];
 };
 
+union st_mode {
+	u32 val;
+	// 从低地址到高地址
+	struct {
+		unsigned other_x : 1;
+		unsigned other_w : 1;
+		unsigned other_r : 1;
+		unsigned group_x : 1;
+		unsigned group_w : 1;
+		unsigned group_r : 1;
+		unsigned user_x : 1;
+		unsigned user_w : 1;
+		unsigned user_r : 1;
+		unsigned t : 1;
+		unsigned g : 1;
+		unsigned u : 1;
+		unsigned file_type : 4;
+	} __attribute__((packed)) bits; // 取消优化对齐
+};
+
 extern FileSystem* fatFs;
 
 typedef int (*findfs_callback_t)(FileSystem *fs, void *data);
@@ -177,4 +212,6 @@ int partition_format(FileSystem* fs);//初始化文件系统分区
 void fat32_init(struct FileSystem* fs) ;
 void fs_init(void);
 int get_entry_count_by_name(char* name);
+FileSystem *find_fs_by(findfs_callback_t findfs, void *data);
+void fat32Test(void);
 #endif

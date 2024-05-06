@@ -1,6 +1,6 @@
 #include <linux/console.h>
 #include <linux/ns16550a.h>
-#include <linux/sync.h>
+#include <sync.h>
 #include <linux/thread.h>
 static struct lock console_lock;    // 控制台锁
 

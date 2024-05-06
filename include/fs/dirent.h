@@ -7,8 +7,8 @@
 
 typedef struct Dirent Dirent;
 int is_directory(FAT32Directory* f);
-void dirent_init();
-Dirent *dirent_alloc();
+void dirent_init(void);
+Dirent *dirent_alloc(void);
 void dirent_dealloc(Dirent *dirent);
 
 #endif

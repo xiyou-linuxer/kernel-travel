@@ -6,20 +6,9 @@
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <sync.h>
-#include <sys/errno.h>
+#include <linux/errno.h>
 
 extern struct lock mtx_file;
-
-int is_mount_dir(Dirent *dirent)
-{
-	if(dirent->head != NULL){
-		return true;
-	}else
-	{
-		return false;
-	}
-	
-}
 
 // mount之后，目录中原有的文件将被暂时取代为挂载的文件系统内的内容，umount时会重新出现
 int mount_fs(char *special, Dirent *baseDir, char *dirPath) {
@@ -36,7 +25,7 @@ int mount_fs(char *special, Dirent *baseDir, char *dirPath) {
 	}
 
 	// 检查dir是否是目录
-	if (!is_directory(&(dir->raw_dirent))) {
+	if (!is_directory(&dir->raw_dirent)) {
 		printk("dir %s is not a directory!\n", dirPath);
 		file_close(dir);
 		lock_release(&mtx_file);
@@ -46,14 +35,14 @@ int mount_fs(char *special, Dirent *baseDir, char *dirPath) {
 	// 2. 寻找mount的文件
 	// 特判是否是设备（deprecated）
 	Dirent *image;
-	if (strcmp(special, "/dev/vda2") == 0) {
+	if (strncmp(special, "/dev/vda2", 10) == 0) {
 		image = NULL;
 	} else {
 		ret = getFile(baseDir, special, &image);
 		if (ret < 0) {
-			warn("image %s is not found!\n", special);
+			printk("image %s is not found!\n", special);
 			file_close(dir);
-			mtx_unlock_sleep(&mtx_file);
+			lock_release(&mtx_file);
 			return ret;
 		}
 	}

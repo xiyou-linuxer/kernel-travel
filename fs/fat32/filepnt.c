@@ -15,17 +15,17 @@ void filepnt_setval(DirentPointer* fileptr, int i, int value) {
 	if (index1 >= NDIRENT_SECPOINTER) {
 		// 导入三级指针
 		if (fileptr->third == NULL) {
-			fileptr->third = (struct ThirdPointer *)get_page();
+			fileptr->third = (struct ThirdPointer *)get_kernel_pge();
 		}
 		index1 = index1 - NDIRENT_SECPOINTER;
 		if (fileptr->third->ptr[index1] == NULL) {
-			fileptr->third->ptr[index1] = (struct TwicePointer *)get_page();
+			fileptr->third->ptr[index1] = (struct TwicePointer *)get_kernel_pge();
 		}
 		struct TwicePointer *twicep = fileptr->third->ptr[index1];
 		twicep->cluster[index2] = value;
 	} else {
 		if (fileptr->second[index1] == NULL) {
-			fileptr->second[index1] = (struct TwicePointer *)get_page();
+			fileptr->second[index1] = (struct TwicePointer *)get_kernel_pge();
 		}
 		struct TwicePointer *twicep = fileptr->second[index1];
 		twicep->cluster[index2] = value;
