@@ -44,7 +44,7 @@ static inline phys_addr_t memblock_fit_size(phys_addr_t base, phys_addr_t* size)
 }
 #define for_first_empty_memory_regions(regions)		\
 	for()
-static int __meminit memblock_add_range(struct memblock_type* memblock_type,phys_addr_t base,phys_addr_t size,enum memblock_flags flags)
+static int __meminit memblock_add_range(struct memblock_type* memblock_type,phys_addr_t base,phys_addr_t size,enum memblock_flags flags,int nid)
 {
 	phys_addr_t end = base + memblock_fit_size(base,&size);
 	int empty_regions_index = -1;
@@ -61,6 +61,7 @@ static int __meminit memblock_add_range(struct memblock_type* memblock_type,phys
 	memblock_type->regions[empty_regions_index].base = base;
 	memblock_type->regions[empty_regions_index].size = size;
 	memblock_type->regions[empty_regions_index].flags = flags;
+	memblock_type->regions[empty_regions_index].nid = nid;
 	memblock_type->total_size += size;
 
 	return 0;
@@ -73,7 +74,7 @@ int __meminit memblock_reserve(phys_addr_t base, phys_addr_t size)
 	memblock_dbg("%s: [%pa-%pa] %pS\n", __func__,
 		     &base, &end, (void *)_RET_IP_);
 
-	return memblock_add_range(&memblock.reserved, base, size, 0);
+	return memblock_add_range(&memblock.reserved, base, size,0,0);
 }
 
 int __meminit memblock_add(phys_addr_t base, phys_addr_t size)
@@ -82,5 +83,5 @@ int __meminit memblock_add(phys_addr_t base, phys_addr_t size)
 	phys_addr_t end = base + size - 1;
 	memblock_debug = 1;
 	memblock_dbg("%s: [0x%pa-0x%pa] 0x%p\n", __func__,&base, &end, (void *)_RET_IP_);
-	return memblock_add_range(&memblock.memory,base,size,0);
+	return memblock_add_range(&memblock.memory,base,size,0,0);
 }

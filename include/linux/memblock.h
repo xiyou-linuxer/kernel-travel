@@ -20,6 +20,7 @@ struct memblock_region {
 	phys_addr_t base;
 	phys_addr_t size;
 	enum memblock_flags flags;
+	int nid;
 };
 
 struct memblock_type {

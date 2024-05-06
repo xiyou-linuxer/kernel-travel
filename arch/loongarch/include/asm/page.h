@@ -26,6 +26,8 @@
 #define PGD_BASE_ADD 0x9000000000010000
 
 void phy_pool_init(void);
+void paging_init(void);
+
 
 
 #endif /* _ASM_PAGE_H */
