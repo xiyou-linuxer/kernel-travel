@@ -7,6 +7,7 @@
 #include <process.h>
 #include <asm/pt_regs.h>
 #include <linux/switch.h>
+#include <asm/loongarch.h>
 
 extern void user_ret(void);
 

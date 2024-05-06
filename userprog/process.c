@@ -64,8 +64,9 @@ void process_execute(void* filename, char* name) {
 
 void page_dir_activate(struct task_struct* pcb)
 {
-    if (pcb->pgdir != 0) {
-        write_csr_pgdl(pcb->pgdir);
-    }
+	if (pcb->pgdir != 0) {
+		write_csr_pgdl(pcb->pgdir);
+		invalidate();
+	}
 }
 
