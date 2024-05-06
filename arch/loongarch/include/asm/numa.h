@@ -29,12 +29,14 @@ struct free_area {
 	unsigned long		nr_free;
 };
 
+#define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 struct zone {
 	long low_reserved_mem[MAX_NR_ZONES];
 	int node;
 	struct pglist_data	*zone_pgdat;
 	unsigned long		zone_start_pfn;
 	// atomic_long_t		managed_pages;
+	unsigned long		managed_pages;	// for tmp use
 	unsigned long		spanned_pages;
 	unsigned long		present_pages;
 	const char		*name;

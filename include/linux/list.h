@@ -18,6 +18,8 @@ struct list {
 
 typedef int (function) (struct list_elem* ,void* arg);
 
+#define list_elem_init(elm) list_insert_before(elm,elm)
+
 void list_init(struct list*);
 void list_insert_before(struct list_elem* before,struct list_elem* elm);
 void list_push(struct list* plist,struct list_elem* elm);

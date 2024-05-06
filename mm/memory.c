@@ -18,6 +18,9 @@ struct pool reserve_phy_pool;
 struct pool phy_pool;
 static unsigned long arch_zone_lowest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __initdata;
+static unsigned long nr_kernel_pages __initdata;
+static unsigned long nr_all_pages __initdata;
+
 uint64_t get_page(void)
 {
 	unsigned long page;
@@ -227,8 +230,86 @@ static void __init calculate_node_totalpages(struct pglist_data *pg_data,
 	printk("On node %d totalpages: %lu\n", pg_data->node_id, realtotalpages);
 }
 
-static void __init free_area_init_core(struct pglist_data *pgdat)
+static void __meminit pgdat_init_internals(struct pglist_data *pg_data)
 {
+	// 需要初始化 pgdat->kswapd_wait 。是 kswapd 线程等待的等待队列。 前提：调度的 waitqueue
+	/*需要等待某些条件满足或等待某些资源的释放，这时 kswapd 就会将自己放置在 kswapd_wait 等待队列中进行等待。*/
+	// init_waitqueue_head(&pgdat->kswapd_wait);
+	// ...
+}
+
+static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx, int nid,
+							unsigned long remaining_pages)
+{
+	zone->managed_pages = remaining_pages;
+	zone->node = nid;
+	zone->name = zone_names[idx];
+	zone->zone_pgdat = node_data[nid];
+	// spin_lock_init(&zone->lock);
+	// zone_seqlock_init(zone);
+}
+
+static void __meminit zone_init_free_lists(struct zone *zone)
+{
+	unsigned int order, t;
+	for_each_migratetype_order(order, t) {
+		list_elem_init(&zone->free_area[order].free_list[t]);
+		zone->free_area[order].nr_free = 0;
+	}
+}
+
+
+void __meminit init_currently_empty_zone(struct zone *zone,
+					unsigned long zone_start_pfn,
+					unsigned long size)
+{
+	struct pglist_data *pg_data = zone->zone_pgdat;
+	int zone_idx = zone_idx(zone) + 1;
+	// 确保 pgdat->nr_zones 记录了节点中所有内存区域的数量
+	if (zone_idx > pg_data->nr_zones)
+		pg_data->nr_zones = zone_idx;
+
+	zone->zone_start_pfn = zone_start_pfn;
+
+
+}
+
+static unsigned long __init calc_memmap_pages_size(unsigned long spanned_pages)
+{
+	return PAGE_ALIGN(spanned_pages * sizeof(struct page)) >> PAGE_SHIFT;
+}
+
+static void __init free_area_init_core(struct pglist_data *pg_data)
+{
+	int nid = pg_data->node_id;
+	pgdat_init_internals(pg_data);
+
+	for (enum zone_type j = 0; j < MAX_NR_ZONES; j++) {
+		struct zone *zone = pg_data->node_zones + j;
+		unsigned long size = zone->spanned_pages;
+		unsigned long present_size = zone->present_pages;
+		unsigned long memmap_pages_size = calc_memmap_pages_size(size);
+		
+		if(present_size > memmap_pages_size) {
+			present_size -= memmap_pages_size;
+			if(memmap_pages_size)
+				printk("[%s zone]: %lu pages used for memmap\n",
+					 zone_names[j], memmap_pages_size);
+			else
+				printk("[%s zone]: %lu memmap pages exceeds freesize %lu\n",
+					zone_names[j], memmap_pages_size, present_size);
+		}
+		// 这里需要 DMA 的话还要减去为 DMA 保留的页
+		// ...
+		nr_kernel_pages += present_size;
+		nr_all_pages += present_size;
+		zone_init_internals(zone, j, nid, present_size);
+		
+		if (!size)
+			continue;
+		
+
+	}
 	return;
 }
 

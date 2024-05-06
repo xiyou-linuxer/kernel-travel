@@ -30,7 +30,7 @@ extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
 #define VMEM_SIZE (1UL << (9 + 9 + 12))
-
+extern void disk_init(void);
 extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);

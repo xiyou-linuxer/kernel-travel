@@ -55,9 +55,9 @@ function image()
 		make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image
 	fi
 
-	sudo docker cp /home/username/Desktop/Os/kernel-travel/arch/loongarch/boot/Image  os-contest:/srv/tftp/Image
-	sudo docker cp vmlinux os-contest:/vmlinux
-	sudo docker cp command/user_prog os-contest:/tmp/qemu/user_prog
+	docker cp /home/username/Desktop/Os/kernel-travel/arch/loongarch/boot/Image  os-contest:/srv/tftp/Image
+	docker cp vmlinux os-contest:/vmlinux
+	docker cp command/user_prog os-contest:/tmp/qemu/user_prog
 }
 
 function gdb()

@@ -17,6 +17,11 @@
 
 #define DMW_MASK  (0x9000000000000000)
 
+#define for_each_migratetype_order(order, type) \
+	for (order = 0; order <= MAX_ORDER; order++) \
+		for (type = 0; type < MIGRATE_TYPES; type++)
+
+
 struct virt_addr {
     u64 vaddr_start;
     struct bitmap btmp;
@@ -29,9 +34,9 @@ struct pool {
 
 #define _struct_page_alignment	__aligned(2 * sizeof(unsigned long))
 
-// struct page {
+struct page {
 //     // 存储 page 的定位信息以及相关标志位
-//     unsigned long flags;        
+	unsigned long flags;
 
 //     union {
 //         struct {    /* Page cache and anonymous pages */
@@ -105,6 +110,7 @@ struct pool {
 //     void *virtual;  // 内存页对应的虚拟内存地址
 
 // } _struct_page_alignment;
+};
 
 struct mm_struct {
 	u64 pgd;

@@ -2,6 +2,7 @@
 #define _ASM_PAGE_H
 
 #include <asm/addrspace.h>
+#include <linux/align.h>
 
 #define PAGE_SHIFT	12
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
@@ -35,6 +36,9 @@
 #define PFN_PHYS(x)	((phys_addr_t)(x) << PAGE_SHIFT)
 // 将给定的物理地址转换为PFN
 #define PHYS_PFN(x)	((unsigned long)((x) >> PAGE_SHIFT))
+
+#define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
+
 void phy_pool_init(void);
 void paging_init(void);
 
