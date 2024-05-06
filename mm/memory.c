@@ -6,8 +6,11 @@
 #include <linux/stdio.h>
 #include <linux/types.h>
 #include <linux/string.h>
-#include "linux/sched.h"
-#include "linux/thread.h"
+#include <linux/sched.h>
+#include <linux/thread.h>
+#include <linux/memblock.h>
+#include <linux/init.h>
+#include <linux/math.h>
 
 
 struct pool reserve_phy_pool;
@@ -100,11 +103,34 @@ void free_kernel_pge(void* k_page)
 
 void * kmalloc(u64 size)
 {
-	// struct task_struct * curr =  running_thread();
-	// struct mm_struct * mm = curr->mm;
-	// return (void *)get_kernel_pge();
-	if(__builtin_constant_p(size) && size) {
-		unsigned long index;
-		if(size > KMALLOC_MAX_CACHE_SIZE)
+	struct task_struct * curr =  running_thread();
+	struct mm_struct * mm = curr->mm;
+	return (void *)get_kernel_pge();
+	// if(__builtin_constant_p(size) && size) {
+	// 	unsigned long index;
+	// 	if(size > KMALLOC_MAX_CACHE_SIZE)
+	// }
+}
+
+void __init get_pfn_range_for_nid(unsigned int nid,
+			unsigned long *start_pfn, unsigned long *end_pfn)
+{
+	unsigned long this_start_pfn, this_end_pfn;
+	int i;
+
+	*start_pfn = -1UL;
+	*end_pfn = 0;
+
+	for_each_mem_pfn_range(i, nid, &this_start_pfn, &this_end_pfn, NULL) {
+		*start_pfn = min(*start_pfn, this_start_pfn);
+		*end_pfn = max(*end_pfn, this_end_pfn);
 	}
+
+	if (*start_pfn == -1UL)
+		*start_pfn = 0;
+}
+
+void __init free_area_init(unsigned long *max_zone_pfn)
+{
+	
 }

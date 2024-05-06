@@ -25,6 +25,16 @@
 
 #define PGD_BASE_ADD 0x9000000000010000
 
+// 将给定的值x按页对齐
+#define PFN_ALIGN(x)	(((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
+// 将给定的值x向上舍入到下一个页面的起始位置
+#define PFN_UP(x)	(((x) + PAGE_SIZE-1) >> PAGE_SHIFT)
+// 将给定的值x向下舍入到当前页面的起始位置
+#define PFN_DOWN(x)	((x) >> PAGE_SHIFT)
+// 将给定的PFN转换为物理地址
+#define PFN_PHYS(x)	((phys_addr_t)(x) << PAGE_SHIFT)
+// 将给定的物理地址转换为PFN
+#define PHYS_PFN(x)	((unsigned long)((x) >> PAGE_SHIFT))
 void phy_pool_init(void);
 void paging_init(void);
 

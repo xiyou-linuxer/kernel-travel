@@ -3,6 +3,7 @@
 
 #include <linux/memory.h>
 #include <linux/types.h>
+#include <linux/list.h>
 
 // 目前是 UMA 架构，只有一个伪 NUMA 节点
 #define MAX_NUMNODES 1
@@ -24,10 +25,22 @@ enum zone_type {
 };
 
 struct free_area {
-	struct list_head	free_list[MIGRATE_TYPES];
+	struct list_elem	free_list[MIGRATE_TYPES];
 	unsigned long		nr_free;
 };
 
+struct zone {
+	long low_reserved_mem[MAX_NR_ZONES];
+	int node;
+	struct pglist_data	*zone_pgdat;
+	unsigned long		zone_start_pfn;
+	// atomic_long_t		managed_pages;
+	unsigned long		spanned_pages;
+	unsigned long		present_pages;
+	const char		*name;
+	// spinlock_t		lock;
+	struct free_area	free_area[MAX_ORDER + 1];
+};
 
 typedef struct pglist_data {
 	struct zone node_zones[MAX_NR_ZONES];
@@ -49,18 +62,7 @@ typedef struct pglist_data {
 
 } pg_data_t;
 
-struct zone {
-	long low_reserved_mem[MAX_NR_ZONES];
-	int node;
-	struct pglist_data	*zone_pgdat;
-	unsigned long		zone_start_pfn;
-	// atomic_long_t		managed_pages;
-	unsigned long		spanned_pages;
-	unsigned long		present_pages;
-	const char		*name;
-	// spinlock_t		lock;
-	struct free_area	free_area[MAX_ORDER + 1];
-};
+
 
 void paging_init(void);
 

@@ -3,6 +3,7 @@
 #include <linux/init.h>
 #include <linux/stdio.h>
 #include <linux/printk.h>
+#include <asm/page.h>
 #include <debug.h>
 #define INIT_MEMBLOCK_MEMORY_REGIONS 32
 #define INIT_MEMBLOCK_RESERVED_REGIONS INIT_MEMBLOCK_MEMORY_REGIONS
@@ -17,6 +18,7 @@
 
 static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS];
 static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS];
+static int memblock_debug __meminitdata;
 
 struct memblock memblock = {
 	.memory.regions		= memblock_memory_init_regions,
@@ -35,16 +37,20 @@ struct memblock memblock = {
 
 
 
-static int memblock_debug __meminitdata;
+
+unsigned long max_low_pfn = 0;
+unsigned long min_low_pfn = 0;
+unsigned long max_pfn = 0;
+unsigned long long max_possible_pfn = 0;
 
 /* 保证物理地址的合法性 */
 static inline phys_addr_t memblock_fit_size(phys_addr_t base, phys_addr_t* size)
 {
 	return *size = *size < (PHYS_ADDR_MAX - base) ? *size : (PHYS_ADDR_MAX - base);
 }
-#define for_first_empty_memory_regions(regions)		\
-	for()
-static int __meminit memblock_add_range(struct memblock_type* memblock_type,phys_addr_t base,phys_addr_t size,enum memblock_flags flags,int nid)
+
+static int __meminit memblock_add_range(struct memblock_type* memblock_type,
+			phys_addr_t base,phys_addr_t size,enum memblock_flags flags,int nid)
 {
 	phys_addr_t end = base + memblock_fit_size(base,&size);
 	int empty_regions_index = -1;
@@ -84,4 +90,34 @@ int __meminit memblock_add(phys_addr_t base, phys_addr_t size)
 	memblock_debug = 1;
 	memblock_dbg("%s: [0x%pa-0x%pa] 0x%p\n", __func__,&base, &end, (void *)_RET_IP_);
 	return memblock_add_range(&memblock.memory,base,size,0,0);
+}
+
+void __next_mem_pfn_range(int *idx, int nid, unsigned long *out_start_pfn,
+			  unsigned long *out_end_pfn, int *out_nid)
+{
+	int reg_nid;
+	struct memblock_type * mem_type = &memblock.memory;
+	struct memblock_region * reg;
+
+	while(++*idx < mem_type->cnt) {
+		reg = &mem_type->regions[*idx];
+		reg_nid = reg->nid;
+		if(PFN_UP(reg->base) >= PFN_DOWN(reg->base + reg->size))
+			continue;
+		// 找到合适的 regions
+		if(nid == reg_nid)
+			break;
+	}
+	// 错误处理
+	if (*idx >= mem_type->cnt) {
+		*idx = -1;
+		return;
+	}
+	// 检查空指针
+	if (out_start_pfn)
+		*out_start_pfn = PFN_UP(reg->base);
+	if (out_end_pfn)
+		*out_end_pfn = PFN_DOWN(reg->base + reg->size);
+	if (out_nid)
+		*out_nid = reg_nid;
 }

@@ -20,6 +20,7 @@ obj-y += env.o
 obj-y += ../../../mm/memblock.o
 obj-y += mem.o
 obj-y += syscall.o
+obj-y += numa.o
 
 
 head-y			:= head.o
