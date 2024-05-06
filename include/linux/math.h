@@ -18,4 +18,6 @@
 		typeof(b) _b = b;\
 		_a < _b ? _a : _b; })
 
+#define clamp(val, lo, hi) min((typeof(val))max(val, lo), hi)
+
 #endif /* _LINUX_MATH_H */

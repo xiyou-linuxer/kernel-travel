@@ -121,3 +121,15 @@ void __next_mem_pfn_range(int *idx, int nid, unsigned long *out_start_pfn,
 	if (out_nid)
 		*out_nid = reg_nid;
 }
+
+phys_addr_t __meminit memblock_start_of_DRAM(void)
+{
+	return memblock.memory.regions[0].base;
+}
+
+phys_addr_t __meminit memblock_end_of_DRAM(void)
+{
+	int idx = memblock.memory.cnt - 1;
+
+	return (memblock.memory.regions[idx].base + memblock.memory.regions[idx].size);
+}

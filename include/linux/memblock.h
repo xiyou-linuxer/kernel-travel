@@ -49,6 +49,9 @@ extern unsigned long long max_possible_pfn;
 void memblock_init(void);
 int memblock_add(phys_addr_t base, phys_addr_t size);
 int memblock_reserve(phys_addr_t base, phys_addr_t size);
+phys_addr_t memblock_start_of_DRAM(void);
+phys_addr_t memblock_end_of_DRAM(void);
+
 void __next_mem_pfn_range(int *idx, int nid, unsigned long *out_start_pfn,
 			  unsigned long *out_end_pfn, int *out_nid);
 
