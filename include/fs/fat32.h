@@ -1,9 +1,6 @@
 #ifndef _FS_FAT32_H
 #define _FS_FAT32_H
 
-#define DIRENT_SIZE 32
-#define BYTES_LONGENT 13//长文件名每项的长度
-
 #include <linux/block_device.h>
 #include <linux/types.h>
 #include <fs/fs.h>
@@ -42,8 +39,21 @@ typedef struct FAT32BootParamBlock {
 } __attribute__((packed)) FAT32BootParamBlock;
 
 /*fat32文件系统中的目录项*/
+typedef struct FAT32Directory {
+	u8 DIR_Name[11];
+	u8 DIR_Attr;
+	u8 DIR_NTRes;
+	u8 DIR_CrtTimeTenth;
+	u16 DIR_CrtTime;
+	u16 DIR_CrtDate;
+	u16 DIR_LstAccDate;
+	u16 DIR_FstClusHI;
+	u16 DIR_WrtTime;
+	u16 DIR_WrtDate;
+	u16 DIR_FstClusLO;
+	u32 DIR_FileSize;
+} __attribute__((packed)) FAT32Directory;
 
-//长文件名
 typedef struct FAT32LongDirectory {
 	u8 LDIR_Ord;
 	unsigned short LDIR_Name1[5];
@@ -55,9 +65,11 @@ typedef struct FAT32LongDirectory {
 	unsigned short LDIR_Name3[2];
 } __attribute__((packed)) FAT32LongDirectory;
 
-#define MAX_DIRENT 160000
+#define BYTES_LONGENT 13
 
+#define BPB_SIZE sizeof(FAT32BootParamBlock)
 #define DIR_SIZE sizeof(FAT32Directory)
+
 // 如果DIR_Name[0] == 0xE5，则表示该目录项已经被删除
 #define FAT32_INVALID_ENTRY 0xE5
 
@@ -68,19 +80,12 @@ typedef struct FAT32LongDirectory {
 #define ATTR_VOLUME_ID 0x08		//卷标属性
 #define ATTR_DIRECTORY 0x10		//目录属性
 #define ATTR_ARCHIVE 0x20		//归档属性
-#define ATTR_LINK 0x40
 #define ATTR_LONG_NAME_MASK (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 #define CHAR2LONGENT 26
 #define LAST_LONG_ENTRY 0x40
-#define IS_LINK(raw_dirent) ((raw_dirent)->DIR_Attr & ATTR_LINK)
-#define PGROUNDUP(a) (((a) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
-#define ROUNDUP(a, x) (((a) + (x)-1) & ~((x)-1))
-#define MIN(_a,_b)                                                                                \
-	({                                                                                         \
-		typeof(_a) __a = (_a);                                                             \
-		typeof(_b) __b = (_b);                                                             \
-		__a <= __b ? __a : __b;                                                            \
-	})
+#define DIRENT_SIZE 32
+
+#define CLUS_SIZE(fs) ((fs)->superBlock.bytes_per_clus)
 
 void init_root_fs(void);
 #endif

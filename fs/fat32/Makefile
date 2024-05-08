@@ -1,9 +1,6 @@
 obj-y	+=fat32init.o
 obj-y	+=cluster.o
-obj-y	+=chardev.o
-obj-y	+=directory.o
 obj-y	+=dirent.o
+obj-y	+=directory.o
 obj-y	+=file.o
 obj-y	+=filepnt.o
-obj-y	+=link.o
-obj-y	+=mount.o

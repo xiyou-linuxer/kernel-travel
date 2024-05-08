@@ -38,16 +38,16 @@ static unsigned long clusterFatSecIndex(FileSystem *fs, unsigned long cluster) {
 }
 
 void clusterRead(FileSystem *fs, unsigned long cluster, long offset, void *dst, size_t n, bool isUser) {
-
+	/*printk("offset + n:%x fs->superBlock.bytes_per_clus:%x",offset + n,fs->superBlock.bytes_per_clus);*/
 	// 读的偏移不能超出该扇区
-	ASSERT(offset + n > fs->superBlock.bytes_per_clus);
+	//ASSERT(offset + n < fs->superBlock.bytes_per_clus);
 	// 计算簇号 cluster 所在的扇区号
 	unsigned long secno = clusterSec(fs, cluster) + offset / fs->superBlock.bpb.bytes_per_sec;
 	// 计算簇号 cluster 所在的扇区内的偏移量
 	unsigned long secoff = offset % fs->superBlock.bpb.bytes_per_sec;
 
 	// 判断读写长度是否超过簇的大小
-	ASSERT(n > fs->superBlock.bytes_per_clus - offset);
+	//ASSERT(n < fs->superBlock.bytes_per_clus - offset);
 
 	// 读扇区
 	for (unsigned long i = 0; i < n; secno++, secoff = 0) {
@@ -74,7 +74,7 @@ void clusterWrite(FileSystem *fs, unsigned long cluster, long offset, void *src,
 	unsigned long secoff = offset % fs->superBlock.bpb.bytes_per_sec;
 
 	// 判断读写长度是否超过簇的大小
-	ASSERT(n > fs->superBlock.bytes_per_clus - offset);
+	//ASSERT(n > fs->superBlock.bytes_per_clus - offset);
 
 	// 写扇区
 	for (unsigned long i = 0; i < n; secno++, secoff = 0) {
@@ -197,7 +197,6 @@ long fileBlockNo(FileSystem *fs, unsigned long firstclus, unsigned long fblockno
 	// 找到第 fblockno 个块所在的扇区号
 	return clusterSec(fs, curClus) + fblockno % block_per_clus;
 }
-
 int countClusters(struct Dirent *file) {
 	printk("count Cluster begin!\n");
 

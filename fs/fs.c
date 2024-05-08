@@ -1,10 +1,10 @@
 #include <fs/fs.h>
-#include <fs/fat32.h>
 #include <fs/buf.h>
 #include <linux/stdio.h>
 #include <debug.h>
 #include <linux/string.h>
 #include <fs/cluster.h>
+#include <fs/dirent.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
@@ -58,6 +58,7 @@ FileSystem *find_fs_by(findfs_callback_t findfs, void *data) {
 	return NULL;
 }
 
+
 int find_fs_of_dir(FileSystem *fs, void *data) {
 	Dirent *dir = (Dirent *)data;
 	if (fs->mountPoint == NULL) {
@@ -66,6 +67,7 @@ int find_fs_of_dir(FileSystem *fs, void *data) {
 		return fs->mountPoint->first_clus == dir->first_clus;
 	}
 }
+
 
 /**
  * @brief 初始化分区信息，填写文件系统结构体里面的超级块
@@ -115,6 +117,7 @@ int partition_format(FileSystem *fs) {
 		printk("BUF_SIZE != fs->superBlock.bpb.bytes_per_sec\n");
 		return -E_DEV_ERROR;
 	}
+
 	printk("cluster ok!\n");
 
 	// 释放缓冲区
@@ -130,24 +133,9 @@ void fs_init(void)
 	printk("fs_init start\n");
 	bufInit();			//初始化buf
 	//bufTest(0);
+	dirent_init();
 	init_root_fs();		//初始化根文件系统
+	printk("init_root_fs down\n");
+	fat32Test() ;
 	printk("fs_init down\n");
-}
-
-int get_entry_count_by_name(char *name) 
-{
-	int len = (strlen(name) + 1);
-
-	if (len > 11) {
-		int cnt = 1; // 包括短文件名项
-		if (len % BYTES_LONGENT == 0) {
-			cnt += len / BYTES_LONGENT;
-		} else {
-			cnt += len / BYTES_LONGENT + 1;
-		}
-		return cnt;
-	} else {
-		// 自己一个，自己的长目录项一个
-		return 2;
-	}
 }

@@ -2,7 +2,6 @@
 #include <fs/dirent.h>
 #include <fs/fat32.h>
 #include <fs/file.h>
-#include <fs/filedev.h>
 #include <fs/file_time.h>
 #include <fs/fs.h>
 #include <fs/vfs.h>
@@ -11,100 +10,59 @@
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <debug.h>
-/**
- * @brief mtx_file是负责维护磁盘file访问互斥性的锁。
- * 每次我们携带dirent指针进入文件系统层对文件进行操作，都需要获取这个锁，以保证对dirent的
- * 读、写、删除等是互斥的。之前曾设计过更细粒度的锁（对每个Dirent加锁），但因太复杂而使用此粗粒度的锁。
- */
-extern struct lock mtx_file;
 
-/**
- * 管理文件相关事务
- * 文件新建、读写、删除
- */
-
-struct FileDev file_dev_file = {
-    .dev_id = 'f',
-    .dev_name = "file",
-    .dev_read = file_read,
-    .dev_write = file_write,
-};
-
-/**
- * @brief 获取文件Dirent，但并不跟随软链接。每次get引用计数加1，close引用计数减一
- * @param baseDir 文件或目录寻址时的基地址
- * @param path
- * 文件或目录的路径。如果path是绝对路径，则忽略baseDir；如果path是相对路径（不以 '/'
- * 开头，则是相对于baseDir的）。 path指向的地址要求为内核地址
- * @return 负数表示出错
- */
 int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
-	lock_acquire(&mtx_file);
-
+	//lock_acquire(&mtx_file);
+	
 	Dirent *file;
 	longEntSet longSet;
 	FileSystem *fs;
 
-	extern FileSystem *fatFs;
+	//FileSystem *fatFs;
 
-	if (baseDir) {
+	/*if (baseDir) {
 		fs = baseDir->file_system;
 	} else {
 		fs = fatFs;
-	}
+	}*/
 
 	if (path == NULL) {
-		if (baseDir == NULL) {
+		/*if (baseDir == NULL) {
 			// 一般baseDir都是以类似dirFd的形式解析出来的，所以如果baseDir为NULL，表示归属的fd无效
 			printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
-			lock_release(&mtx_file);
+			//lock_release(&mtx_file);
 			return -1;
 		} else {
 			// 如果path为NULL，则直接返回baseDir（即上层的dirfd解析出的Dirent）
 			*pfile = baseDir;
 			dget_path(baseDir); // 此时复用一次，也需要加引用
-			lock_release(&mtx_file);
+			//lock_release(&mtx_file);
 			return 0;
-		}
+		}*/
+		printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
 	}
-
 	int r = walk_path(fs, path, baseDir, 0, &file, 0, &longSet);
+	printk("get_file_raw\n");
 	if (r < 0) {
-		lock_release(&mtx_file);
+		//lock_release(&mtx_file);
 		return r;
 	} else {
 		// 首次打开，更新pointer
 		filepnt_init(file);
-		lock_release(&mtx_file);
+		//lock_release(&mtx_file);
 		*pfile = file;
 		return 0;
 	}
 }
-
-static void file_readlink(Dirent *file, char *buf, int size) {
-	ASSERT(IS_LINK(&(file->raw_dirent)));
-	ASSERT(file->file_size < size);
-
-	file_read(file, 0, (u64)buf, 0, file->file_size);
-}
-
-/**
- * @brief 打开路径为path的文件或目录，返回描述项Dirent。每次get引用计数加1，close引用计数减一
- * @param baseDir 文件或目录寻址时的基地址
- * @param path
- * 文件或目录的路径。如果path是绝对路径，则忽略baseDir；如果path是相对路径（不以 '/'
- * 开头，则是相对于baseDir的）。 path指向的地址要求为内核地址
- * @return -ENOENT 找不到文件；
- *  -ENOTDIR 路径中的某一级不是目录；
- */
 int getFile(Dirent *baseDir, char *path, Dirent **pfile) {
 	Dirent *file;
 	int ret = get_file_raw(baseDir, path, &file);
 	if (ret < 0) {
 		return ret;
 	}
-
-	if (IS_LINK(&(file->raw_dirent))) {
+	*pfile = file;
+	return 0;
+	/*if (IS_LINK(&(file->raw_dirent))) {
 		char buf[MAX_NAME_LEN];
 		file_readlink(file, buf, MAX_NAME_LEN);
 		file_close(file);
@@ -114,30 +72,9 @@ int getFile(Dirent *baseDir, char *path, Dirent **pfile) {
 	} else {
 		*pfile = file;
 		return 0;
-	}
+	}*/
 }
 
-/**
- * @brief 关闭Dirent，使其引用计数减一
- */
-void file_close(Dirent *file) {
-	lock_acquire(&mtx_file);
-	dput_path(file);
-	if (file->is_rm && file->refcnt == 0) {
-		printk("file close and is_rm is set, rm file %s\n", file->name);
-		rm_unused_file(file);
-	}
-	lock_release(&mtx_file);
-}
-
-// 补充两个不获取锁的_file_read_nolock和_file_write_nolock，以供连续写入时使用
-
-/**
- * @brief 将文件 entry 的 off 偏移往后长度为 n 的内容读到 dst 中。如果 user
- * 为真，则为用户地址，否则为内核地址。
- * @brief 如果遇到文件结束，返回0
- * @return 返回读取文件的字节数
- */
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
@@ -171,6 +108,7 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 
 	// 之后的块
 	clusIndex += 1;
+	printk("%d",clusIndex * clusSize);
 	for (; end >= clusIndex * clusSize; clusIndex++) {
 		clus = filepnt_getclusbyno(file, clusIndex);
 		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),
@@ -182,9 +120,6 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 	return n;
 }
 
-/**
- * @brief 扩充文件到新的大小
- */
 void file_extend(struct Dirent *file, int newSize) {
 	ASSERT(file->file_size < newSize);
 
@@ -222,12 +157,7 @@ void file_extend(struct Dirent *file, int newSize) {
 	sync_dirent_rawdata_back(file);
 }
 
-/**
- * @brief 将 src 写入文件 entry 的 off 偏移往后长度为 n 的内容。如果 user
- * 为真，则为用户地址，否则为内核地址。
- * @note 允许写入的内容超出文件，此时将扩展文件
- * @return 返回写入文件的字节数
- */
+
 int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
@@ -265,150 +195,4 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 
 	lock_release(&mtx_file);
 	return n;
-}
-
-/**
- * @brief 缩小文件到指定的大小，并释放之前的簇
- * 在ftruncate之前首先需要将文件最后一个簇的多余部分清零
- */
-void file_shrink(Dirent *file, u64 newsize) {
-	lock_acquire(&mtx_file);
-
-	ASSERT(file != NULL);
-	ASSERT(file->file_size >= newsize);
-
-	u32 oldsize = file->file_size;
-	u32 clusSize = CLUS_SIZE(file->file_system);
-
-	// 1. 清空文件最后一个簇的剩余内容
-	char buf[1024];
-	memset(buf, 0, sizeof(buf));
-	if (oldsize % PAGE_SIZE != 0) {
-		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
-			
-			file_write(file, 0, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
-		}
-	}
-
-	// 2. 释放后面的簇
-	u32 new_clusters = (newsize + clusSize - 1) / clusSize;
-	u32 old_clusters = (oldsize + clusSize - 1) / clusSize;
-	if (new_clusters < old_clusters) {
-		// 获取新文件大小之后的第一个簇
-		u32 last_clus = filepnt_getclusbyno(file, new_clusters);
-		if (new_clusters != 0) {
-			u32 prev_clus = filepnt_getclusbyno(file, new_clusters-1);
-			fatWrite(file->file_system, prev_clus, FAT32_EOF); // 标识最后一个簇
-		}
-		clus_sequence_free(file->file_system, last_clus);
-		for (int i = new_clusters; i < old_clusters; i++) {
-			// 清空簇号表的对应位置
-			filepnt_setval(&file->pointer, i, 0);
-		}
-	}
-
-	// 2. 缩小文件
-	file->file_size = newsize;
-	if (newsize == 0) {
-		file->first_clus = 0;
-	}
-
-	// 3. 写回
-	sync_dirent_rawdata_back(file);
-	lock_release(&mtx_file);
-}
-
-static mode_t get_file_mode(struct Dirent *file) {
-	// 默认给予RWX权限
-	mode_t mode = file->mode;
-
-	if (strncmp(file->name, "ssh_host_", 9) == 0) {
-		// ssh_host_*文件的权限为600
-		mode = 0600;
-	} else if (strncmp(file->name, "empty", 5) == 0) {
-		mode = 0711;
-	}
-
-	if (file->type == DIRENT_DIR) {
-		mode |= __S_IFDIR;
-	} else if (file->type == DIRENT_FILE) {
-		mode |= __S_IFREG;
-	} else if (file->type == DIRENT_CHARDEV) {
-		// 我们默认设备总是字符设备
-		mode |= __S_IFCHR;
-	} else if (file->type == DIRENT_BLKDEV) {
-		mode |= __S_IFBLK;
-	} else {
-		printk("unknown file type: %x\n", file->type);
-		mode |= __S_IFREG; // 暂时置为REGULAR FILE
-	}
-
-	// 打印文件的类型
-	if (S_ISREG(mode)) {
-		printk("file type: regular file\n");
-	} else if (S_ISDIR(mode)) {
-		printk("file type: directory\n");
-	} else if (S_ISCHR(mode)) {
-		printk("file type: character device\n");
-	} else if (S_ISBLK(mode)) {
-		printk("file type: block device\n");
-	} else {
-		printk("file type: unknown\n");
-	}
-
-	return mode;
-}
-
-/**
- * @brief 获取文件状态信息
- * @param kstat 内核态指针，指向文件信息结构体
- */
-void fileStat(struct Dirent *file, struct kstat *pKStat) {
-	lock_acquire(&mtx_file);
-
-	memset(pKStat, 0, sizeof(struct kstat));
-	// P262 Linux-Unix系统编程手册
-	pKStat->st_dev = file->file_system->deviceNumber;
-
-	// 并未实现inode，使用Dirent编号替代inode编号
-	pKStat->st_ino = ((u64)file - 0x80000000ul);
-
-	pKStat->st_mode = get_file_mode(file);
-	pKStat->st_nlink = 1; // 文件的链接数，无链接时为1
-	pKStat->st_uid = 0;
-	pKStat->st_gid = 0;
-	pKStat->st_rdev = 0;
-	pKStat->st_size = file->file_size;
-	pKStat->st_blksize = CLUS_SIZE(file->file_system);
-	pKStat->st_blocks = ROUNDUP(file->file_size, pKStat->st_blksize);
-
-	// 时间相关
-	//file_get_timestamp(file, pKStat);
-
-	lock_release(&mtx_file);
-}
-
-// 检查文件的用户权限，暂时忽略flags
-int faccessat(Dirent *dir, char *path, int mode, int flags) {
-	Dirent *file;
-	int ret = getFile(dir, path, &file);
-	if (ret < 0) {
-		printk("faccessat: file %s not exist\n", path);
-		// 文件不存在肯定不满足任何一项条件
-		return ret;
-	}
-
-	// 文件默认有RWX三种权限，因为FAT32没有实现文件访问权限机制
-	// 因此确认文件存在后，不继续检查，直接返回0
-	file_close(file);
-	return 0;
-}
-
-/**
- * @brief 同步文件系统到磁盘
- */
-void fs_sync(void) {
-	lock_acquire(&mtx_file);
-	//bufSync();
-	lock_release(&mtx_file);
 }

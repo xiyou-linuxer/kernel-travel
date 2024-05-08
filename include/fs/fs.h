@@ -1,9 +1,10 @@
 #ifndef _FS_H
 #define _FS_H
 
-#include <fs/fat32.h>
 #include <linux/list.h>
 #include <linux/types.h>
+#include <asm-generic/int-ll64.h>
+#include <fs/fat32.h>
 #include <asm/page.h>
 #include <fs/file_time.h>
 
@@ -11,23 +12,14 @@
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
 #define PAGE_NCLUSNO (PAGE_SIZE / sizeof(unsigned int))// 一页能容纳的u32簇号个数
 #define NDIRENT_SECPOINTER 5
-#define DIRENT_HOLDER_CNT 256
-extern struct lock mtx_file;
+#define MAX_DIRENT 160000
 
-typedef struct FAT32Directory {
-	u8 DIR_Name[11];
-	u8 DIR_Attr;
-	u8 DIR_NTRes;
-	u8 DIR_CrtTimeTenth;
-	u16 DIR_CrtTime;
-	u16 DIR_CrtDate;
-	u16 DIR_LstAccDate;
-	u16 DIR_FstClusHI;
-	u16 DIR_WrtTime;
-	u16 DIR_WrtDate;
-	u16 DIR_FstClusLO;
-	u32 DIR_FileSize;
-} __attribute__((packed)) FAT32Directory;
+typedef struct FileSystem FileSystem;
+typedef struct Dirent Dirent;
+typedef struct SuperBlock SuperBlock;
+
+// 对应目录、文件、设备
+typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV } dirent_type_t;
 
 
 struct bpb{
@@ -42,10 +34,10 @@ struct bpb{
 };
 
 typedef struct SuperBlock {
-	unsigned int first_data_sec;
-	unsigned int data_sec_cnt;
-	unsigned int data_clus_cnt;
-	unsigned int bytes_per_clus;
+	u32 first_data_sec;
+	u32 data_sec_cnt;
+	u32 data_clus_cnt;
+	u32 bytes_per_clus;
 	struct bpb bpb;
 }SuperBlock;
 
@@ -83,23 +75,14 @@ typedef struct DirentPointer {
 	u16 valid;
 } DirentPointer;
 
-#define MAX_LONGENT 8
-
-typedef struct longEntSet {
-	struct FAT32LongDirectory *longEnt[MAX_LONGENT];
-	int cnt;
-} longEntSet;
-
-struct file_time;
-
 typedef struct Dirent {
 	FAT32Directory raw_dirent; // 原生的dirent项
 	char name[MAX_NAME_LEN];
 
 	// 文件系统相关属性
 	FileSystem *file_system; // 所在的文件系统
-	unsigned int first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
-	unsigned int file_size;		 // 文件大小
+	u32 first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
+	u32 file_size;		 // 文件大小
 
 	/* for OS */
 	// 操作系统相关的数据结构
@@ -113,12 +96,12 @@ typedef struct Dirent {
 	// u16 is_extend;
 
 	// 在上一个目录项中的内容偏移，用于写回
-	unsigned int parent_dir_off;
+	u32 parent_dir_off;
 
 	// 标记是文件、目录还是设备文件（仅在文件系统中出现，不出现在磁盘中）
-	unsigned short type;
+	u16 type;
 
-	unsigned short is_rm;
+	u16 is_rm;
 
 	// 文件的时间戳
 	struct file_time time;
@@ -128,19 +111,32 @@ typedef struct Dirent {
 
 	// 子Dirent列表
 	struct list child_list;
-	struct list_elem dirent_tag;//链表节点，用于父目录记录,tag要么被链接的到dirent_free_list要么链接到child_list
-
+	struct list_elem dirent_tag;//链表节点，用于父目录记录
+	// 用于空闲链表和父子连接中的链接，因为一个Dirent不是在空闲链表中就是在树上
 	//LIST_ENTRY(Dirent) dirent_link;
 
 	// 父亲Dirent
 	struct Dirent *parent_dirent; // 即使是mount的目录，也指向其上一级目录。如果该字段为NULL，表示为总的根目录
 
-	unsigned int mode;
+	u32 mode;
 
 	// 各种计数
-	unsigned short linkcnt; // 链接计数
-	unsigned short refcnt;  // 引用计数
+	u16 linkcnt; // 链接计数
+	u16 refcnt;  // 引用计数
+
+	//struct holder_info holders[DIRENT_HOLDER_CNT];
+	//int holder_cnt;
 }Dirent;
+
+extern struct lock mtx_file;
+
+#define MAX_LONGENT 8
+
+typedef struct longEntSet {
+	FAT32LongDirectory *longEnt[MAX_LONGENT];
+	int cnt;
+} longEntSet;
+
 
 enum fs_result {
 	E_NO_MAP,			//无法创建映射，用于mmap
@@ -153,55 +149,13 @@ enum fs_result {
 	E_EXCEED_FILE,		//文件大小超过限制
 };
 
-enum dirent_type
-{ 
-	DIRENT_DIR, 
-	DIRENT_FILE, 
-	DIRENT_CHARDEV, 
-	DIRENT_BLKDEV 
-};
+#define MIN(_a, _b)                                                                                \
+	({                                                                                         \
+		typeof(_a) __a = (_a);                                                             \
+		typeof(_b) __b = (_b);                                                             \
+		__a <= __b ? __a : __b;                                                            \
+	})
 
-struct kstat {
-	dev_t st_dev;
-	ino_t st_ino;
-	mode_t st_mode;
-	nlink_t st_nlink;
-	uid_t st_uid;
-	gid_t st_gid;
-	dev_t st_rdev;
-	unsigned long __pad;
-	off_t st_size;
-	blksize_t st_blksize;
-	int __pad2;
-	blkcnt_t st_blocks;
-	long st_atime_sec;
-	long st_atime_nsec;
-	long st_mtime_sec;
-	long st_mtime_nsec;
-	long st_ctime_sec;
-	long st_ctime_nsec;
-	unsigned __unused[2];
-};
-
-union st_mode {
-	u32 val;
-	// 从低地址到高地址
-	struct {
-		unsigned other_x : 1;
-		unsigned other_w : 1;
-		unsigned other_r : 1;
-		unsigned group_x : 1;
-		unsigned group_w : 1;
-		unsigned group_r : 1;
-		unsigned user_x : 1;
-		unsigned user_w : 1;
-		unsigned user_r : 1;
-		unsigned t : 1;
-		unsigned g : 1;
-		unsigned u : 1;
-		unsigned file_type : 4;
-	} __attribute__((packed)) bits; // 取消优化对齐
-};
 
 extern FileSystem* fatFs;
 
@@ -209,9 +163,9 @@ typedef int (*findfs_callback_t)(FileSystem *fs, void *data);
 void allocFs(struct FileSystem **pFs);
 void deAllocFs(struct FileSystem *fs);
 int partition_format(FileSystem* fs);//初始化文件系统分区
+FileSystem *find_fs_by(findfs_callback_t findfs, void *data);
 void fat32_init(struct FileSystem* fs) ;
 void fs_init(void);
-int get_entry_count_by_name(char* name);
-FileSystem *find_fs_by(findfs_callback_t findfs, void *data);
+int is_directory(FAT32Directory* f);
 void fat32Test(void);
 #endif

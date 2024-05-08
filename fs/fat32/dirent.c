@@ -11,18 +11,18 @@
 #include <fs/filepnt.h>
 #include <debug.h>
 #include <asm/errno.h>
+#include <linux/list.h>
 unsigned long used_dirents = 0;
 
 /**
  * 本文件用于维护Dirent的分配以及维护和修改Dirent的树状结构
  */
 
-extern FileSystem *fatFs;
 extern struct lock mtx_file;
 
 // 待分配的dirent
-Dirent dirents[MAX_DIRENT];
-struct list dirent_free_list ;
+Dirent dirents[4096];
+struct list dirent_free_list;
 
 #define PEEK sizeof(dirents)
 
@@ -33,7 +33,7 @@ void dirent_init(void)
 {
 	lock_init(&mtx_dirent);
 	list_init(&dirent_free_list);
-	for (int i = 0; i < MAX_DIRENT; i++) {
+	for (int i = 0; i < 4096; i++) {
 		list_append(&dirent_free_list,&dirents[i].dirent_tag);
 	}
 	printk("dirent Init Finished!\n");
@@ -43,7 +43,7 @@ void dirent_init(void)
 Dirent *dirent_alloc(void) 
 {
 	lock_acquire(&mtx_dirent);
-	ASSERT(list_empty(&dirent_free_list));
+	ASSERT(!list_empty(&dirent_free_list));
 	struct list_elem* node = list_pop(&dirent_free_list);
 	Dirent *dirent = elem2entry(struct Dirent,dirent_tag,node);
 	// TODO: 需要初始化dirent的睡眠锁
@@ -66,9 +66,6 @@ void dirent_dealloc(Dirent *dirent)
 	lock_release(&mtx_dirent);
 }
 
-/**
- * @brief 跳过左斜线。unix传统，允许路径上有连续的多个左斜线，解析时看作一条
- */
 static char *skip_slash(char *p) 
 {
 	while (*p == '/') {
@@ -77,9 +74,6 @@ static char *skip_slash(char *p)
 	return p;
 }
 
-/**
- * @brief 将dirent的引用计数加一
- */
 void dget(Dirent *dirent) 
 {
 	int is_filled = 0;
@@ -95,9 +89,6 @@ void dput(Dirent *dirent)
 	dirent->refcnt -= 1;
 }
 
-/**
- * @brief 获取某个Dirent的父级Dirent，需要考虑mount的情形
- */
 static Dirent *get_parent_dirent(Dirent *dirent)
 {
 
@@ -121,10 +112,6 @@ static Dirent *get_parent_dirent(Dirent *dirent)
 	return ans;
 }
 
-/**
- * @brief 在dir中找一个名字为name的文件，找到后获取其引用
- * @note 只需要遍历Dirent树即可，无需实际访问磁盘
- */
 static int dir_lookup(FileSystem *fs, Dirent *dir, char *name, struct Dirent **file) 
 {
 	Dirent *child;
@@ -142,9 +129,6 @@ static int dir_lookup(FileSystem *fs, Dirent *dir, char *name, struct Dirent **f
 	return -ENOENT;
 }
 
-/**
- * @brief 尝试将dirent从当前的mountPoint转移到mountFs内部的root目录项
- */
 static Dirent *try_enter_mount_dir(Dirent *dir) 
 {
 	struct Dirent * dir1 = dir;
@@ -160,9 +144,6 @@ static Dirent *try_enter_mount_dir(Dirent *dir)
 	return dir1;
 }
 
-/**
- * @brief 顺序获取路径上（包括自己）的所有目录引用
- */
 void dget_path(Dirent *file) 
 {
 	if (file == NULL) {
@@ -170,6 +151,7 @@ void dget_path(Dirent *file)
 	}
 	while (1) {
 		dget(file);
+		printk("dget_path\n");
 		if (file == file->file_system->root) {//如果是根目录
 			file = file->file_system->mountPoint;//找到挂载的父目录
 			if (file == NULL)//直到根目录
@@ -197,14 +179,6 @@ void dput_path(Dirent *file)
 	}
 }
 
-/**
- * @brief 遍历路径，找到某个文件。若找到，则获取该文件的引用
- * @todo 动态根据Dirent识别 fs，以及引入链接和虚拟文件的机制
- * @param baseDir 开始遍历的根，为 NULL 表示忽略。但如果path以'/'开头，则强制使用根目录
- * @param pdir 文件所在的目录
- * @param pfile 文件本身
- * @param lastelem 如果恰好找到了文件的上一级目录的位置，则返回最后未匹配的那个项目的名称(legacy)
- */
 int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent **pfile, char *lastelem, longEntSet *longSet) 
 {
 	char *p;
@@ -228,6 +202,7 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 	*pfile = 0;
 
 	while (*path != '\0') {
+		
 		dir = file;
 		p = path;
 
@@ -304,13 +279,14 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 			return r;
 		}
 	}
-
+	
 	tmp = try_enter_mount_dir(file);
+	printk("walk_path\n");
 	if (tmp != file) {
 		dget(tmp);
 		file = tmp;
 	}
-
+	
 	if (pdir) {
 		*pdir = dir;
 	}
@@ -318,143 +294,3 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 	return 0;
 }
 
-/**
- * @brief 传入一个Dirent，获取其绝对路径
- */
-void dirent_get_path(Dirent *dirent, char *path) 
-{
-	ASSERT(dirent->refcnt > 0);
-
-	Dirent *tmp = dirent;
-	path[0] = 0; // 先把path清空为空串
-
-	// 是根目录
-	if (tmp == fatFs->root) {
-		strins(path, "/");
-	}
-
-	while (tmp != fatFs->root) {
-		if (tmp == tmp->file_system->root) {
-			FileSystem *fs = tmp->file_system;
-			tmp = fs->mountPoint;
-		}
-
-		strins(path, tmp->name);
-		strins(path, "/");
-		tmp = get_parent_dirent(tmp);
-	}
-}
-
-static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int isDir) 
-{
-	lock_acquire(&mtx_file);
-
-	char lastElem[MAX_NAME_LEN];
-	Dirent *dir = NULL, *f = NULL;
-	int r;
-	longEntSet longSet;
-	FileSystem *fs;
-	extern FileSystem *fatFs;
-
-	if (baseDir) {
-		fs = baseDir->file_system;
-	} else {
-		fs = fatFs;
-	}
-
-	// 1. 寻找要创建的文件
-	if ((r = walk_path(fs, path, baseDir, &dir, &f, lastElem, &longSet)) == 0) {
-		file_close(f);
-		printk("file or directory exists: %s\n", path);
-
-		lock_release(&mtx_file);
-		return -1;
-	}
-
-	// 2. 处理错误：当出现其他错误，或者没有找到上一级的目录时，退出
-	if (r != -ENOENT || dir == NULL) {
-		lock_release(&mtx_file);
-		return r;
-	}
-
-	// 获取新创建的文件父级目录及之前的引用
-	// todo: 完全的并发环境下这里会产生引用空洞（导致dir可能被删除），需要在walk_path中就保留dir的引用！
-	dget_path(dir);
-
-	// 3. 分配Dirent，并获取新创建文件的引用
-	if ((r = dir_alloc_file(dir, &f, lastElem)) < 0) {
-		lock_release(&mtx_file);
-		return r;
-	}
-
-	// 4. 填写Dirent的各项信息
-	f->parent_dirent = dir;				   // 设置父亲节点，以安排写回
-	f->file_system = dir->file_system;
-	extern struct FileDev file_dev_file;
-	f->dev = &file_dev_file; // 赋值设备指针
-	f->type = (isDir) ? DIRENT_DIR : DIRENT_FILE;
-
-	// 5. 目录应当以其分配了的大小为其文件大小（TODO：但写回时只写回0）
-	if (isDir) {
-		// 目录至少分配一个簇
-		int clusSize = CLUS_SIZE(dir->file_system);
-		f->first_clus = clusterAlloc(dir->file_system, 0); // 在Alloc时即将first_clus清空为全0
-		f->file_size = clusSize;
-		f->raw_dirent.DIR_Attr = ATTR_DIRECTORY;
-	} else {
-		// 空文件不分配簇
-		f->file_size = 0;
-		f->first_clus = 0;
-	}
-	filepnt_init(f);
-
-	// 4. 将dirent加入到上级目录的子Dirent列表
-	list_append(&dir->child_list,&dir->dirent_tag);
-
-	// 5. 回写dirent信息
-	sync_dirent_rawdata_back(f);
-
-	if (file) {
-		*file = f;
-	}
-
-	lock_release(&mtx_file);
-	return 0;
-}
-
-/**
- * @brief 在dir目录下新建一个名为path的目录。忽略mode参数
- * @return 0成功，-1失败
- */
-int makeDirAt(Dirent *baseDir, char *path, int mode) 
-{
-	Dirent *dir = NULL;
-	int ret = createItemAt(baseDir, path, &dir, 1);
-	if (ret < 0) {
-		return ret;
-	} else {
-		file_close(dir);
-		return 0;
-	}
-}
-
-/**
- * @brief 创建一个文件
- */
-int r;
-int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
-{
-	return createItemAt(baseDir, path, file, 0);
-}
-
-int create_file_and_close(char *path) 
-{
-	Dirent *file = NULL;
-	r = createFile(NULL, path, &file);
-	if (r < 0) {
-		printk("create file error!\n");
-		return r;
-	}
-	file_close(file);
-	return 0;
-}

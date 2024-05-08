@@ -231,4 +231,3 @@ void bufRelease(Buffer *buf) {
 		list_append(&bufferGroups[group].list,&buf->Buffer_node);
 	}
 }
-
