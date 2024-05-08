@@ -85,6 +85,16 @@ typedef __u32 __bitwise __wsum;
 
 typedef unsigned __bitwise __poll_t;
 
+typedef u32 mode_t;
+typedef u64 dev_t;
+typedef u64 ino_t;
+typedef u32 nlink_t;
+typedef u32 uid_t;
+typedef u32 gid_t;
+typedef long off_t;
+typedef u32 blksize_t;
+typedef u64 blkcnt_t;
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* _LINUX_TYPES_ */

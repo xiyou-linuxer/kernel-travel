@@ -54,6 +54,25 @@ typedef struct FAT32Directory {
 	u32 DIR_FileSize;
 } __attribute__((packed)) FAT32Directory;
 
+typedef struct FAT32LongDirectory {
+	u8 LDIR_Ord;
+	unsigned short LDIR_Name1[5];
+	u8 LDIR_Attr;
+	u8 LDIR_Type;
+	u8 LDIR_Chksum;
+	unsigned short LDIR_Name2[6];
+	u16 LDIR_FstClusLO;
+	unsigned short LDIR_Name3[2];
+} __attribute__((packed)) FAT32LongDirectory;
+
+#define BYTES_LONGENT 13
+
+#define BPB_SIZE sizeof(FAT32BootParamBlock)
+#define DIR_SIZE sizeof(FAT32Directory)
+
+// 如果DIR_Name[0] == 0xE5，则表示该目录项已经被删除
+#define FAT32_INVALID_ENTRY 0xE5
+
 // FAT32 文件、目录属性
 #define ATTR_READ_ONLY 0x01		//只读属性
 #define ATTR_HIDDEN 0x02		//隐藏属性
@@ -64,6 +83,9 @@ typedef struct FAT32Directory {
 #define ATTR_LONG_NAME_MASK (ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 #define CHAR2LONGENT 26
 #define LAST_LONG_ENTRY 0x40
+#define DIRENT_SIZE 32
+
+#define CLUS_SIZE(fs) ((fs)->superBlock.bytes_per_clus)
 
 void init_root_fs(void);
 #endif

@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <linux/string.h>
 #include <fs/cluster.h>
+#include <fs/dirent.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
@@ -46,6 +47,27 @@ void deAllocFs(struct FileSystem *fs) {
 	fs->valid = 0;
 	memset(fs, 0, sizeof(struct FileSystem));
 }
+
+
+FileSystem *find_fs_by(findfs_callback_t findfs, void *data) {
+	for (int i = 0; i < MAX_FS_COUNT; i++) {
+		if (findfs(&fs[i], data)) {
+			return &fs[i];
+		}
+	}
+	return NULL;
+}
+
+
+int find_fs_of_dir(FileSystem *fs, void *data) {
+	Dirent *dir = (Dirent *)data;
+	if (fs->mountPoint == NULL) {
+		return 0;
+	} else {
+		return fs->mountPoint->first_clus == dir->first_clus;
+	}
+}
+
 
 /**
  * @brief 初始化分区信息，填写文件系统结构体里面的超级块
@@ -111,6 +133,9 @@ void fs_init(void)
 	printk("fs_init start\n");
 	bufInit();			//初始化buf
 	//bufTest(0);
+	dirent_init();
 	init_root_fs();		//初始化根文件系统
+	printk("init_root_fs down\n");
+	fat32Test() ;
 	printk("fs_init down\n");
 }

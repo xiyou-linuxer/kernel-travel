@@ -82,6 +82,18 @@ int strncmp(const char *p, const char *q, unsigned int n)
 	return (unsigned char)*p - (unsigned char)*q;
 }
 
+char strcmp (const char* a, const char* b) {
+    ASSERT(a != NULL && b != NULL);
+    while (*a != 0 && *a == *b) {
+        a++;
+        b++;
+    }
+/* 如果*a小于*b就返回-1,否则就属于*a大于等于*b的情况。在后面的布尔表达式"*a > *b"中,
+ * 若*a大于*b,表达式就等于1,否则就表达式不成立,也就是布尔值为0,恰恰表示*a等于*b */
+    return *a < *b ? -1 : *a > *b;
+}
+
+
 /* 从后往前查找字符串str中首次出现字符ch的地址(不是下标,是地址) */
 char* strrchr(const char* str, const uint8_t ch) 
 {
@@ -122,3 +134,77 @@ uint32_t strchrs(const char* str, uint8_t ch)
 	}
 	return ch_cnt;
 }
+
+int wstrlen(const unsigned short *s) 
+{
+	int n;
+
+	for (n = 0; s[n]; n++) {
+		;
+	}
+	return n;
+}
+
+/**
+ * @brief 在wchar字符串buf前面插入字符串s。保证buf数组有足够的空间
+ */
+void wstrnins(unsigned short *buf, const unsigned short *str, int len)
+{
+	int lbuf = wstrlen(buf);
+	int i;
+	for (i = lbuf; i >= 0; i--) {
+		buf[i + len] = buf[i];
+	}
+	for (i = 0; i < len; i++) {
+		buf[i] = str[i];
+	}
+}
+
+/**
+ * @brief 将wide char字符串转化为char字符串
+ * @return 返回写入字符串的长度
+ */
+int wstr2str(char *dst, const unsigned short *src) 
+{
+	int i;
+	for (i = 0; src[i]; i++) {
+		dst[i] = (char)(src[i] & 0xff);
+	}
+	dst[i] = 0;
+	return i;
+}
+
+int str2wstr(unsigned short *dst, const char *src) 
+{
+	int i;
+	for (i = 0; src[i]; i++) {
+		dst[i] = src[i];
+	}
+	dst[i] = 0;
+	return i;
+}
+
+int strn2wstr(unsigned short *dst, const char *src, int n)
+{
+	int i;
+	for (i = 0; src[i] && i < n; i++) {
+		dst[i] = src[i];
+	}
+	if (i < n) {
+		dst[i] = 0;
+	}
+	return i;
+}
+void strins(char *buf, const char *str) 
+{
+	int lbuf = strlen(buf);
+	int i;
+	int len = strlen(str);
+	for (i = lbuf; i >= 0; i--) {
+		buf[i + len] = buf[i];
+	}
+	for (i = 0; i < len; i++) {
+		buf[i] = str[i];
+	}
+}
+

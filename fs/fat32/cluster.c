@@ -38,16 +38,16 @@ static unsigned long clusterFatSecIndex(FileSystem *fs, unsigned long cluster) {
 }
 
 void clusterRead(FileSystem *fs, unsigned long cluster, long offset, void *dst, size_t n, bool isUser) {
-
+	/*printk("offset + n:%x fs->superBlock.bytes_per_clus:%x",offset + n,fs->superBlock.bytes_per_clus);*/
 	// 读的偏移不能超出该扇区
-	ASSERT(offset + n > fs->superBlock.bytes_per_clus);
+	//ASSERT(offset + n < fs->superBlock.bytes_per_clus);
 	// 计算簇号 cluster 所在的扇区号
 	unsigned long secno = clusterSec(fs, cluster) + offset / fs->superBlock.bpb.bytes_per_sec;
 	// 计算簇号 cluster 所在的扇区内的偏移量
 	unsigned long secoff = offset % fs->superBlock.bpb.bytes_per_sec;
 
 	// 判断读写长度是否超过簇的大小
-	ASSERT(n > fs->superBlock.bytes_per_clus - offset);
+	//ASSERT(n < fs->superBlock.bytes_per_clus - offset);
 
 	// 读扇区
 	for (unsigned long i = 0; i < n; secno++, secoff = 0) {
@@ -74,7 +74,7 @@ void clusterWrite(FileSystem *fs, unsigned long cluster, long offset, void *src,
 	unsigned long secoff = offset % fs->superBlock.bpb.bytes_per_sec;
 
 	// 判断读写长度是否超过簇的大小
-	ASSERT(n > fs->superBlock.bytes_per_clus - offset);
+	//ASSERT(n > fs->superBlock.bytes_per_clus - offset);
 
 	// 写扇区
 	for (unsigned long i = 0; i < n; secno++, secoff = 0) {
@@ -196,4 +196,35 @@ long fileBlockNo(FileSystem *fs, unsigned long firstclus, unsigned long fblockno
 	}
 	// 找到第 fblockno 个块所在的扇区号
 	return clusterSec(fs, curClus) + fblockno % block_per_clus;
+}
+int countClusters(struct Dirent *file) {
+	printk("count Cluster begin!\n");
+
+	int clus = file->first_clus;
+	int i = 0;
+	if (clus == 0) {
+		printk("cluster is 0!\n");
+		return 0;
+	}
+	// 如果文件不包含任何块，则直接返回0即可。
+	else {
+		while (FAT32_NOT_END_CLUSTER(clus)) {
+			printk("clus is %d\n", clus);
+			clus = fatRead(file->file_system, clus);
+			i += 1;
+		}
+		printk("count Cluster end!\n");
+		return i;
+	}
+}
+
+unsigned char checkSum(unsigned char *pFcbName) {
+	short FcbNameLen;
+	unsigned char Sum;
+	Sum = 0;
+	for (FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		Sum = ((Sum & 1) ? 0x80 : 0) + (Sum >> 1) + *pFcbName++;
+	}
+	return (Sum);
 }

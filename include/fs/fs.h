@@ -10,8 +10,17 @@
 
 #define MAX_FS_COUNT 4 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
-#define PAGE_NCLUSNO (PAGE_SIZE / sizeof(u32))// 一页能容纳的u32簇号个数
+#define PAGE_NCLUSNO (PAGE_SIZE / sizeof(unsigned int))// 一页能容纳的u32簇号个数
 #define NDIRENT_SECPOINTER 5
+#define MAX_DIRENT 160000
+
+typedef struct FileSystem FileSystem;
+typedef struct Dirent Dirent;
+typedef struct SuperBlock SuperBlock;
+
+// 对应目录、文件、设备
+typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV } dirent_type_t;
+
 
 struct bpb{
 	u16 bytes_per_sec;
@@ -87,12 +96,12 @@ typedef struct Dirent {
 	// u16 is_extend;
 
 	// 在上一个目录项中的内容偏移，用于写回
-	u32 parent_dir_off;
+	unsigned int parent_dir_off;
 
 	// 标记是文件、目录还是设备文件（仅在文件系统中出现，不出现在磁盘中）
-	u16 type;
+	unsigned short type;
 
-	u16 is_rm;
+	unsigned short is_rm;
 
 	// 文件的时间戳
 	struct file_time time;
@@ -119,6 +128,16 @@ typedef struct Dirent {
 	//int holder_cnt;
 }Dirent;
 
+extern struct lock mtx_file;
+
+#define MAX_LONGENT 8
+
+typedef struct longEntSet {
+	FAT32LongDirectory *longEnt[MAX_LONGENT];
+	int cnt;
+} longEntSet;
+
+
 enum fs_result {
 	E_NO_MAP,			//无法创建映射，用于mmap
 	E_BAD_ELF, 			//ELF 文件损坏
@@ -130,12 +149,23 @@ enum fs_result {
 	E_EXCEED_FILE,		//文件大小超过限制
 };
 
+#define MIN(_a, _b)                                                                                \
+	({                                                                                         \
+		typeof(_a) __a = (_a);                                                             \
+		typeof(_b) __b = (_b);                                                             \
+		__a <= __b ? __a : __b;                                                            \
+	})
+
+
 extern FileSystem* fatFs;
 
 typedef int (*findfs_callback_t)(FileSystem *fs, void *data);
 void allocFs(struct FileSystem **pFs);
 void deAllocFs(struct FileSystem *fs);
 int partition_format(FileSystem* fs);//初始化文件系统分区
+FileSystem *find_fs_by(findfs_callback_t findfs, void *data);
 void fat32_init(struct FileSystem* fs) ;
 void fs_init(void);
+int is_directory(FAT32Directory* f);
+void fat32Test(void);
 #endif
