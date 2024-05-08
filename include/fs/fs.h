@@ -96,12 +96,12 @@ typedef struct Dirent {
 	// u16 is_extend;
 
 	// 在上一个目录项中的内容偏移，用于写回
-	u32 parent_dir_off;
+	unsigned int parent_dir_off;
 
 	// 标记是文件、目录还是设备文件（仅在文件系统中出现，不出现在磁盘中）
-	u16 type;
+	unsigned short type;
 
-	u16 is_rm;
+	unsigned short is_rm;
 
 	// 文件的时间戳
 	struct file_time time;

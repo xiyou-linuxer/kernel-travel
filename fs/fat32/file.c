@@ -196,3 +196,24 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	lock_release(&mtx_file);
 	return n;
 }
+
+Dirent* search_file(Dirent* parent,char *name)
+{
+	Dirent *file;
+	struct list_elem* dir_node = parent->child_list.head.next;
+	while (dir_node!=&parent->child_list.tail)
+	{
+		file = elem2entry(struct Dirent,dirent_tag,dir_node);
+		if (strcmp(file->name, name) == 0)
+		{
+			break;
+		}
+		/*if (file->type == DIRENT_DIR)
+		{
+			file = search_file(file,name);
+		}*/
+		printk("%s\n",file->name);
+		dir_node = dir_node->next;
+	}
+	return file;
+}

@@ -13,7 +13,7 @@ void fat32Test(void) {
 	
 	Dirent *file;
 	//ASSERT(getFile(NULL, "/text.txt", &file)==0);
-	struct list_elem* dir_node = fatFs->root->child_list.head.next;
+	/*struct list_elem* dir_node = fatFs->root->child_list.head.next;
 	while (dir_node!=&fatFs->root->child_list.tail)
 	{
 		file = elem2entry(struct Dirent,dirent_tag,dir_node);
@@ -24,7 +24,8 @@ void fat32Test(void) {
 		}
 		printk("%s\n",file->name);
 		dir_node = dir_node->next;
-	}
+	}*/
+	file =  search_file(fatFs->root,"text.txt");
 	filepnt_init(file);
 	//printk("fat32Test\n");
 	file_read(file, 0, (unsigned long)buf, 0, file->file_size);

@@ -82,6 +82,18 @@ int strncmp(const char *p, const char *q, unsigned int n)
 	return (unsigned char)*p - (unsigned char)*q;
 }
 
+char strcmp (const char* a, const char* b) {
+    ASSERT(a != NULL && b != NULL);
+    while (*a != 0 && *a == *b) {
+        a++;
+        b++;
+    }
+/* 如果*a小于*b就返回-1,否则就属于*a大于等于*b的情况。在后面的布尔表达式"*a > *b"中,
+ * 若*a大于*b,表达式就等于1,否则就表达式不成立,也就是布尔值为0,恰恰表示*a等于*b */
+    return *a < *b ? -1 : *a > *b;
+}
+
+
 /* 从后往前查找字符串str中首次出现字符ch的地址(不是下标,是地址) */
 char* strrchr(const char* str, const uint8_t ch) 
 {

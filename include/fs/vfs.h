@@ -14,4 +14,5 @@ void sync_dirent_rawdata_back(Dirent *dirent);
 int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent **pfile,char *lastelem, longEntSet *longSet);
 void dget_path(Dirent *file);
 int find_fs_of_dir(FileSystem* fs, void* data);
+Dirent* search_file(Dirent* parent, char* name);
 #endif
