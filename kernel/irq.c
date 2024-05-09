@@ -106,11 +106,12 @@ void register_handler(uint8_t vector_no, intr_handler function) {
 
 extern void do_irq(struct pt_regs* regs, uint64_t virq);
 void do_irq(struct pt_regs* regs, uint64_t virq) {
-    irq_enter();
-    intr_table[virq](regs);
-    irq_exit();
-    if (softirq_active)
-        do_softirq();
+	irq_enter();
+	intr_table[virq](regs);
+	irq_exit();
+	if (softirq_active)
+		do_softirq();
+	raise_softirq(TIMER_SOFTIRQ);
 }
 
 bool in_interrupt(void) {

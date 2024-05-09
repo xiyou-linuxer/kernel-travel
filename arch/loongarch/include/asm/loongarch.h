@@ -80,6 +80,7 @@
 #define  CPUCFG2_MIPSBT			BIT(20)
 #define  CPUCFG2_LSPW			BIT(21)
 #define  CPUCFG2_LAM			BIT(22)
+#define  CPUCFG2_PTW			(UL(1) << (24))
 
 #define LOONGARCH_CPUCFG3		0x3
 #define  CPUCFG3_CCDMA			BIT(0)
@@ -1354,6 +1355,14 @@ static inline void write_csr_pwch(unsigned long x)
 	asm volatile ("csrwr %0, 0x1d"::"r"(x));
 }
 
+static inline unsigned int read_csr_pgdl(void)
+{
+	unsigned int x;
+	asm volatile("csrrd %0, 0x19" : "=r" (x) );
+	return x;
+}
+
+
 static inline void write_csr_pgdl(unsigned long x)
 {
 	asm volatile ("csrwr %0, 0x19"::"r"(x));
@@ -1486,7 +1495,7 @@ static inline int intr_get(void)
 #define PS_1G		0x0000001e
 
 /* Default page size for a given kernel configuration */
-#define PS_DEFAULT_SIZE PS_16K
+#define PS_DEFAULT_SIZE PS_4K
 
 /* Default huge tlb size for a given kernel configuration */
 #define PS_HUGE_SIZE   PS_16M
@@ -1601,5 +1610,8 @@ do {	\
 	"	movgr2fcsr	%0, "__stringify(dest)"	\n"	\
 	: : "r" (val));	\
 } while (0)
+
+/* CPUCFG */
+#define read_cpucfg(reg) __builtin_loongarch_cpucfg(reg)
 
 #endif

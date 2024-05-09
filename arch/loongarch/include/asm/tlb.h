@@ -72,7 +72,7 @@ static inline void tlbflush(void)
 /*
  * TLB R/W operations.
  */
-static inline void tlb_probe(void)
+static inline void __tlb_probe(void)
 {
 	__asm__ __volatile__("tlbsrch");
 }
@@ -115,17 +115,21 @@ static inline void invtlb(u32 op, u32 info, u64 addr)
 }
 
 
+
 void __update_tlb(void);
 struct tlb_entry tlb_read(u64 index,u32 ps);
 s16 tlb_write(struct tlb_entry *entry, u8 is_valid);
+u64 tlb_search(u64 vaddr);
 
 void test_tlb_func(void);
 
-extern char asid_bitmap[];
+// 定义一个char类型的位图数组，数组大小为 (1024 / 8) = 128
+extern char asid_bitmap[1 << (LOONGARCH64_ASIDBITS - 3)];
 
 int find_free_asid(void);
 void set_asid(uint32_t asid);
 void clear_asid(uint32_t asid);
 int check_asid(uint32_t asid);
+void tlb_init(int cpu);
 
 #endif

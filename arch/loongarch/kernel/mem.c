@@ -54,27 +54,4 @@ void __init phy_pool_init(void)
 	phy_pool.btmp.bits = (u8*)(USR_PHY_POOL_BASE | DMW_MASK);
 }
 
-void __init page_setting_init(void)
-{
-	unsigned long pwctl0, pwctl1;
-	unsigned long pgd_i = 0, pgd_w = 0;
-	unsigned long pud_i = 0, pud_w = 0;
-	unsigned long pmd_i = 0, pmd_w = 0;
-	unsigned long pte_i = 0, pte_w = 0;
 
-	pgd_i = PGDIR_SHIFT;
-	pgd_w = PAGE_SHIFT - 3;
-	pmd_i = PMD_SHIFT;
-	pmd_w = PAGE_SHIFT - 3;
-	pte_i = PAGE_SHIFT;
-	pte_w = PAGE_SHIFT - 3;
-
-	pwctl0 = pte_i | pte_w << 5 | pmd_i << 10 | pmd_w << 15;
-	pwctl1 = pgd_i | pgd_w << 6;
-
-	csr_write64(pwctl0, LOONGARCH_CSR_PWCTL0);
-	csr_write64(pwctl1, LOONGARCH_CSR_PWCTL1);
-
-	// csr_write64(PGD_BASE_ADD,LOONGARCH_CSR_PGDL);
-	// csr_write64(PGD_BASE_ADD,LOONGARCH_CSR_PGDH);
-}

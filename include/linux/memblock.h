@@ -7,6 +7,11 @@
 #define pr_fmt(fmt) "memory: " fmt
 #define PHYS_ADDR_MAX (~(phys_addr_t)0x0)
 
+#define for_each_mem_pfn_range(i, nid, p_start, p_end, p_nid)		\
+	for (i = -1, __next_mem_pfn_range(&i, nid, p_start, p_end, p_nid); \
+	     i >= 0; __next_mem_pfn_range(&i, nid, p_start, p_end, p_nid))
+
+
 enum memblock_flags {
 	MEMBLOCK_NONE		= 0x0,	/* No special request */
 	MEMBLOCK_HOTPLUG	= 0x1,	/* hotpluggable region */
@@ -20,6 +25,7 @@ struct memblock_region {
 	phys_addr_t base;
 	phys_addr_t size;
 	enum memblock_flags flags;
+	int nid;
 };
 
 struct memblock_type {
@@ -36,10 +42,18 @@ struct memblock {
 	struct memblock_type memory;
 	struct memblock_type reserved;
 };
-
+extern unsigned long max_low_pfn;
+extern unsigned long min_low_pfn;
+extern unsigned long max_pfn;
+extern unsigned long long max_possible_pfn;
 void memblock_init(void);
 int memblock_add(phys_addr_t base, phys_addr_t size);
 int memblock_reserve(phys_addr_t base, phys_addr_t size);
+phys_addr_t memblock_start_of_DRAM(void);
+phys_addr_t memblock_end_of_DRAM(void);
+
+void __next_mem_pfn_range(int *idx, int nid, unsigned long *out_start_pfn,
+			  unsigned long *out_end_pfn, int *out_nid);
 
 extern struct memblock memblock;
 

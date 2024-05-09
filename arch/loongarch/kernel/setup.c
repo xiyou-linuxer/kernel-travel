@@ -1,12 +1,21 @@
 #include <asm/bootinfo.h>
 #include <asm/setup.h>
+#include <asm/loongarch.h>
 #include <asm/page.h>
+#include <asm/tlb.h>
+#include <linux/smp.h>
+#include <linux/stdio.h>
 
 unsigned long fw_arg0, fw_arg1, fw_arg2;
 unsigned long kernelsp;
 
 void setup_arch(void)
 {
+	unsigned int config;
+	config = read_cpucfg(LOONGARCH_CPUCFG1);
+	if (config & CPUCFG2_PTW) {
+		printk("have PTW configuration\n");
+	}
 	/**
 	 * 例外与中断的初始化
 	 */
@@ -15,6 +24,6 @@ void setup_arch(void)
 
 	memblock_init();
 	phy_pool_init();
-	page_setting_init();
-	
+	tlb_init(smp_processor_id());
+	paging_init();
 }

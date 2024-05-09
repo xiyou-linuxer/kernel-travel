@@ -30,36 +30,40 @@ extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
 #define VMEM_SIZE (1UL << (9 + 9 + 12))
-
+extern void disk_init(void);
 extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);
 
 void thread_a(void *unused);
 #ifdef CONFIG_LOONGARCH
+#endif /* CONFIG_LOONGARCH */
 void thread_a(void *unused)
 {
 	printk("enter thread_a\n");
 	while (1) {
-		unsigned long crmd = read_csr_crmd();
-		printk("thread_a at:at pri %d  ",crmd & PLV_MASK);
+		printk("thread_a pid=%d\n",sys_getpid());
 	}
 }
-#endif /* CONFIG_LOONGARCH */
 
 char* sstr = "hello\n";
 void proc_1(void *unused)
 {
 	while(1) {
-		syscall(SYS_PSTR,0x9000000008040378);
+		syscall(SYS_PSTR,sstr);
 	}
 }
+
+void timer_func(unsigned long unused){
+	printk("timer done");
+}
+
+char usrprog[30000];
 
 void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-
 	printk("%lx\n", lalist_mem_map.map_count);
 	printk("%lx\n", lalist_mem_map.map->mem_type);
 	printk("%lx\n", lalist_mem_map.map->mem_start);
@@ -70,22 +74,28 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 	local_irq_enable();
-	test_tlb_func();
 	pci_init();
 	disk_init();
 	thread_init();
 	timer_init();
+	struct timer_list timer;
+	timer.elm.prev = timer.elm.next = NULL;
+	timer.expires = ticks + 100000;
+	timer.func = timer_func;
+	timer.data = 7;
+	add_timer(&timer);
+
 	fs_init();
 	syscall_init();
-	fs_init();
-	/*thread_start("thread_a",10,thread_a,NULL);
-	process_execute(proc_1,"proc_1");*/
+	//thread_start("thread_a",10,thread_a,NULL);
+	//block_read(5,50,(uint64_t)usrprog,1);
+	//process_execute(usrprog,"proc_1");
 
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 	while (1) {
 		//time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%lu\n",ticks);
-		//printk("m ");
+		//printk("main pid=%d\n ",sys_getpid());
 	}
 }

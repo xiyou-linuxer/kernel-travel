@@ -28,10 +28,9 @@ struct task_struct *task_alloc(void)
 
 void* userstk_alloc(uint64_t pdir)
 {
-    void *stk_ptr = NULL;
-    uint64_t stk_addr = get_page();
-    page_table_add(pdir,USER_STACK-KERNEL_STACK_SIZE,stk_addr&~DMW_MASK,PTE_V | PTE_PLV | PTE_D);
-    stk_ptr = (void*)(USER_STACK);
+	void *stk_ptr = NULL;
+	malloc_usrpage(pdir,USER_STACK-KERNEL_STACK_SIZE);
+	stk_ptr = (void*)(USER_STACK);
 
-    return stk_ptr;
+	return stk_ptr;
 }

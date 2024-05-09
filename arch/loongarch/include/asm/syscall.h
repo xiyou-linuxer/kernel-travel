@@ -103,6 +103,7 @@ extern void* syscall_table[NR_SYSCALLS];
 enum SYSCALL {
 	SYS_GETPID,
 	SYS_PSTR,
+	SYS_FORK,
 };
 
 
@@ -114,6 +115,10 @@ static inline pid_t getpid(void) {
 
 static inline void pstr(char *str) {
 	syscall(SYS_PSTR,str);
+}
+
+static inline int fork(void) {
+	return syscall(SYS_FORK);
 }
 
 
