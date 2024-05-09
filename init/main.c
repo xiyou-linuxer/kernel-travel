@@ -83,7 +83,7 @@ void __init __no_sanitize_address start_kernel(void)
 	timer.expires = ticks + 100000;
 	timer.func = timer_func;
 	timer.data = 7;
-	add_timer(&timer);
+	//add_timer(&timer);
 
 	fs_init();
 	syscall_init();

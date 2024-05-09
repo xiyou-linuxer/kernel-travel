@@ -37,7 +37,6 @@
 	switch (cmd)
 	{
 	case ATA_CMD_READ_DMA_EXT:
-		printk("block_make_request\n");
 		ahci_read(prot_base, LBA_startl, LBA_starth, count, buffer);
 		break;
 	case ATA_CMD_WRITE_DMA_EXT:

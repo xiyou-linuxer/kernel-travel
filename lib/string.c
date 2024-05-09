@@ -1,14 +1,18 @@
 #include <linux/string.h>
 #include <linux/printk.h>
+#include <linux/stdio.h>
 #include <debug.h>
 void memset(void* dst_, uint8_t value, uint32_t size) {
+	
 	uint8_t* dst = (uint8_t*)dst_;
 	if(dst_ == NULL) {
 		efi_puts("BUG!!!");
 		while(1);
 	}
-	while (size-- > 0)
+	//printk("memset");
+	while (size-- > 0){
 		*dst++ = value;
+	}
 }
 
 void memcpy(void* dst_, const void* src_, uint32_t size)

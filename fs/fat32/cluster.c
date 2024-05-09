@@ -14,7 +14,7 @@ unsigned long alloced_clus = 0;
 /**
  * @return 返回簇号 cluster 所在的第一个扇区号
  */
-static unsigned long clusterSec(FileSystem *fs, unsigned long cluster) {
+ unsigned long clusterSec(FileSystem *fs, unsigned long cluster) {
 	const int cluster_first_sec = 2;
 	return fs->superBlock.first_data_sec +
 	       (cluster - cluster_first_sec) * fs->superBlock.bpb.sec_per_clus;
@@ -38,30 +38,17 @@ static unsigned long clusterFatSecIndex(FileSystem *fs, unsigned long cluster) {
 }
 
 void clusterRead(FileSystem *fs, unsigned long cluster, long offset, void *dst, size_t n, bool isUser) {
-	/*printk("offset + n:%x fs->superBlock.bytes_per_clus:%x",offset + n,fs->superBlock.bytes_per_clus);*/
-	// 读的偏移不能超出该扇区
-	//ASSERT(offset + n < fs->superBlock.bytes_per_clus);
+
 	// 计算簇号 cluster 所在的扇区号
 	unsigned long secno = clusterSec(fs, cluster) + offset / fs->superBlock.bpb.bytes_per_sec;
 	// 计算簇号 cluster 所在的扇区内的偏移量
 	unsigned long secoff = offset % fs->superBlock.bpb.bytes_per_sec;
-
-	// 判断读写长度是否超过簇的大小
-	//ASSERT(n < fs->superBlock.bytes_per_clus - offset);
-
 	// 读扇区
 	for (unsigned long i = 0; i < n; secno++, secoff = 0) {
-		printk("secno:%d n:%d i:%d\n",secno,n,i);
 		Buffer *buf = fs->get(fs, secno, true);
-		printk("bufget\n");
 		// 计算本次读写的长度
 		size_t len = min(fs->superBlock.bpb.bytes_per_sec - secoff, n - i);
-		if (isUser) {//如果是用户空间
-			/*extern void copyOut(unsigned long uPtr, void *kPtr, int len);
-			copyOut((unsigned long)dst + i, &buf->data->data[secoff], len);*/
-		} else {//如果是内核空间
-			memcpy(dst + i, &buf->data->data[secoff], len);
-		}
+		memcpy(dst + i, &buf->data->data[secoff], len);
 		bufRelease(buf);
 		i += len;
 	}

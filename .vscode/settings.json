@@ -34,6 +34,7 @@
         "file_time.h": "c",
         "page.h": "c",
         "filesystem": "c",
-        "cluster.h": "c"
+        "cluster.h": "c",
+        "buf.h": "c"
     }
 }

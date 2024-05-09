@@ -81,8 +81,8 @@ typedef struct Dirent {
 
 	// 文件系统相关属性
 	FileSystem *file_system; // 所在的文件系统
-	u32 first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
-	u32 file_size;		 // 文件大小
+	unsigned int first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
+	unsigned int file_size;		 // 文件大小
 
 	/* for OS */
 	// 操作系统相关的数据结构

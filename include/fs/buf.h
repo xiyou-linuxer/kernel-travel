@@ -53,4 +53,5 @@ void bufTest(unsigned long blockno);
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) __attribute__((warn_unused_result));
 void bufWrite(Buffer *buf);
 void bufRelease(Buffer *buf);
+void bufSync(void);
 #endif

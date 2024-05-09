@@ -7,30 +7,19 @@
 #include <fs/fs.h>
 #include <debug.h>
 #include <linux/list.h>
-
+#include <fs/buf.h>
+#include <fs/cluster.h>
 char buf[8192];
 void fat32Test(void) {
 	// 测试读取文件
 	
 	Dirent *file;
-	//ASSERT(getFile(NULL, "/text.txt", &file)==0);
-	/*struct list_elem* dir_node = fatFs->root->child_list.head.next;
-	while (dir_node!=&fatFs->root->child_list.tail)
-	{
-		file = elem2entry(struct Dirent,dirent_tag,dir_node);
-		if (strncmp(file->name, "text.txt", 9) == 0)
-		{
-			
-			break;
-		}
-		printk("%s\n",file->name);
-		dir_node = dir_node->next;
-	}*/
-	file = search_file(fatFs->root,"text.txt");
+	file = search_file(fatFs->root,"dup");
 	filepnt_init(file);
-	//printk("fat32Test\n");
-	file_read(file, 0, (unsigned long)buf, 0, file->file_size);
+	pre_read(file,buf,file->file_size/4096+1);
 	printk("%s\n", buf);
+	//file_read(file, 0, (unsigned long)buf, 0, file->file_size);
+	
 
 	// 测试写入文件
 	char *str = "Hello! I\'m "
@@ -45,7 +34,7 @@ void fat32Test(void) {
 		    "333333233333333233333333233333333233333333233333333233333333233333333233333333"
 		    "23333333323333333322222222222222222222222222\n This is end!";
 	int len = strlen(str) + 1;
-	file_write(file, 0, (u64)str, 0, len) ;
+	//file_write(file, 0, (u64)str, 0, len) ;
 
 	// 读出文件
 	file_read(file, 0, (u64)buf, 0, file->file_size) ;

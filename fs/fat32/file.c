@@ -75,6 +75,15 @@ int getFile(Dirent *baseDir, char *path, Dirent **pfile) {
 	}*/
 }
 
+void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
+{
+	u32 clus = filepnt_getclusbyno(file, 0);
+	for (int i = clus; i < clus+n; i++)
+	{
+		clusterRead(file->file_system, i, 0, (void *)(dst + 4096*i),4096,1);
+	}
+}
+
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
@@ -84,15 +93,13 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 		lock_release(&mtx_file);
 		return 0;
 	} else if (off + n > file->file_size) {
-		printk("read too much. shorten read length from %d to %d!\n", n,
-		     file->file_size - off);
+		printk("read too much. shorten read length from %d to %d!\n", n,file->file_size - off);
 		n = file->file_size - off;
 	}
 	if (n == 0) {
 		lock_release(&mtx_file);
 		return 0;
-	}
-
+	}	
 	u64 start = off, end = off + n - 1;
 	u32 clusSize = file->file_system->superBlock.bytes_per_clus;
 	u32 offset = off % clusSize;
@@ -101,22 +108,16 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 	u32 clusIndex = start / clusSize;
 	u32 clus = filepnt_getclusbyno(file, clusIndex);
 	u32 len = 0; // 累计读取的字节数
-
 	// 读取第一块
 	clusterRead(file->file_system, clus, offset, (void *)dst, MIN(n, clusSize - offset), user);
 	len += MIN(n, clusSize - offset);
-
 	// 之后的块
 	clusIndex += 1;
-	//printk("%d",clusIndex * clusSize);
 	for (; end >= clusIndex * clusSize; clusIndex++) {
-		clus = filepnt_getclusbyno(file, clusIndex);
-		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),
-			    user);
+		clus ++;
+		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),user);
 		len += MIN(clusSize, n - len);
-		printk("clusIndex: %d\n",clusIndex);
 	}
-
 	lock_release(&mtx_file);
 	return n;
 }
