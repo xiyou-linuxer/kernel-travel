@@ -210,11 +210,6 @@ Dirent* search_file(Dirent* parent,char *name)
 		{
 			break;
 		}
-		/*if (file->type == DIRENT_DIR)
-		{
-			file = search_file(file,name);
-		}*/
-		printk("%s\n",file->name);
 		dir_node = dir_node->next;
 	}
 	return file;
