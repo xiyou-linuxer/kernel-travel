@@ -136,6 +136,14 @@ void fs_init(void)
 	dirent_init();
 	init_root_fs();		//初始化根文件系统
 	printk("init_root_fs down\n");
+		int i = 0;
+	while (i<512)
+	{
+		printk("i:%d",i);
+		bufRead(1,i+65448,1);
+		i++;
+	}
+	
 	fat32Test() ;
 	printk("fs_init down\n");
 }

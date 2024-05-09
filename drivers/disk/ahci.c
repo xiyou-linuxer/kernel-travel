@@ -48,11 +48,13 @@ static void stop_cmd(unsigned int prot_base)
 /*寻找可用的命令槽位*/
 static int ahci_find_cmdslot(unsigned long prot_base)
 {
+	printk("ahci_find_cmdslot\n");
 	// If not set in SACT and CI, the slot is free
 	uint32_t slots = (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_SACT)) | *(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CI)));
 	int num_of_cmd_clots =((*(unsigned int*)(SATA_ABAR_BASE | HBA_CAP)) & 0x0f00) >> 8;  // bit 12-8
 	for (int i = 0; i < num_of_cmd_clots; i++)
 	{
+		printk("i:%d\n",i);
 		if ((slots & 1) == 0)
 			return i;
 		slots >>= 1;
@@ -98,7 +100,9 @@ static struct hba_command_table *ahci_initialize_command_table(struct hba_comman
 */
 static struct hba_command_header *ahci_initialize_command_header(unsigned long prot_base,int slot,unsigned int count,int write)
 {
+	
 	struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long*)(SATA_ABAR_BASE|(prot_base+PORT_CLB)));
+	//printk("ahci_initialize_command_header\n");
 	cmdheader += slot;
 	cmdheader->fis_length = sizeof(struct fis_reg_host_to_device) / sizeof(uint32_t); // 帧结构大小
 	cmdheader->write = write ? 1 : 0;                                        //0为读，1为写
@@ -134,18 +138,26 @@ static struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct 
 
 int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
-	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
+	//printk("spin\n");
+	//*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
+	
 	int spin = 0;            // Spin lock timeout counter
-	int slot = ahci_find_cmdslot(prot_base);//寻找是否有空出的命令槽位
+	
+	int slot = 0; /*ahci_find_cmdslot(prot_base);*///寻找是否有空出的命令槽位
+	
 	if (slot == -1)
 		return E_NOEMPTYSLOT;
 	struct hba_command_header* cmdheader = ahci_initialize_command_header(prot_base, slot, count,0);
 	struct hba_command_table* cmdtbl = ahci_initialize_command_table(cmdheader, count, buf,1);
 	struct fis_reg_host_to_device* cmdfis = ahci_initialize_fis_host_to_device(cmdtbl, startl, starth, ATA_CMD_READ_DMA_EXT, count);
+	//printk("slot\n");
 	int tfd = *(unsigned int*)(SATA_ABAR_BASE | (prot_base + PORT_TFD));
+	
 	while ((tfd & (BIT_STAT_BSY | BIT_STAT_DRQ)) && spin < 1000000) {
+		
 		spin++;
 	}
+	
 	if (spin == 1000000)
 	{
 		printk("Port is hung");

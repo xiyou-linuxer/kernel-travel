@@ -108,12 +108,13 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 
 	// 之后的块
 	clusIndex += 1;
-	printk("%d",clusIndex * clusSize);
+	//printk("%d",clusIndex * clusSize);
 	for (; end >= clusIndex * clusSize; clusIndex++) {
 		clus = filepnt_getclusbyno(file, clusIndex);
 		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),
 			    user);
 		len += MIN(clusSize, n - len);
+		printk("clusIndex: %d\n",clusIndex);
 	}
 
 	lock_release(&mtx_file);
@@ -196,7 +197,7 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	lock_release(&mtx_file);
 	return n;
 }
-
+/*搜索文件的临时接口*/
 Dirent* search_file(Dirent* parent,char *name)
 {
 	Dirent *file;

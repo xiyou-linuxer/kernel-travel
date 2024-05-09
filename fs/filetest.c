@@ -1,12 +1,13 @@
 #include <fs/dirent.h>
 #include <fs/vfs.h>
+#include <fs/filepnt.h>
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <linux/types.h>
 #include <fs/fs.h>
 #include <debug.h>
 #include <linux/list.h>
-#include <fs/filepnt.h>
+
 char buf[8192];
 void fat32Test(void) {
 	// 测试读取文件
@@ -25,7 +26,7 @@ void fat32Test(void) {
 		printk("%s\n",file->name);
 		dir_node = dir_node->next;
 	}*/
-	file =  search_file(fatFs->root,"text.txt");
+	file = search_file(fatFs->root,"text.txt");
 	filepnt_init(file);
 	//printk("fat32Test\n");
 	file_read(file, 0, (unsigned long)buf, 0, file->file_size);

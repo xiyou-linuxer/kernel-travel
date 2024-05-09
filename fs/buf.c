@@ -209,6 +209,7 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
 	Buffer *buf = bufAlloc(dev, blockno);
 	if (!buf->valid) {
+		printk("bufRead\n");
 		if (is_read) block_read(blockno,1,buf->data,1);
 		buf->valid = true;
 	}
@@ -231,3 +232,19 @@ void bufRelease(Buffer *buf) {
 		list_append(&bufferGroups[group].list,&buf->Buffer_node);
 	}
 }
+
+/*void bufSync() {
+
+	printk( "begin sync all pages to disk!\n");
+	for (int i = 0; i < BGROUP_NUM; i++) {
+		BufferGroup *b = &bufferGroups[i];
+		for (int j = 0; j < BGROUP_BUF_NUM; j++) {
+			Buffer *buf = &b->buf[j];
+			if (buf->valid && buf->dirty) {
+				disk_rw(buf, 1);
+				buf->dirty = false;
+			}
+		}
+	}
+	printk( "sync all pages to disk done!\n");
+}*/

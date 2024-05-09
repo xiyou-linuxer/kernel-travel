@@ -51,7 +51,9 @@ void clusterRead(FileSystem *fs, unsigned long cluster, long offset, void *dst, 
 
 	// 读扇区
 	for (unsigned long i = 0; i < n; secno++, secoff = 0) {
+		printk("secno:%d n:%d i:%d\n",secno,n,i);
 		Buffer *buf = fs->get(fs, secno, true);
+		printk("bufget\n");
 		// 计算本次读写的长度
 		size_t len = min(fs->superBlock.bpb.bytes_per_sec - secoff, n - i);
 		if (isUser) {//如果是用户空间

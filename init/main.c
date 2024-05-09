@@ -77,7 +77,7 @@ void __init __no_sanitize_address start_kernel(void)
 	timer_init();
 	fs_init();
 	syscall_init();
-	//fs_init();
+	fs_init();
 	/*thread_start("thread_a",10,thread_a,NULL);
 	process_execute(proc_1,"proc_1");*/
 
