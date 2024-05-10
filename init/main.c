@@ -26,6 +26,9 @@
 #include <asm/syscall.h>
 #include <asm/stdio.h>
 #include <fs/fs.h>
+#include <fs/vfs.h>
+#include <fs/filepnt.h>
+#include <fs/cluster.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -58,7 +61,7 @@ void timer_func(unsigned long unused){
 	printk("timer done");
 }
 
-char usrprog[30000];
+char usrprog[90000];
 
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -78,18 +81,28 @@ void __init __no_sanitize_address start_kernel(void)
 	disk_init();
 	thread_init();
 	timer_init();
-	struct timer_list timer;
-	timer.elm.prev = timer.elm.next = NULL;
-	timer.expires = ticks + 100000;
-	timer.func = timer_func;
-	timer.data = 7;
+	//struct timer_list timer;
+	//timer.elm.prev = timer.elm.next = NULL;
+	//timer.expires = ticks + 100000;
+	//timer.func = timer_func;
+	//timer.data = 7;
 	//add_timer(&timer);
 
-	fs_init();
 	syscall_init();
+	fs_init();
 	//thread_start("thread_a",10,thread_a,NULL);
 	//block_read(5,50,(uint64_t)usrprog,1);
 	//process_execute(usrprog,"proc_1");
+	Dirent *file;
+	file = search_file(fatFs->root,"getpid");
+	filepnt_init(file);
+	pre_read(file,(unsigned long)usrprog,file->file_size/4096+1);
+	//printk("%s\n", buf);
+	file_read(file, 0, (unsigned long)usrprog, 0, file->file_size);
+	printk("%s\n", usrprog);
+	process_execute(usrprog,"proc1");
+	
+
 
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);

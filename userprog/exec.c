@@ -4,6 +4,7 @@
 #include <linux/stdio.h>
 #include <stdint.h>
 #include <linux/string.h>
+#include <asm/loongarch.h>
 
 void* program_begin;
 
@@ -85,7 +86,8 @@ done:
 int sys_execv(void *program)
 {
 	program_begin = program;
-	int64_t entry_point = load(program);
+	void* programp = program;
+	int64_t entry_point = load(programp);
 	if (entry_point == -1) {
 		printk("sys_execv: load failed\n");
 		return -1;

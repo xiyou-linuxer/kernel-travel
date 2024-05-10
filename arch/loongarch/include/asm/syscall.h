@@ -3,7 +3,7 @@
 #include <linux/thread.h>
 #include <asm/pt_regs.h>
 
-#define NR_SYSCALLS 48
+#define NR_SYSCALLS 200
 #define ENOSYS		38
 
 static inline long __syscall0(long n)
@@ -101,16 +101,16 @@ static inline long __syscall4(long n,long ag0,long ag1,long ag2,long ag3)
 extern void* syscall_table[NR_SYSCALLS];
 
 enum SYSCALL {
-	SYS_GETPID,
 	SYS_PSTR,
 	SYS_FORK,
 };
 
+#define SYS_getpid 172
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline pid_t getpid(void) {
-	return syscall(SYS_GETPID);
+	return syscall(SYS_getpid);
 }
 
 static inline void pstr(char *str) {
