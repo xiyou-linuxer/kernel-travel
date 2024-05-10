@@ -20,3 +20,4 @@ quick_start.sh
 .cache/
 .vscode/
 command/user_prog
+kernel.bin

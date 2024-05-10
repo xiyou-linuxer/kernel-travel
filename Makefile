@@ -74,8 +74,8 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # 第三种方法是在.config中保存交叉编译的设置。
 # 注意：某些体系结构在它们的arch/*/Makefile文件中指定了CROSS_COMPILE。
 export KBUILD_BUILDHOST := $(SUBARCH)
-ARCH		?= x86
-CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+ARCH		?= loongarch
+CROSS_COMPILE	?= ./cross-tools/bin/loongarch64-unknown-linux-gnu-
 
 # 写入到compile.h
 # #define UTS_MACHINE "mips64"
