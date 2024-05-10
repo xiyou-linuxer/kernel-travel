@@ -19,7 +19,7 @@ typedef struct Dirent Dirent;
 typedef struct SuperBlock SuperBlock;
 
 // 对应目录、文件、设备
-typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOW} dirent_type_t;
+typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
 
 
 struct bpb{

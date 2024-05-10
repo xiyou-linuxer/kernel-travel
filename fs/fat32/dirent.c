@@ -294,3 +294,18 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 	return 0;
 }
 
+Dirent* search_dir_tree(Dirent* parent,char *name)
+{
+	Dirent *file;
+	struct list_elem* dir_node = parent->child_list.head.next;
+	while (dir_node!=&parent->child_list.tail)
+	{
+		file = elem2entry(struct Dirent,dirent_tag,dir_node);
+		if (strcmp(file->name, name) == 0)
+		{
+			break;
+		}
+		dir_node = dir_node->next;
+	}
+	return file;
+}

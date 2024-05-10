@@ -15,4 +15,5 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 void dget_path(Dirent *file);
 int find_fs_of_dir(FileSystem* fs, void* data);
 Dirent* search_file(Dirent* parent, char* name);
+Dirent* search_file1(const char *pathname, struct path_search_record *searched_record);
 #endif

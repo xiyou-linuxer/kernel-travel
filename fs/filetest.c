@@ -9,17 +9,19 @@
 #include <linux/list.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
+#include <fs/dirent.h>
 char buf[8192];
 void fat32Test(void) {
 	// 测试读取文件
 	
 	Dirent *file;
-	file = search_file(fatFs->root,"dup");
+	struct path_search_record searched_record;
+	file = search_file1("/text.txt",&searched_record);
 	filepnt_init(file);
 	pre_read(file,buf,file->file_size/4096+1);
-	printk("%s\n", buf);
-	//file_read(file, 0, (unsigned long)buf, 0, file->file_size);
 	
+	file_read(file, 0, (unsigned long)buf, 0, file->file_size);
+	printk("%s\n", buf);
 
 	// 测试写入文件
 	char *str = "Hello! I\'m "
@@ -36,8 +38,7 @@ void fat32Test(void) {
 	int len = strlen(str) + 1;
 	//file_write(file, 0, (u64)str, 0, len) ;
 
-	// 读出文件
-	file_read(file, 0, (u64)buf, 0, file->file_size) ;
+	// 读出文件	
 	printk("%s\n", buf);
 
 	// TODO: 写一个删除文件的函数
