@@ -16,10 +16,11 @@ void fat32Test(void) {
 	
 	Dirent *file;
 	struct path_search_record searched_record;
-	file = search_file1("/text.txt",&searched_record);
+	file = search_file("/text.txt",&searched_record);
+	printk("filename:%s",file->name);
 	filepnt_init(file);
-	pre_read(file,buf,file->file_size/4096+1);
 	
+	pre_read(file,buf,file->file_size/4096+1);
 	file_read(file, 0, (unsigned long)buf, 0, file->file_size);
 	printk("%s\n", buf);
 
@@ -38,18 +39,17 @@ void fat32Test(void) {
 	int len = strlen(str) + 1;
 	//file_write(file, 0, (u64)str, 0, len) ;
 
-	// 读出文件	
-	printk("%s\n", buf);
-
 	// TODO: 写一个删除文件的函数
 	// 测试创建文件
-	/*ASSERT(createFile(NULL, "/zrp123456789zrp.txt", &file) < 0);
+	Dirent *file1;
+	createFile(NULL, "/zrp123456789zrp.txt", &file1) ;
 	char *str2 = "Hello! I\'m zrp!\n";
-	ASSERT(file_write(file, 0, (u64)str2, 0, strlen(str2) + 1) < 0);
+	printk("filename:%s\n",file1->name);
+	file_write(file1, 0, (u64)str2, 0, strlen(str2) + 1) < 0;
 
 	// 读取刚创建的文件
-	ASSERT(getFile(NULL, "/zrp123456789zrp.txt", &file)==0);
-	ASSERT(file_read(file, 0, (u64)buf, 0, file->file_size) < 0);*/
+	file1 = search_file("/zrp123456789zrp.txt",&searched_record);
+	file_read(file1, 0, (u64)buf, 0, file->file_size) ;
 	printk("file zrp.txt: %s\n", buf);
 
 	printk("FAT32 Test Passed!\n");

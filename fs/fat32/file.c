@@ -168,69 +168,8 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	return n;
 }
 
-/*搜索文件的临时接口*/
-Dirent* search_file(Dirent* parent,char *name)
-{
-	Dirent *file;
-	struct list_elem* dir_node = parent->child_list.head.next;
-	while (dir_node!=&parent->child_list.tail)
-	{
-		file = elem2entry(struct Dirent,dirent_tag,dir_node);
-		if (strcmp(file->name, name) == 0)
-		{
-			break;
-		}
-		dir_node = dir_node->next;
-	}
-	return file;
-}
-
-char *path_parse(char *pathname, char *name_store)
-{
-    if (pathname[0] == '/')
-    { // 根目录不需要单独解析
-        /* 路径中出现1个或多个连续的字符'/',将这些'/'跳过,如"///a/b" */
-        while (*(++pathname) == '/')
-            ;
-    }
-
-    /* 开始一般的路径解析 */
-    while (*pathname != '/' && *pathname != 0)
-    {
-        *name_store++ = *pathname++;
-    }
-
-    if (pathname[0] == 0)
-    { // 若路径字符串为空则返回NULL
-        return NULL;
-    }
-    return pathname;
-}
-
-/* 返回路径深度,比如/a/b/c,深度为3 */
-int32_t path_depth_cnt(char *pathname)
-{
-    ASSERT(pathname != NULL);
-    char *p = pathname;
-    char name[MAX_NAME_LEN]; // 用于path_parse的参数做路径解析
-    uint32_t depth = 0;
-
-    /* 解析路径,从中拆分出各级名称 */
-    p = path_parse(p, name);
-    while (name[0])
-    {
-        depth++;
-        memset(name, 0, MAX_NAME_LEN);
-        if (p)
-        { // 如果p不等于NULL,继续分析路径
-            p = path_parse(p, name);
-        }
-    }
-    return depth;
-}
-
-/* 搜索文件pathname,若找到则返回其inode号,否则返回-1 */
-Dirent* search_file1(const char *pathname, struct path_search_record *searched_record)
+/* 搜索文件pathname,若找到则返回其Dirent项,否则返回-1 */
+Dirent* search_file(const char *pathname, struct path_search_record *searched_record)
 {
 	/* 如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息 */
 	if (!strcmp(pathname, "/") || !strcmp(pathname, "/.") || !strcmp(pathname, "/.."))
@@ -265,6 +204,7 @@ Dirent* search_file1(const char *pathname, struct path_search_record *searched_r
 		strcat(searched_record->searched_path, "/");
 		strcat(searched_record->searched_path, name);
 		dir_e = search_dir_tree(parent_dir, name);
+		printk("name:%s",name);
 		/* 在所给的目录中查找文件 */
 		if (dir_e != NULL)
 		{
@@ -273,11 +213,12 @@ Dirent* search_file1(const char *pathname, struct path_search_record *searched_r
 			if (sub_path)
 			{
 				sub_path = path_parse(sub_path, name);
-            }
+			}
 
-            if (dir_e->type == DIRENT_DIR )
-            { // 如果被打开的是目录
+			if (dir_e->type == DIRENT_DIR )
+			{ // 如果被打开的是目录
 				searched_record->parent_dir = parent_dir;
+				parent_dir = dir_e;
 				continue;
 			}
 			else if (dir_e->type == DIRENT_FILE)
@@ -290,8 +231,8 @@ Dirent* search_file1(const char *pathname, struct path_search_record *searched_r
 		{
 			return NULL;
 		}
+		
 	}
-
 	/* 执行到此,必然是遍历了完整路径并且查找的文件或目录只有同名目录存在 */
 	/* 保存被查找目录的直接父目录 */
 	//searched_record->parent_dir = dir_open(cur_part, parent_inode_no);
