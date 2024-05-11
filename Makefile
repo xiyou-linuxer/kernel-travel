@@ -75,7 +75,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # 注意：某些体系结构在它们的arch/*/Makefile文件中指定了CROSS_COMPILE。
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= loongarch
-CROSS_COMPILE	?= ./cross-tools/bin/loongarch64-unknown-linux-gnu-
+CROSS_COMPILE	?= /opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
 
 # 写入到compile.h
 # #define UTS_MACHINE "mips64"
@@ -85,7 +85,7 @@ SRCARCH 	:= $(ARCH)
 # 头文件所在的目录
 hdr-arch  := $(SRCARCH)
 
-KCONFIG_CONFIG	?= .config
+KCONFIG_CONFIG	?= defconfig
 export KCONFIG_CONFIG
 
 # SHELL used by kbuild
