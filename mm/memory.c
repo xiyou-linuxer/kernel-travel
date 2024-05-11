@@ -244,7 +244,7 @@ static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx,
 	zone->managed_pages = remaining_pages;
 	zone->node = nid;
 	zone->name = zone_names[idx];
-	zone->zone_pgdat = node_data[nid];
+	zone->zone_pgdat = &node_data[nid];
 	// spin_lock_init(&zone->lock);
 	// zone_seqlock_init(zone);
 }
@@ -270,8 +270,7 @@ void __meminit init_currently_empty_zone(struct zone *zone,
 		pg_data->nr_zones = zone_idx;
 
 	zone->zone_start_pfn = zone_start_pfn;
-
-
+	zone_init_free_lists(zone);
 }
 
 static unsigned long __init calc_memmap_pages_size(unsigned long spanned_pages)
@@ -307,15 +306,15 @@ static void __init free_area_init_core(struct pglist_data *pg_data)
 		
 		if (!size)
 			continue;
-		
 
+		init_currently_empty_zone(zone, zone->zone_start_pfn, size);
 	}
 	return;
 }
 
 static void __init free_area_init_node(int nid)
 {
-	pg_data_t *pg_data = node_data[nid];
+	pg_data_t *pg_data = &node_data[nid];
 	unsigned long start_pfn = 0, end_pfn = 0;
 	ASSERT(pg_data->nr_zones >= 0);
 	get_pfn_range_for_nid(nid, &start_pfn, &end_pfn);
@@ -344,7 +343,7 @@ static void __init memmap_init(void)
 
 }
 
-void __init free_area_init(unsigned long *max_zone_pfn)
+void __init  free_area_init(unsigned long *max_zone_pfn)
 {
 	unsigned long start_pfn = PHYS_PFN(memblock_start_of_DRAM());
 	int nid;
@@ -379,7 +378,6 @@ void __init free_area_init(unsigned long *max_zone_pfn)
 	}
 
 		// NUMA 下要处理每个 node 这里只有一个 node 简化处理
-		pg_data_t *pg_data = node_data[nid];
 		free_area_init_node(nid);
 
 	memmap_init();

@@ -65,7 +65,8 @@ typedef struct pglist_data {
 } pg_data_t;
 
 
-extern struct pglist_data *node_data[MAX_NUMNODES];
+extern struct pglist_data node_data[MAX_NUMNODES];
+
 extern char * const zone_names[MAX_NR_ZONES];
 void paging_init(void);
 
