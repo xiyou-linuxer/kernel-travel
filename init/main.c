@@ -94,7 +94,8 @@ void __init __no_sanitize_address start_kernel(void)
 	//block_read(5,50,(uint64_t)usrprog,1);
 	//process_execute(usrprog,"proc_1");
 	Dirent *file;
-	file = search_file(fatFs->root,"getpid");
+	struct path_search_record searched_record;
+	file = search_file("/getpid",&searched_record);
 	filepnt_init(file);
 	pre_read(file,(unsigned long)usrprog,file->file_size/4096+1);
 	//printk("%s\n", buf);
