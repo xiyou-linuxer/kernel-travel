@@ -399,23 +399,38 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 	/*如果已经存在该文件则不能重复建立*/
 	if (dir != NULL)
 	{
-		if((isDir==1 && dir->type == DIRENT_DIR) || (isDir==0 && dir->type == DIRENT_FILE))
+		printk("1111 %d\n",dir->type);
+		if(isDir == 1 && dir->type == DIRENT_DIR)
 		{
-			printk("file or directory exists: %s\n", path);
+			printk("directory exists: %s\n", path);
+			lock_release(&mtx_file);
+
+		}else if (isDir == 0 && dir->type == DIRENT_FILE)
+		{
+			printk("file exists: %s\n", path);
 			lock_release(&mtx_file);
 		}
 		return -1;
 	}
 	
 	// 3. 分配Dirent，并获取新创建文件的引用
-	if ((r = dir_alloc_file(searched_record.parent_dir, &f, lastElem)) < 0) {
+	if ((r = dir_alloc_file(searched_record.parent_dir, &f, path)) < 0) {
 		lock_release(&mtx_file);
 		return r;
 	}
 	//4. 填写Dirent的各项信息
 	f->parent_dirent = searched_record.parent_dir;				   // 设置父亲节点，以安排写回
 	f->file_system = searched_record.parent_dir->file_system;
-	f->type = (isDir) ? DIRENT_DIR : DIRENT_FILE;
+	if (isDir == 1)
+	{
+		f->type = DIRENT_DIR;
+	}else
+	{
+		f->type = DIRENT_FILE;
+	}
+	
+	
+	//f->type = (isDir) ? DIRENT_FILE : DIRENT_DIR;
 
 	// 5. 目录应当以其分配了的大小为其文件大小（TODO：但写回时只写回0）
 	if (isDir) {
@@ -431,10 +446,9 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 	}
 	
 	filepnt_init(f);
-
+	printk("type:%d\n",f->type);
 	// 4. 将dirent加入到上级目录的子Dirent列表
 	list_append(&searched_record.parent_dir->child_list,&f->dirent_tag);
-	strcpy(f->name,"zrp123456789zrp.txt");
 	// 5. 回写dirent信息
 	sync_dirent_rawdata_back(f);
 

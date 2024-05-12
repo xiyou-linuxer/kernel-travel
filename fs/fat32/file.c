@@ -56,7 +56,7 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
-	printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
+	//printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
 		lock_release(&mtx_file);

@@ -82,7 +82,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 				tmpName[11] = 0;
 			}
 
-			printk("find: \"%s\"\n", tmpName);
+			//printk("find: \"%s\"\n", tmpName);
 
 			// 2. 设置找出的dirent的信息（为NULL的无需设置）
 			Dirent *dirent = dirent_alloc();
@@ -237,10 +237,12 @@ static char *fill_long_entry(FAT32LongDirectory *longDir, char *raw_name) {
  * @brief
  * 分配一个目录项，其中填入文件名（已支持长文件名）。无需获取dir的锁，因为程序内将自动获取锁。出函数将携带file的锁
  */
-int dir_alloc_file(Dirent *dir, Dirent **file, char *name) 
+int dir_alloc_file(Dirent *dir, Dirent **file, char *path) 
 {
 
 	Dirent *dirent = dirent_alloc();//在缓存中分配目录项
+	char *name = (strrchr(path,'/')+1);
+	//name = name - 1;
 	printk("create a file using long Name! name is %s\n", name);
 	int cnt = get_entry_count_by_name(name);//计算需要几个目录
 	printk("cnt:%d\n",cnt);

@@ -26,7 +26,7 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 void dget_path(Dirent *file);
 void dget(Dirent *dirent);
 int find_fs_of_dir(FileSystem* fs, void* data);
-int dir_alloc_file(Dirent *dir, Dirent **file, char *name);
+int dir_alloc_file(Dirent *dir, Dirent **file, char *path);
 Dirent* search_file(const char *pathname, struct path_search_record *searched_record);
 int createFile(struct Dirent* baseDir, char* path, Dirent** file);
 #endif

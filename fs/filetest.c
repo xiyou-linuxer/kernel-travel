@@ -44,13 +44,13 @@ void fat32Test(void) {
 	Dirent *file1;
 	createFile(NULL, "/zrp123456789zrp.txt", &file1) ;
 	char *str2 = "Hello! I\'m zrp!\n";
-	printk("filename:%s\n",file1->name);
+	printk("filename2:%s\n",file1->name);
 	file_write(file1, 0, (u64)str2, 0, strlen(str2) + 1) < 0;
 
 	// 读取刚创建的文件
 	file1 = search_file("/zrp123456789zrp.txt",&searched_record);
 	file_read(file1, 0, (u64)buf, 0, file->file_size) ;
 	printk("file zrp.txt: %s\n", buf);
-
+	bufSync();
 	printk("FAT32 Test Passed!\n");
 }
