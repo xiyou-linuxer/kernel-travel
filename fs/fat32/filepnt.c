@@ -49,6 +49,7 @@ void filepnt_init(Dirent *file) {
 	}
 }
 unsigned int filepnt_getclusbyno(Dirent *file, int fileClusNo) {
+
 	unsigned int ind1 = fileClusNo / PAGE_NCLUSNO;
 	unsigned int ind2 = fileClusNo % PAGE_NCLUSNO;
 	DirentPointer *fileptr = &file->pointer;

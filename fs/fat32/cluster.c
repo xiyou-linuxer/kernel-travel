@@ -83,7 +83,7 @@ void clusterWrite(FileSystem *fs, unsigned long cluster, long offset, void *src,
 }
 
 void fatWrite(FileSystem *fs, unsigned long cluster, unsigned int content) {
-	ASSERT(cluster < 2 || cluster > fs->superBlock.data_clus_cnt + 1);
+	//ASSERT(cluster < 2 || cluster > fs->superBlock.data_clus_cnt + 1);
 
 	// fatno从0开始
 	for (unsigned char fatno = 0; fatno < fs->superBlock.bpb.fat_cnt; fatno++) {

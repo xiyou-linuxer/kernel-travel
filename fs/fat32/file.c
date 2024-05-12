@@ -10,7 +10,7 @@
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <debug.h>
-
+#include <linux/memory.h>
 int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
 	//lock_acquire(&mtx_file);
 	
@@ -18,27 +18,7 @@ int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
 	longEntSet longSet;
 	FileSystem *fs;
 
-	//FileSystem *fatFs;
-
-	/*if (baseDir) {
-		fs = baseDir->file_system;
-	} else {
-		fs = fatFs;
-	}*/
-
 	if (path == NULL) {
-		/*if (baseDir == NULL) {
-			// 一般baseDir都是以类似dirFd的形式解析出来的，所以如果baseDir为NULL，表示归属的fd无效
-			printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
-			//lock_release(&mtx_file);
-			return -1;
-		} else {
-			// 如果path为NULL，则直接返回baseDir（即上层的dirfd解析出的Dirent）
-			*pfile = baseDir;
-			dget_path(baseDir); // 此时复用一次，也需要加引用
-			//lock_release(&mtx_file);
-			return 0;
-		}*/
 		printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
 	}
 	int r = walk_path(fs, path, baseDir, 0, &file, 0, &longSet);
@@ -62,17 +42,6 @@ int getFile(Dirent *baseDir, char *path, Dirent **pfile) {
 	}
 	*pfile = file;
 	return 0;
-	/*if (IS_LINK(&(file->raw_dirent))) {
-		char buf[MAX_NAME_LEN];
-		file_readlink(file, buf, MAX_NAME_LEN);
-		file_close(file);
-		printk("follow link: %s -> %s\n", path, buf);
-		ASSERT(buf[0] == '/');		  // 链接文件的路径必须是绝对路径
-		return getFile(NULL, buf, pfile); // 递归调用
-	} else {
-		*pfile = file;
-		return 0;
-	}*/
 }
 
 void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
@@ -87,7 +56,7 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
-	printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
+	//printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
 		lock_release(&mtx_file);
@@ -198,19 +167,75 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	lock_release(&mtx_file);
 	return n;
 }
-/*搜索文件的临时接口*/
-Dirent* search_file(Dirent* parent,char *name)
+
+/* 搜索文件pathname,若找到则返回其Dirent项,否则返回-1 */
+Dirent* search_file(const char *pathname, struct path_search_record *searched_record)
 {
-	Dirent *file;
-	struct list_elem* dir_node = parent->child_list.head.next;
-	while (dir_node!=&parent->child_list.tail)
+	/* 如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息 */
+	if (!strcmp(pathname, "/") || !strcmp(pathname, "/.") || !strcmp(pathname, "/.."))
 	{
-		file = elem2entry(struct Dirent,dirent_tag,dir_node);
-		if (strcmp(file->name, name) == 0)
-		{
-			break;
-		}
-		dir_node = dir_node->next;
+		searched_record->parent_dir = fatFs->root;
+		searched_record->file_type = DIRENT_DIR;
+		searched_record->searched_path[0] = 0; // 搜索路径置空
+		return NULL;
 	}
-	return file;
+
+	uint32_t path_len = strlen(pathname);
+	/* 保证pathname至少是这样的路径/x且小于最大长度 */
+	ASSERT(pathname[0] == '/' && path_len > 1 && path_len < MAX_PATH_LEN);
+	char *sub_path = (char *)pathname;
+	Dirent *parent_dir = fatFs->root;
+	Dirent *dir_e;
+
+	/* 记录路径解析出来的各级名称,如路径"/a/b/c",
+	* 数组name每次的值分别是"a","b","c" */
+	char name[MAX_NAME_LEN] = {0};
+
+	searched_record->parent_dir = parent_dir;
+	searched_record->file_type = DIRENT_UNKNOWN;
+
+	sub_path = path_parse(sub_path, name);
+	while (name[0])
+	{ // 若第一个字符就是结束符,结束循环
+		/* 记录查找过的路径,但不能超过searched_path的长度512字节 */
+		//ASSERT(strlen(searched_record->searched_path) < 512);
+
+		/* 记录已存在的父目录 */
+		strcat(searched_record->searched_path, "/");
+		strcat(searched_record->searched_path, name);
+		dir_e = search_dir_tree(parent_dir, name);
+		printk("name:%s",name);
+		/* 在所给的目录中查找文件 */
+		if (dir_e != NULL)
+		{
+			memset(name, 0, MAX_NAME_LEN);
+			/* 若sub_path不等于NULL,也就是未结束时继续拆分路径 */
+			if (sub_path)
+			{
+				sub_path = path_parse(sub_path, name);
+			}
+
+			if (dir_e->type == DIRENT_DIR )
+			{ // 如果被打开的是目录
+				searched_record->parent_dir = parent_dir;
+				parent_dir = dir_e;
+				continue;
+			}
+			else if (dir_e->type == DIRENT_FILE)
+			{ // 若是普通文件
+				searched_record->file_type = DIRENT_FILE;
+				return dir_e;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+		
+	}
+	/* 执行到此,必然是遍历了完整路径并且查找的文件或目录只有同名目录存在 */
+	/* 保存被查找目录的直接父目录 */
+	//searched_record->parent_dir = dir_open(cur_part, parent_inode_no);
+	searched_record->file_type = DIRENT_DIR;
+	return dir_e;
 }

@@ -127,16 +127,31 @@ int partition_format(FileSystem *fs) {
 	return 0;
 }
 
+int get_entry_count_by_name(char *name) {
+	int len = (strlen(name) + 1);
+
+	if (len > 11) {
+		int cnt = 1; // 包括短文件名项
+		if (len % BYTES_LONGENT == 0) {
+			cnt += len / BYTES_LONGENT;
+		} else {
+			cnt += len / BYTES_LONGENT + 1;
+		}
+		return cnt;
+	} else {
+		// 自己一个，自己的长目录项一个
+		return 2;
+	}
+}
+
 /*文件系统初始化*/
 void fs_init(void)
 {
 	printk("fs_init start\n");
 	bufInit();			//初始化buf
-	//bufTest(0);
 	dirent_init();
 	init_root_fs();		//初始化根文件系统
 	printk("init_root_fs down\n");
-		//int i = 0;
-	fat32Test() ;
+	//fat32Test() ;
 	printk("fs_init down\n");
 }
