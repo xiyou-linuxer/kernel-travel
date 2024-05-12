@@ -149,11 +149,9 @@ void fs_init(void)
 {
 	printk("fs_init start\n");
 	bufInit();			//初始化buf
-	//bufTest(0);
 	dirent_init();
 	init_root_fs();		//初始化根文件系统
 	printk("init_root_fs down\n");
-	//int i = 0;
-	fat32Test() ;
+	//fat32Test() ;
 	printk("fs_init down\n");
 }
