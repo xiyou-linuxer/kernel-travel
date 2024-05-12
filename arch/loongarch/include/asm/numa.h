@@ -25,7 +25,7 @@ enum zone_type {
 };
 
 struct free_area {
-	struct list_elem	free_list[MIGRATE_TYPES];
+	struct list_head	free_list[MIGRATE_TYPES];
 	unsigned long		nr_free;
 };
 

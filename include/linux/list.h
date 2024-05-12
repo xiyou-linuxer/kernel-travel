@@ -16,6 +16,16 @@ struct list {
    struct list_elem tail;
 };
 
+struct list_head {
+	struct list_head *next, *prev;
+};
+
+static inline void INIT_LIST_HEAD(struct list_head* list)
+{
+	list->next = list;
+	list->prev = list;
+}
+
 typedef int (function) (struct list_elem* ,void* arg);
 
 #define list_elem_init(elm) list_insert_before(elm,elm)

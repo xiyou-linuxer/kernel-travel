@@ -253,7 +253,7 @@ static void __meminit zone_init_free_lists(struct zone *zone)
 {
 	unsigned int order, t;
 	for_each_migratetype_order(order, t) {
-		list_elem_init(&zone->free_area[order].free_list[t]);
+		INIT_LIST_HEAD(&zone->free_area[order].free_list[t]);
 		zone->free_area[order].nr_free = 0;
 	}
 }
@@ -270,7 +270,7 @@ void __meminit init_currently_empty_zone(struct zone *zone,
 		pg_data->nr_zones = zone_idx;
 
 	zone->zone_start_pfn = zone_start_pfn;
-	// zone_init_free_lists(zone);
+	zone_init_free_lists(zone);
 }
 
 static unsigned long __init calc_memmap_pages_size(unsigned long spanned_pages)
