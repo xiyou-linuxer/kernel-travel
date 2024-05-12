@@ -193,12 +193,12 @@ unsigned long __init zone_absent_pages_in_node(int nid,
 	return nr_absent;
 }
 
-static void __init calculate_node_totalpages(struct pglist_data *pg_data,
+void calculate_node_totalpages(struct pglist_data *pg_data,
 			unsigned long node_start_pfn,unsigned long node_end_pfn)
 {
 	unsigned long realtotalpages = 0, totalpages = 0;
 
-	for (enum zone_type i; i < MAX_NR_ZONES; ++i) {
+	for (enum zone_type i = 0; i < MAX_NR_ZONES; ++i) {
 		struct zone *zone = pg_data->node_zones + i;
 		unsigned long zone_start_pfn, zone_end_pfn;
 		unsigned long spanned, absent;
@@ -270,7 +270,7 @@ void __meminit init_currently_empty_zone(struct zone *zone,
 		pg_data->nr_zones = zone_idx;
 
 	zone->zone_start_pfn = zone_start_pfn;
-	zone_init_free_lists(zone);
+	// zone_init_free_lists(zone);
 }
 
 static unsigned long __init calc_memmap_pages_size(unsigned long spanned_pages)
@@ -323,7 +323,7 @@ static void __init free_area_init_node(int nid)
 	pg_data->node_start_pfn = start_pfn;
 
 	if(start_pfn != end_pfn) {
-		printk("[node%d] : [mem %#018Lx-%#018Lx]\n", nid,
+		printk("[node%d] : [mem %lu-%lu]\n", nid,
 			(u64)start_pfn << PAGE_SHIFT,
 			end_pfn ? ((u64)end_pfn << PAGE_SHIFT) - 1 : 0);
 		calculate_node_totalpages(pg_data, start_pfn, end_pfn);
@@ -333,9 +333,6 @@ static void __init free_area_init_node(int nid)
 		return;
 	}
 	free_area_init_core(pg_data);
-
-
-
 }
 
 static void __init memmap_init(void)
@@ -370,16 +367,14 @@ void __init  free_area_init(unsigned long *max_zone_pfn)
 				arch_zone_highest_possible_pfn[i])
 			printk("empty\n");
 		else
-			printk("[mem %#018Lx-%#018Lx]\n",
+			printk("[mem %lu-%lu]\n",
 				(u64)arch_zone_lowest_possible_pfn[i]
 					<< PAGE_SHIFT,
 				((u64)arch_zone_highest_possible_pfn[i]
 					<< PAGE_SHIFT) - 1);
 	}
 
-		// NUMA 下要处理每个 node 这里只有一个 node 简化处理
-		free_area_init_node(nid);
-
+	free_area_init_node(nid);
 	memmap_init();
 
 }

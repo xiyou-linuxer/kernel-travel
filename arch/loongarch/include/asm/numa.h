@@ -40,6 +40,7 @@ struct zone {
 	unsigned long		spanned_pages;
 	unsigned long		present_pages;
 	const char		*name;
+	struct bitmap		*pageblock_flags;
 	// spinlock_t		lock;
 	struct free_area	free_area[MAX_ORDER + 1];
 };
