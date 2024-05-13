@@ -375,6 +375,6 @@ void __init  free_area_init(unsigned long *max_zone_pfn)
 	}
 
 	free_area_init_node(nid);
-	memmap_init();
+	// memmap_init();
 
 }
