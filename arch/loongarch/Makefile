@@ -88,7 +88,7 @@ KBUILD_DTBS	:= dtbs
 all:	config $(KBUILD_DTBS) Image
 	mv arch/loongarch/boot/Image kernel.bin
 	md5sum kernel.bin
-	ll kernel.bin
+	ls -l kernel.bin
 
 boot := arch/loongarch/boot
 
