@@ -121,8 +121,8 @@ typedef struct Dirent {
 	u32 mode;
 
 	// 各种计数
-	u16 linkcnt; // 链接计数
-	u16 refcnt;  // 引用计数
+	unsigned short linkcnt; // 链接计数
+	unsigned short refcnt;  // 引用计数
 
 	//struct holder_info holders[DIRENT_HOLDER_CNT];
 	//int holder_cnt;

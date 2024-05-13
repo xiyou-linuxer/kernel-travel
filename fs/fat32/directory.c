@@ -242,7 +242,6 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *path)
 
 	Dirent *dirent = dirent_alloc();//在缓存中分配目录项
 	char *name = (strrchr(path,'/')+1);
-	//name = name - 1;
 	printk("create a file using long Name! name is %s\n", name);
 	int cnt = get_entry_count_by_name(name);//计算需要几个目录
 	printk("cnt:%d\n",cnt);

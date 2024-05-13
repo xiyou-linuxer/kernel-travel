@@ -1,0 +1,186 @@
+#include <linux/stdio.h>
+#include <linux/string.h>
+#include <linux/types.h>
+#include <debug.h>
+#include <linux/list.h>
+#include <linux/console.h>
+#include <fs/buf.h>
+#include <fs/cluster.h>
+#include <fs/dirent.h>
+#include <fs/dirent.h>
+#include <fs/vfs.h>
+#include <fs/filepnt.h>
+#include <fs/fs.h>
+#include <fs/fd.h>
+#include <linux/thread.h>
+/*本文件用于实现文件的syscall*/
+int32_t sys_open(const char *pathname, int flags, mode_t mode)
+{
+	Dirent *file;
+	int fd = -1;
+	struct path_search_record searched_record;
+	memset(&searched_record, 0, sizeof(struct path_search_record));
+
+	/* 记录目录深度.帮助判断中间某个目录不存在的情况 */
+	unsigned int pathname_depth = path_depth_cnt((char *)pathname);
+
+	/* 先检查是否将全部的路径遍历 */
+	file = search_file(pathname,&searched_record);
+	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
+	if (pathname_depth != path_searched_depth)
+	{ 
+		// 说明并没有访问到全部的路径,某个中间目录是不存在的
+		printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
+		return -1;
+	}
+
+	/* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
+	if ((file == NULL) && !(flags & O_CREATE))
+	{
+		printk("in path %s, file %s is`t exist\n",searched_record.searched_path,(strrchr(searched_record.searched_path, '/') + 1));
+		return -1;
+	}
+	else if ((file != NULL) && flags & O_CREATE)
+	{ // 若要创建的文件已存在
+		printk("%s has already exist!\n", pathname);
+		return -1;
+	}
+
+	switch (flags & O_CREATE)
+	{
+	case O_CREATE:
+		printk("creating file\n");
+		fd = file_create(searched_record.parent_dir, pathname, flags, mode);
+		break;
+	default:
+		/* 其余情况均为打开已存在文件:
+		 * O_RDONLY,O_WRONLY,O_RDWR */
+		fd = file_open(file, flags ,mode);
+	}
+
+	/* 此fd是指任务pcb->fd_table数组中的元素下标,
+	 * 并不是指全局file_table中的下标 */
+	return fd;
+}
+
+int32_t sys_write(int32_t fd, const void *buf, uint32_t count)
+{
+	if (fd < 0)
+	{
+		printk("sys_write: fd error\n");
+		return -1;
+	}
+	if (fd == stdout_no)
+	{
+		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
+		/*if (is_pipe(fd))
+		{
+			return pipe_write(fd, buf, count);
+		}
+		else*/
+		//{
+			char tmp_buf[1024] = {0};
+			memcpy(tmp_buf, buf, count);
+			console_put_str(tmp_buf);
+			return count;
+		//}
+	}
+	/*else if (is_pipe(fd))
+	{ // 若是管道就调用管道的方法
+		return pipe_write(fd, buf, count);
+	}*/
+	else
+	{
+		int _fd = fd_local2global(fd);
+		Dirent *wr_file = &file_table[_fd].dirent;
+		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
+		{
+            unsigned bytes_written = file_write(wr_file, 0, buf,file_table[_fd].offset,count);
+            file_table[_fd].offset += bytes_written;
+            return bytes_written;
+        }
+        else
+        {
+            console_put_str("sys_write: not allowed to write file without flag O_RDWR or O_WRONLY\n");
+            return -1;
+        }
+    }
+}
+
+/* 从文件描述符fd指向的文件中读取count个字节到buf,若成功则返回读出的字节数,到文件尾则返回-1 */
+int32_t sys_read(int32_t fd, void *buf, uint32_t count)
+{
+	ASSERT(buf != NULL);
+	int32_t ret = -1;
+	uint32_t global_fd = 0;
+	if (fd < 0 || fd == stdout_no || fd == stderr_no)
+	{
+		printk("sys_read: fd error\n");
+	}
+	else if (fd == stdin_no)
+	{
+		/* 标准输入有可能被重定向为管道缓冲区, 因此要判断 */
+		/*if (is_pipe(fd))
+		{
+			ret = pipe_read(fd, buf, count);
+        }
+        else*/
+        //{
+            /*char *buffer = buf;
+            uint32_t bytes_read = 0;
+            while (bytes_read < count)
+            {
+                *buffer = ioq_getchar(&kbd_buf);
+                bytes_read++;
+                buffer++;
+            }
+            ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+        //}
+    }
+    else if (is_pipe(fd))
+    { // 若是管道就调用管道的方法 
+        ret = pipe_read(fd, buf, count);*/
+	}
+	else
+	{
+		global_fd = fd_local2global(fd);
+		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
+		file_table[global_fd].offset += ret;
+	}
+	return ret;
+}
+
+/* 成功关闭文件返回0,失败返回-1 */
+int32_t sys_close(int32_t fd)
+{
+	int32_t ret = -1; // 返回值默认为-1,即失败
+	if (fd > 2)
+	{
+		uint32_t global_fd = fd_local2global(fd);
+		/*if (is_pipe(fd))
+		{
+			// 如果此管道上的描述符都被关闭,释放管道的环形缓冲区 
+			if (--file_table[global_fd].fd_pos == 0)
+			{
+                mfree_page(PF_KERNEL, file_table[global_fd].fd_inode, 1);
+                file_table[global_fd].fd_inode = NULL;
+            }
+            ret = 0;
+        }
+        else
+        {*/
+			ret=file_close(&file_table[global_fd]);
+        //}
+        running_thread()->fd_table[fd] = -1; // 使该文件描述符位可用
+    }
+    return ret;
+}
+
+int sys_mkdirat(int dirFd, u64 path, int mode) {
+	return makeDirAtFd(dirFd, path, mode);
+}
+
+char * sys_getcwd(char *buf, int size)
+{
+	
+}

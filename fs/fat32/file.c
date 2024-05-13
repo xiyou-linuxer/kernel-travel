@@ -7,6 +7,7 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/buf.h>
+#include <fs/fd.h>
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <debug.h>
@@ -128,7 +129,11 @@ void file_extend(struct Dirent *file, int newSize) {
 	sync_dirent_rawdata_back(file);
 }
 
-
+/*
+*src：缓冲区地址
+*off：文件偏移指针
+*n：要读取的长度
+*/
 int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
