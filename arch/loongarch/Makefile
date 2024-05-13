@@ -87,12 +87,13 @@ KBUILD_DTBS	:= dtbs
 #all:	$(KBUILD_IMAGE) $(KBUILD_DTBS) Image
 all:	config $(KBUILD_DTBS) Image
 	mv arch/loongarch/boot/Image kernel.bin
+	md5sum kernel.bin
 
 boot := arch/loongarch/boot
 
 
 config:
-	mv defconfig .config
+	cp defconfig .config
 
 Image Image.gz: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
