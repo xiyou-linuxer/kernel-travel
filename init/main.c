@@ -29,6 +29,7 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
+#include <linux/console.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -78,6 +79,7 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 	local_irq_enable();
 	pci_init();
+	console_init();
 	disk_init();
 	thread_init();
 	timer_init();
