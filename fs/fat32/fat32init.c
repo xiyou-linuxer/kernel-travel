@@ -25,14 +25,12 @@ static void build_dirent_tree(Dirent *parent) {
 			break;
 		}
 		//printk("get child: %s, parent: %s\n", child->name, parent->name);
-
-		// 跳过.和..
+		list_append(&parent->child_list,&child->dirent_tag);
+		// 跳过.和..防止死循环
 		if (strncmp(child->name, ".          ", 11) == 0 ||
 		    strncmp(child->name, "..         ", 11) == 0) {
 			continue;
 		}
-		list_append(&parent->child_list,&child->dirent_tag);
-
 		// 如果为目录，就向下一层递归
 		if (child->type == DIRENT_DIR) {
 			build_dirent_tree(child);
@@ -52,6 +50,7 @@ void fat32_init(FileSystem* fs)
 	
 
 	// 2. 初始化根目录
+	fs->root->parent_dirent = fs->root;
 	fs->root = dirent_alloc();
 	
 	strcpy(fs->root->name, "/");
