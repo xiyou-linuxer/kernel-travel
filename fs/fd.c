@@ -1,17 +1,19 @@
 #include <fs/dirent.h>
 #include <fs/vfs.h>
-#include <fs/filepnt.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
-#include <linux/types.h>
-#include <fs/fs.h>
-#include <debug.h>
-#include <linux/list.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
 #include <fs/fd.h>
+#include <fs/fs.h>
+#include <fs/filepnt.h>
+#include <linux/stdio.h>
+#include <linux/string.h>
+#include <linux/types.h>
 #include <linux/sched.h>
+#include <linux/thread.h>
+#include <linux/list.h>
+#include <debug.h>
+
 struct fd file_table[MAX_FILE_OPEN];//全局文件打开数组
 
 /* 从文件表file_table中获取一个空闲位,成功返回下标,失败返回-1 */
@@ -62,7 +64,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 uint32_t fd_local2global(uint32_t local_fd)
 {
     struct task_struct *cur = running_thread();
-    int32_t global_fd = cur->fd_table[local_fd];
+    int global_fd = cur->fd_table[local_fd];
     ASSERT(global_fd >= 0 && global_fd < MAX_FILE_OPEN);
     return (uint32_t)global_fd;
 }
@@ -123,10 +125,84 @@ int file_close(struct fd *_fd)
 	_fd->refcnt -= 1;
 	if (_fd->refcnt == 0)//fd的引用计数为0则释放这个fd
 	{
+		_fd->dirent->refcnt -=1;
 		_fd->dirent= NULL;
 		_fd->offset = 0;
 		_fd->offset = -1;
 		_fd->type = -1;
 	}
 	return 0;
+}
+
+int rm_unused_file(struct Dirent *file) {
+	ASSERT(file->refcnt == 0);
+	char linked_file_path[MAX_NAME_LEN];
+	int cnt = get_entry_count_by_name(file->name);
+	char data = FAT32_INVALID_ENTRY;
+
+
+	// 2. 断开父子关系
+	ASSERT(file->parent_dirent != NULL); // 不处理根目录的情况
+	// 先递归删除子Dirent（由于存在意向锁，因此这样）
+	if (file->type == DIRENT_DIR) {
+		struct list_elem *tmp = file->child_list.head.next;
+		while (tmp!=&file->child_list.tail) {
+			struct list_elem *next = tmp->next;
+			Dirent *file_child = elem2entry(Dirent,dirent_tag,tmp);
+			rmfile(file_child);
+			tmp = next;
+		}
+	}
+
+	list_remove(&file->dirent_tag);// 从父亲的子Dirent列表删除
+	// 3. 释放其占用的Cluster
+	file_shrink(file, 0);
+
+	// 4. 清空目录项
+	for (int i = 0; i < cnt; i++) {
+		int ret = file_write(file->parent_dirent, 0, (unsigned long)&data, file->parent_dir_off - i * DIR_SIZE, 1) < 0;
+		if (ret != 0)
+		{
+			/* code */
+		}
+	}
+	dirent_dealloc(file); // 释放目录项
+	return 0;
+}
+
+/**
+ * @brief 删除文件。支持递归删除文件夹
+ */
+int rmfile(struct Dirent *file) 
+{
+	//若引用计数大于则报错返回
+	if (file->refcnt > 1) {
+		printk("File is in use\n");
+		return -1;
+	}
+
+	return rm_unused_file(file);
+}
+
+/**
+ * @brief 需要保证传入的file->refcnt == 0
+ */
+
+
+/**
+ * @brief 撤销链接。即删除(链接)文件
+ */
+int unlinkat(struct Dirent *dir, char *path) {
+	lock_acquire(&mtx_file);
+
+	Dirent *file;
+	int ret;
+	if ((ret = getFile(dir, path, &file)) < 0) {
+		printk("file %s not found!\n", path);
+		lock_release(&mtx_file);
+		return ret;
+	}
+	ret = rmfile(file);
+	lock_release(&mtx_file);
+	return ret;
 }

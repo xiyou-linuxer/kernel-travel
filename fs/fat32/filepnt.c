@@ -1,11 +1,11 @@
 #include <fs/cluster.h>
-#include <linux/stdio.h>
 #include <fs/fs.h>
 #include <fs/fat32.h>
 #include <linux/types.h>
 #include <linux/memory.h>
-#include <debug.h>
+#include <linux/stdio.h>
 #include <linux/string.h>
+#include <debug.h>
 void filepnt_setval(DirentPointer* fileptr, int i, int value) {
 	unsigned int index1 = i / PAGE_NCLUSNO;
 	unsigned int index2 = i % PAGE_NCLUSNO;
@@ -67,4 +67,19 @@ unsigned int filepnt_getclusbyno(Dirent *file, int fileClusNo) {
 	u32 ret = twicep->cluster[ind2];
 	ASSERT(ret != 0); // 假设要查找的文件肯定有第fileClusNo个簇
 	return ret;
+}
+/**
+ * @brief 释放文件的簇
+ * @param clus 文件的第一个簇号
+*/
+void clus_sequence_free(FileSystem *fs, int clus) {
+	while (1) {
+		int nxt_clus = fatRead(fs, clus);
+		fatWrite(fs, clus, 0);
+		clus = nxt_clus;
+
+		if (!FAT32_NOT_END_CLUSTER(clus)) {
+			break;
+		}
+	}
 }

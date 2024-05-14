@@ -70,12 +70,7 @@ void clusterWrite(FileSystem *fs, unsigned long cluster, long offset, void *src,
 		Buffer *buf = fs->get(fs, secno, true);
 		// 计算本次读写的长度
 		size_t len = min(fs->superBlock.bpb.bytes_per_sec - secoff, n - i);
-		if (isUser) {
-			/*extern void copyIn(unsigned long uPtr, void *kPtr, int len);
-			copyIn((unsigned long)src + i, &buf->data->data[secoff], len);*/
-		} else {
-			memcpy(&buf->data->data[secoff], src + i, len);
-		}
+		memcpy(&buf->data->data[secoff], src + i, len);
 		bufWrite(buf);
 		bufRelease(buf);
 		i += len;

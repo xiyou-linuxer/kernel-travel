@@ -30,4 +30,5 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *path);
 Dirent* search_file(const char *pathname, struct path_search_record *searched_record);
 int createFile(struct Dirent* baseDir, char* path, Dirent** file);
 int makeDirAt(Dirent* baseDir, char* path, int mode);
+void file_shrink(Dirent* file, u64 newsize);
 #endif

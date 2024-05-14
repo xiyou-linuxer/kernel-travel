@@ -47,7 +47,8 @@ struct task_struct {
 	struct virt_addr usrprog_vaddr;
 	struct list_elem general_tag;
 	int fd_table[MAX_FILES_OPEN_PER_PROC];  // 文件描述符数组
-	Dirent cwd_inode_nr;
+	char cwd[MAX_NAME_LEN];					//记录工作目录的字符数组
+	struct Dirent* cwd_dirent;				//当前目录
 	struct list_elem all_list_tag;
 	uint64_t pgdir;
 	u32 asid;
