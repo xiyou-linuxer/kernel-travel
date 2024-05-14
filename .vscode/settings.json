@@ -35,6 +35,15 @@
         "page.h": "c",
         "filesystem": "c",
         "cluster.h": "c",
-        "buf.h": "c"
+        "buf.h": "c",
+        "bitset": "c",
+        "algorithm": "c",
+        "format": "c",
+        "__bit_reference": "c",
+        "map": "c",
+        "set": "c",
+        "unordered_map": "c",
+        "unordered_set": "c",
+        "pci.h": "c"
     }
 }
