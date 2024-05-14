@@ -21,7 +21,7 @@ enum zone_type {
 	ZONE_DMA,
 	ZONE_NORMAL,
 	ZONE_MOVABLE,
-	MAX_NR_ZONES
+	MAX_NR_ZONES = 3
 };
 
 struct free_area {
@@ -43,13 +43,14 @@ struct zone {
 	struct bitmap		*pageblock_flags;
 	// spinlock_t		lock;
 	struct free_area	free_area[MAX_ORDER + 1];
+	bool			initialized;
 };
 
 typedef struct pglist_data {
 	struct zone node_zones[MAX_NR_ZONES];
 	// struct zonelist node_zonelists[MAX_ZONELISTS];
 	int nr_zones;
-
+	struct page *node_mem_map;
 	unsigned long node_start_pfn;
 	unsigned long node_present_pages;
 	unsigned long node_spanned_pages;
@@ -65,6 +66,15 @@ typedef struct pglist_data {
 
 } pg_data_t;
 
+static unsigned long pgdat_end_pfn(struct pglist_data *pgdat)
+{
+	return pgdat->node_start_pfn + pgdat->node_spanned_pages;
+}
+
+static inline bool zone_is_initialized(struct zone *zone)
+{
+	return zone->initialized;
+}
 
 extern struct pglist_data node_data[MAX_NUMNODES];
 

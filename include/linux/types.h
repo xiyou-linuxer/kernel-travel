@@ -13,6 +13,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define NULL ((void*)0)
+#define ULLONG_MAX	(~0ULL)
 
 #define true 1
 #define false 0
@@ -41,7 +42,7 @@ typedef u64                 uint64_t;
 typedef s16		    int16_t;
 
 typedef unsigned long		size_t;
-typedef u64			        phys_addr_t;
+typedef unsigned long		phys_addr_t;
 
 #define __aligned_u64 __u64 __attribute__((aligned(8)))
 

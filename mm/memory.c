@@ -12,7 +12,7 @@
 #include <linux/memblock.h>
 #include <linux/init.h>
 #include <linux/math.h>
-
+#include <linux/compiler.h>
 
 struct pool reserve_phy_pool;
 struct pool phy_pool;
@@ -20,6 +20,8 @@ static unsigned long arch_zone_lowest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long nr_kernel_pages __initdata;
 static unsigned long nr_all_pages __initdata;
+void *high_memory;
+struct page *mem_map;
 
 uint64_t get_page(void)
 {
@@ -193,6 +195,31 @@ unsigned long __init zone_absent_pages_in_node(int nid,
 	return nr_absent;
 }
 
+void __init alloc_node_mem_map(struct pglist_data *pg_data)
+{
+	unsigned long start, offset, size, end;
+	struct page *map;
+
+	if (!pg_data->node_spanned_pages)
+		return;
+
+	start = pg_data->node_start_pfn & ~(MAX_ORDER_NR_PAGES - 1);
+	offset = pg_data->node_start_pfn - start;
+
+	end = ALIGN(pgdat_end_pfn(pg_data), MAX_ORDER_NR_PAGES);
+	size =  (end - start) * sizeof(struct page);
+	map = (struct page *)get_kernel_pge();
+	if (!map)
+		PANIC();
+	pg_data->node_mem_map = map + offset;
+
+	if (pg_data == &node_data[0]) {
+		mem_map = node_data[0].node_mem_map;
+		if (page_to_pfn(mem_map) != pg_data->node_start_pfn)
+			mem_map -= offset;
+	}
+}
+
 void calculate_node_totalpages(struct pglist_data *pg_data,
 			unsigned long node_start_pfn,unsigned long node_end_pfn)
 {
@@ -245,6 +272,7 @@ static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx,
 	zone->node = nid;
 	zone->name = zone_names[idx];
 	zone->zone_pgdat = &node_data[nid];
+	zone->initialized = true;
 	// spin_lock_init(&zone->lock);
 	// zone_seqlock_init(zone);
 }
@@ -332,6 +360,7 @@ static void __init free_area_init_node(int nid)
 		printk("[node%d] : MEMORYLESS\n", nid);
 		return;
 	}
+	alloc_node_mem_map(pg_data);
 	free_area_init_core(pg_data);
 }
 
@@ -377,4 +406,119 @@ void __init  free_area_init(unsigned long *max_zone_pfn)
 	free_area_init_node(nid);
 	// memmap_init();
 
+}
+
+static inline void del_page_from_free_list(struct page *page, struct zone *zone,
+					   unsigned int order)
+{
+	// list_del(&page->buddy_list);
+	set_page_private(page, 0);
+	zone->free_area[order].nr_free--;
+}
+
+static inline void add_to_free_list_tail(struct page *page, struct zone *zone,
+					 unsigned int order, int migratetype)
+{
+	struct free_area *area = &zone->free_area[order];
+
+	list_add_tail(&page->buddy_list, &area->free_list[migratetype]);
+	area->nr_free++;
+}
+
+static inline void add_to_free_list(struct page *page, struct zone *zone,
+				    unsigned int order, int migratetype)
+{
+	struct free_area *area = &zone->free_area[order];
+
+	list_add(&page->buddy_list, &area->free_list[migratetype]);
+	area->nr_free++;
+}
+
+/*判断给定的页面（page）和其伙伴页面（通过参数 buddy_pfn 指定）在指定阶数（order）上是否可以进行合并。*/
+static inline bool
+buddy_merge_likely(unsigned long pfn, unsigned long buddy_pfn,
+		   struct page *page, unsigned int order)
+{
+	unsigned long higher_page_pfn;
+	struct page *higher_page;
+
+	if (order >= MAX_PAGE_ORDER - 1)
+		return false;
+
+	higher_page_pfn = buddy_pfn & pfn;
+	higher_page = page + (higher_page_pfn - pfn);
+
+	return find_buddy_page_pfn(higher_page, higher_page_pfn, order + 1,
+			NULL) != NULL;
+}
+
+void free_one_page(struct zone *zone,
+				struct page *page, unsigned long pfn,
+				unsigned int order,
+				int migratetype, bool fpi_flags)
+{
+	struct page *buddy;
+	unsigned long buddy_pfn = 0;
+	unsigned long combined_pfn;
+	bool to_tail;
+	ASSERT(zone_is_initialized(zone) == true);
+	printk("%p\n",zone);
+	printk("%p\n",zone);
+	printk("%lu\n",order);
+	printk("%lu\n",pfn);
+	while (order < MAX_PAGE_ORDER) {
+		printk("find_buddy_page_pfn function done\n");
+		buddy = find_buddy_page_pfn(page, pfn, order, &buddy_pfn);
+		if (!buddy)
+			// 不需要合并
+			goto done_merging;
+		
+		del_page_from_free_list(buddy, zone, order);
+		printk("del page for list done \n");
+		combined_pfn = buddy_pfn & pfn;
+		page = page + (combined_pfn - pfn);
+		pfn = combined_pfn;
+		order++;
+	}
+done_merging:
+	set_buddy_order(page, order);
+	if(fpi_flags == FPI_TO_TAIL)
+		to_tail = true;
+	else
+	 	to_tail = buddy_merge_likely(pfn, buddy_pfn, page, order);
+	
+	if (to_tail)
+		add_to_free_list_tail(page, zone, order, migratetype);
+	else
+		add_to_free_list(page, zone, order, migratetype);
+}
+
+
+static struct zone *
+page_zone(const struct page *page)
+{
+	return (struct zone *)&node_data[0].node_zones[page_zonenum(page)];
+}
+
+static void __free_pages_ok(struct page *page, unsigned int order,
+			    bool fpi_flags)
+{
+	int migratetype;
+	unsigned long pfn = page_to_pfn(page);
+	struct zone *zone = page_zone(page);
+	printk("come to free_one_page function\n");
+	free_one_page(zone, page, pfn, order, MIGRATE_UNMOVABLE, fpi_flags);
+}
+
+void __init __free_pages_core(struct page *page,unsigned int order)
+{
+	/*清除 struct page 中的数据*/
+	// ...
+	__free_pages_ok(page,order,FPI_TO_TAIL);
+}
+
+void __init mem_init(void)
+{
+	high_memory = (void *) __va(max_low_pfn << PAGE_SHIFT);
+	memblock_free_all();
 }

@@ -62,4 +62,13 @@ typedef __u64 __attribute__((__may_alias__)) __u64_alias_t;
 	(volatile typeof(x) *)&(x); })
 #define ACCESS_ONCE(x) (*__ACCESS_ONCE(x))
 
+
+#ifndef likely
+# define likely(x)		__builtin_expect(!!(x), 1)
+#endif
+
+#ifndef unlikely
+# define unlikely(x)		__builtin_expect(!!(x), 0)
+#endif
+
 #endif /* _LINUX_VOMPILER_H */

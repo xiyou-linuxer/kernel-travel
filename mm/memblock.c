@@ -5,6 +5,8 @@
 #include <linux/printk.h>
 #include <asm/page.h>
 #include <debug.h>
+#include <asm/numa.h>
+#include <linux/math.h>
 #define INIT_MEMBLOCK_MEMORY_REGIONS 32
 #define INIT_MEMBLOCK_RESERVED_REGIONS INIT_MEMBLOCK_MEMORY_REGIONS
 #define MEMBLOCK_ALLOC_ANYWHERE	(~(phys_addr_t)0)
@@ -132,4 +134,116 @@ phys_addr_t __meminit memblock_end_of_DRAM(void)
 	int idx = memblock.memory.cnt - 1;
 
 	return (memblock.memory.regions[idx].base + memblock.memory.regions[idx].size);
+}
+
+void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
+		      struct memblock_type *type_a,
+		      struct memblock_type *type_b, phys_addr_t *out_start,
+		      phys_addr_t *out_end)
+{
+	int idx_a = *idx & 0xffffffff;
+	int idx_b = *idx >> 32;
+
+	for (; idx_a < type_a->cnt; idx_a++) {
+		struct memblock_region *m = &type_a->regions[idx_a];
+
+		phys_addr_t m_start = m->base;
+		phys_addr_t m_end = m->base + m->size;
+
+		if (!type_b) {
+			if (out_start)
+				*out_start = m_start;
+			if (out_end)
+				*out_end = m_end;
+			idx_a++;
+			*idx = (u32)idx_a | (u64)idx_b << 32;
+			return;
+		}
+
+		for (; idx_b < type_b->cnt + 1; idx_b++) {
+			struct memblock_region *r;
+			phys_addr_t r_start;
+			phys_addr_t r_end;
+
+			r = &type_b->regions[idx_b];
+			r_start = idx_b ? r[-1].base + r[-1].size : 0;
+			r_end = idx_b < type_b->cnt ?
+				r->base : PHYS_ADDR_MAX;
+
+			if (r_start >= m_end)
+				break;
+
+			if (m_start < r_end) {
+				if (out_start)
+					*out_start =
+						max(m_start, r_start);
+				if (out_end)
+					*out_end = min(m_end, r_end);
+
+				if (m_end <= r_end)
+					idx_a++;
+				else
+					idx_b++;
+				*idx = (u32)idx_a | (u64)idx_b << 32;
+				return;
+			}
+		}
+	}
+
+	*idx = ULLONG_MAX;
+}
+
+static void __meminit reset_node_managed_pages(void)
+{
+	struct pglist_data *pd_data = &node_data[0];
+	struct zone *z;
+	for (z = pd_data->node_zones; z < pd_data->node_zones + MAX_NR_ZONES; z++)
+		z->managed_pages = 0;
+}
+
+unsigned long __init __free_memory_core(phys_addr_t start,
+				 phys_addr_t end)
+{
+	unsigned long start_pfn = PFN_UP(start);
+	unsigned long end_pfn = (unsigned long)(min(PFN_DOWN(end), max_low_pfn));
+	int order;
+
+	if (start_pfn >= end_pfn)
+		return 0;
+	printk("start = 0x%x,end = 0x%x\n", start, end);
+	while (start < end) {
+		if (start)
+			order = (int)(min(MAX_PAGE_ORDER, __ffs(start)));
+		else
+			order = MAX_PAGE_ORDER;
+
+		while (start + (1UL << order) > end)
+			order--;
+		printk("come to __free_pages_core function\n");
+		__free_pages_core((struct page *)pfn_to_page(start), order);
+
+		start += (1UL << order);
+	}
+
+	return end_pfn - start_pfn;
+}
+
+static unsigned long __init free_low_memory_core_early(void)
+{
+	unsigned long count = 0;
+	phys_addr_t start, end;
+	u64 i;
+	for_each_free_mem_range(i, 0, MEMBLOCK_NONE, &start, &end)
+		count += __free_memory_core(start, end);
+	return count;
+}
+
+void __meminit memblock_free_all(void)
+{
+
+	reset_node_managed_pages();
+	printk("reset_node_managed_pages done\n");
+	unsigned long pages = free_low_memory_core_early();
+	printk("pages: %ld\n", pages);
+
 }

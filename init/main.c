@@ -73,6 +73,7 @@ void __init __no_sanitize_address start_kernel(void)
 	// serial_ns16550a_init(9600);
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
+	mem_init();
 	//初始化中断处理程序
 	trap_init();
 	irq_init();

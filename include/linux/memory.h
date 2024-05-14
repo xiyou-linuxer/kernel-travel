@@ -2,6 +2,9 @@
 #define __MEMORY_H
 #include <linux/types.h>
 #include <bitmap.h>
+#include <asm/bootinfo.h>
+#include <asm/numa.h>
+#include <linux/list.h>
 
 #define DIV_ROUND_UP(divd,divs) ((divd+divs-1)/divs)
 
@@ -21,6 +24,38 @@
 	for (order = 0; order <= MAX_ORDER; order++) \
 		for (type = 0; type < MIGRATE_TYPES; type++)
 
+#define MAX_PAGE_ORDER 10
+#define MAX_ORDER_NR_PAGES (1 << MAX_PAGE_ORDER)
+
+static inline int __ffs(unsigned int x)
+{
+    return __builtin_ffs(x);
+}
+
+#define FPI_NONE		(0)
+#define FPI_TO_TAIL		(1)
+
+
+#ifndef ARCH_PFN_OFFSET
+#define ARCH_PFN_OFFSET		(0UL)
+#endif
+
+#define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
+#define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
+				 ARCH_PFN_OFFSET)
+
+#define page_to_pfn __page_to_pfn
+#define pfn_to_page __pfn_to_page
+
+#ifndef pfn_valid
+static inline int pfn_valid(unsigned long pfn)
+{
+	extern unsigned long max_mapnr;
+	unsigned long pfn_offset = ARCH_PFN_OFFSET;
+
+	return pfn >= pfn_offset && (pfn - pfn_offset) < max_mapnr;
+}
+#endif
 
 struct virt_addr {
     u64 vaddr_start;
@@ -37,20 +72,21 @@ struct pool {
 struct page {
 //     // 存储 page 的定位信息以及相关标志位
 	unsigned long flags;
+	struct list_head buddy_list;
 
-//     union {
-//         struct {    /* Page cache and anonymous pages */
-//             // 用来指向物理页 page 被放置在了哪个 lru 链表上
-//             struct list_head lru;
-//             // 如果 page 为文件页的话，低位为0，指向 page 所在的 page cache
-//             // 如果 page 为匿名页的话，低位为1，指向其对应虚拟地址空间的匿名映射区 anon_vma
-//             struct address_space *mapping;
-//             // 如果 page 为文件页的话，index 为 page 在 page cache 中的索引
-//             // 如果 page 为匿名页的话，表示匿名页在对应进程虚拟内存区域 VMA 中的偏移
-//             pgoff_t index;
-//             // 在不同场景下，private 指向的场景信息不同
-//             unsigned long private;
-//         };
+    union {
+        struct {    /* Page cache and anonymous pages */
+            // 用来指向物理页 page 被放置在了哪个 lru 链表上
+            struct list_head lru;
+            // 如果 page 为文件页的话，低位为0，指向 page 所在的 page cache
+            // 如果 page 为匿名页的话，低位为1，指向其对应虚拟地址空间的匿名映射区 anon_vma
+            struct address_space *mapping;
+            // 如果 page 为文件页的话，index 为 page 在 page cache 中的索引
+            // 如果 page 为匿名页的话，表示匿名页在对应进程虚拟内存区域 VMA 中的偏移
+        //     pgoff_t index;
+            // 在不同场景下，private 指向的场景信息不同
+            unsigned long private;
+        };
         
 //         struct {    /* slab, slob and slub */
 //             union {
@@ -96,7 +132,7 @@ struct page {
 
 //         // 表示 slab 中需要释放回收的对象链表
 //         struct rcu_head rcu_head;
-//     };
+    };
 
 //     union {     /* This union is 4 bytes in size. */
 //         // 表示该 page 映射了多少个进程的虚拟内存空间，一个 page 可以被多个进程映射
@@ -118,10 +154,69 @@ struct mm_struct {
 
 extern struct pool reserve_phy_pool;
 extern struct pool phy_pool;
+extern struct page *mem_map;
+
+
+extern char * const zone_names[3];
 
 static inline void invalidate(void)
 {
 	asm volatile("invtlb 0x0,$r0,$r0");
+}
+
+static inline int
+page_zonenum(const struct page *page)
+{
+	return 1;
+}
+
+
+static inline unsigned long
+__find_buddy_pfn(unsigned long page_pfn, unsigned int order)
+{
+	return page_pfn ^ (1 << order);
+}
+
+static inline unsigned int
+buddy_order(struct page *page)
+{
+	return page->private;
+}
+
+static inline bool
+page_is_buddy(struct page *page, struct page *buddy,
+				 unsigned int order)
+{
+	if (buddy_order(buddy) != order)
+		return false;
+	/*这里只管理 Normal，忽略*/
+	// if (page_zone_id(page) != page_zone_id(buddy))
+	// 	return false;
+	return true;
+}
+
+static inline struct page *
+find_buddy_page_pfn(struct page *page,
+			unsigned long pfn, unsigned int order, unsigned long *buddy_pfn)
+{
+	unsigned long __buddy_pfn = __find_buddy_pfn(pfn, order);
+	struct page *buddy;
+
+	buddy = page + (__buddy_pfn - pfn);
+	if (buddy_pfn)
+		*buddy_pfn = __buddy_pfn;
+
+	if (page_is_buddy(page, buddy, order))
+		return buddy;
+	return NULL;
+}
+
+#define set_buddy_order(page, order) set_page_private(page, order)
+
+static inline void
+set_page_private(struct page *page, unsigned long private)
+{
+	page->private = private;
 }
 
 u64 *pgd_ptr(u64 pd,u64 vaddr);
@@ -139,5 +234,8 @@ void * kmalloc(u64 size);
 void get_pfn_range_for_nid(unsigned int nid,
 			unsigned long *start_pfn, unsigned long *end_pfn);
 void free_area_init(unsigned long *max_zone_pfn);
+void memblock_init(void);
+void __free_pages_core(struct page *page, unsigned int order);
+void mem_init(void);
 
 #endif

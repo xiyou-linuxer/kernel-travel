@@ -11,6 +11,17 @@
 	for (i = -1, __next_mem_pfn_range(&i, nid, p_start, p_end, p_nid); \
 	     i >= 0; __next_mem_pfn_range(&i, nid, p_start, p_end, p_nid))
 
+#define __for_each_mem_range(i, type_a, type_b, nid, flags,		\
+			   p_start, p_end)			\
+	for (i = 0, __next_mem_range(&i, nid, flags, type_a, type_b,	\
+				     p_start, p_end);		\
+	     i != (u64)ULLONG_MAX;					\
+	     __next_mem_range(&i, nid, flags, type_a, type_b,		\
+			      p_start, p_end))
+
+#define for_each_free_mem_range(i, nid, flags, p_start, p_end)	\
+	__for_each_mem_range(i, &memblock.memory, &memblock.reserved,	\
+			     nid, flags, p_start, p_end)
 
 enum memblock_flags {
 	MEMBLOCK_NONE		= 0x0,	/* No special request */
@@ -54,6 +65,7 @@ phys_addr_t memblock_end_of_DRAM(void);
 
 void __next_mem_pfn_range(int *idx, int nid, unsigned long *out_start_pfn,
 			  unsigned long *out_end_pfn, int *out_nid);
+void memblock_free_all(void);
 
 extern struct memblock memblock;
 
