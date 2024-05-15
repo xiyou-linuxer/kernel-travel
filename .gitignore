@@ -21,3 +21,4 @@ quick_start.sh
 .vscode/
 command/user_prog
 kernel.bin
+*.order

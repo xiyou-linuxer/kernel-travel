@@ -13,7 +13,10 @@ pid_t sys_getpid(void)
 
 int64_t sys_write(int fd,const void* buf,size_t count)
 {
-	console_put_str((char*)buf);
+	const char* buffer = buf;
+	for (size_t i = 0; i < count; i++) {
+		console_put_char(buffer[i]);
+	}
 	return count;
 }
 
