@@ -109,7 +109,7 @@ struct page {
 	// 				 * protected by zone->lru_lock !
 	// 				 */
 	struct list_head buddy_list;
-	char __padding[8];
+	char __padding[8]; 
 };
 
 struct mm_struct {

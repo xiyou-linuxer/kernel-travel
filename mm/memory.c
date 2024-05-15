@@ -122,6 +122,21 @@ unsigned long get_kernel_pge(void)
 	return k_page;
 }
 
+u64 get_kernel_pages(u64 count)
+{
+	unsigned long page;
+	u64 bit_off = bit_scan(&reserve_phy_pool.btmp,count);
+	if (bit_off == -1){
+		return 0;
+	}
+	for (u64 i = 0,b = bit_off ; i < count ; i++,b++)
+		bitmap_set(&reserve_phy_pool.btmp,b,1);
+
+	page = (((bit_off << 12) + reserve_phy_pool.paddr_start) | CSR_DMW1_BASE);
+	memset((void *)page,0,(int)(PAGE_SIZE)*count);
+	return page;
+}
+
 void free_kernel_pge(void* k_page)
 {
 	u64 bit_off = (((unsigned long)k_page & ~CSR_DMW1_BASE) >> 12) - 0x6;
@@ -195,6 +210,14 @@ unsigned long __init zone_absent_pages_in_node(int nid,
 	return nr_absent;
 }
 
+struct page * __init memmap_init(unsigned long size)
+{
+	if(size == 0)
+		return NULL;
+
+	return (struct page * )get_kernel_pages(CEIL_DIV(size,PAGE_SIZE));
+}
+
 void __init alloc_node_mem_map(struct pglist_data *pg_data)
 {
 	unsigned long start, offset, size, end;
@@ -207,8 +230,8 @@ void __init alloc_node_mem_map(struct pglist_data *pg_data)
 	offset = pg_data->node_start_pfn - start;
 
 	end = ALIGN(pgdat_end_pfn(pg_data), MAX_ORDER_NR_PAGES);
-	size =  (end - start) * sizeof(struct page);
-	map = (struct page *)get_kernel_pge();
+	size = (end - start) * sizeof(struct page);
+	map = memmap_init(size);
 	if (!map)
 		PANIC();
 	pg_data->node_mem_map = map + offset;
@@ -364,11 +387,6 @@ static void __init free_area_init_node(int nid)
 	free_area_init_core(pg_data);
 }
 
-static void __init memmap_init(void)
-{
-
-}
-
 void __init  free_area_init(unsigned long *max_zone_pfn)
 {
 	unsigned long start_pfn = PHYS_PFN(memblock_start_of_DRAM());
@@ -404,7 +422,6 @@ void __init  free_area_init(unsigned long *max_zone_pfn)
 	}
 
 	free_area_init_node(nid);
-	// memmap_init();
 
 }
 
@@ -515,7 +532,7 @@ void __init __free_pages_core(struct page *page,unsigned int order)
 	/*清除 struct page 中的数据*/
 	// ...
 	printk("pageaddr:0x%llx\n",page);
-	__free_pages_ok(page,order,FPI_TO_TAIL);
+	__free_pages_ok(page,order,FPI_TO_TAIL);   
 }
 
 void __init mem_init(void)

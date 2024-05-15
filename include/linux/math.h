@@ -18,6 +18,9 @@
 		typeof(b) _b = b;\
 		_a < _b ? _a : _b; })
 
+#define CEIL_DIV(x, y) (((x) + (y) - 1) / (y))
+#define FLOOR_DIV(x, y) ((x) / (y))
+
 #define clamp(val, lo, hi) min((typeof(val))max(val, lo), hi)
 
 #endif /* _LINUX_MATH_H */
