@@ -42,7 +42,7 @@ typedef u64                 uint64_t;
 typedef s16		    int16_t;
 
 typedef unsigned long		size_t;
-typedef unsigned long		phys_addr_t;
+typedef unsigned long long	phys_addr_t;
 
 #define __aligned_u64 __u64 __attribute__((aligned(8)))
 
@@ -85,6 +85,10 @@ typedef __u32 __bitwise __wsum;
 #define __aligned_le64 __le64 __attribute__((aligned(8)))
 
 typedef unsigned __bitwise __poll_t;
+
+#ifndef pgoff_t
+#define pgoff_t unsigned long
+#endif
 
 typedef u32 mode_t;
 typedef u64 dev_t;

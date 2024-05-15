@@ -5,6 +5,7 @@
 #include <asm/bootinfo.h>
 #include <asm/numa.h>
 #include <linux/list.h>
+#include "asm-generic/int-ll64.h"
 
 #define DIV_ROUND_UP(divd,divs) ((divd+divs-1)/divs)
 
@@ -37,7 +38,7 @@ static inline int __ffs(unsigned int x)
 
 
 #ifndef ARCH_PFN_OFFSET
-#define ARCH_PFN_OFFSET		(0UL)
+#define ARCH_PFN_OFFSET		(0x9000000090000UL)
 #endif
 
 #define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
@@ -67,85 +68,48 @@ struct pool {
 	struct bitmap btmp;
 };
 
-#define _struct_page_alignment	__aligned(2 * sizeof(unsigned long))
+#define _struct_page_alignment	__aligned(2*sizeof(unsigned long))
 
 struct page {
-//     // 存储 page 的定位信息以及相关标志位
-	unsigned long flags;
+	unsigned long flags;		/* Atomic flags, some possibly
+					 * updated asynchronously */
+	atomic_t _count;		/* Usage count, see below. */
+	union {
+		atomic_t _mapcount;	/* Count of ptes mapped in mms,
+					 * to show when page is mapped
+					 * & limit reverse map searches.
+					 */
+		unsigned int inuse;	/* SLUB: Nr of objects */
+	};
+	union {
+	    struct {
+		unsigned long private;		/* Mapping-private opaque data:
+					 	 * usually used for buffer_heads
+						 * if PagePrivate set; used for
+						 * swp_entry_t if PageSwapCache;
+						 * indicates order in the buddy
+						 * system if PG_buddy is set.
+						 */
+		struct address_space *mapping;	/* If low bit clear, points to
+						 * inode address_space, or NULL.
+						 * If page mapped as anonymous
+						 * memory, low bit is set, and
+						 * it points to anon_vma object:
+						 * see PAGE_MAPPING_ANON below.
+						 */
+	    };
+	    struct kmem_cache *slab;	/* SLUB: Pointer to slab */
+	    struct page *first_page;	/* Compound tail pages */
+	};
+	union {
+		pgoff_t index;		/* Our offset within mapping. */
+		void *freelist;		/* SLUB: freelist req. slab lock */
+	};
+	// struct list_head lru;		/* Pageout list, eg. active_list
+	// 				 * protected by zone->lru_lock !
+	// 				 */
 	struct list_head buddy_list;
-
-    union {
-        struct {    /* Page cache and anonymous pages */
-            // 用来指向物理页 page 被放置在了哪个 lru 链表上
-            struct list_head lru;
-            // 如果 page 为文件页的话，低位为0，指向 page 所在的 page cache
-            // 如果 page 为匿名页的话，低位为1，指向其对应虚拟地址空间的匿名映射区 anon_vma
-            struct address_space *mapping;
-            // 如果 page 为文件页的话，index 为 page 在 page cache 中的索引
-            // 如果 page 为匿名页的话，表示匿名页在对应进程虚拟内存区域 VMA 中的偏移
-        //     pgoff_t index;
-            // 在不同场景下，private 指向的场景信息不同
-            unsigned long private;
-        };
-        
-//         struct {    /* slab, slob and slub */
-//             union {
-//                 // 用于指定当前 page 位于 slab 中的哪个具体管理链表上。
-//                 struct list_head slab_list;
-//                 struct {
-//                     // 当 page 位于 slab 结构中的某个管理链表上时，next 指针用于指向链表中的下一个 page
-//                     struct page *next;
-//                     // 表示 slab 中总共拥有的 page 个数
-//                     int pages;  
-//                     // 表示 slab 中拥有的特定类型的对象个数
-//                     int pobjects;   
-//                 };
-//             };
-//             // 用于指向当前 page 所属的 slab 管理结构
-//             struct kmem_cache *slab_cache; 
-        
-//             // 指向 page 中的第一个未分配出去的空闲对象
-//             void *freelist;     
-//             union {
-//                 // 指向 page 中的第一个对象
-//                 void *s_mem;    
-//                 struct {            /* SLUB */
-//                     // 表示 slab 中已经被分配出去的对象个数
-//                     unsigned inuse:16;
-//                     // slab 中所有的对象个数
-//                     unsigned objects:15;
-//                     // 当前内存页 page 被 slab 放置在 CPU 本地缓存列表中，frozen = 1，否则 frozen = 0
-//                     unsigned frozen:1;
-//                 };
-//             };
-//         };
-//         struct {    /* 复合页 compound page 相关*/
-//             // 复合页的尾页指向首页
-//             unsigned long compound_head;    
-//             // 用于释放复合页的析构函数，保存在首页中
-//             unsigned char compound_dtor;
-//             // 该复合页有多少个 page 组成
-//             unsigned char compound_order;
-//             // 该复合页被多少个进程使用，内存页反向映射的概念，首页中保存
-//             atomic_t compound_mapcount;
-//         };
-
-//         // 表示 slab 中需要释放回收的对象链表
-//         struct rcu_head rcu_head;
-    };
-
-//     union {     /* This union is 4 bytes in size. */
-//         // 表示该 page 映射了多少个进程的虚拟内存空间，一个 page 可以被多个进程映射
-//         atomic_t _mapcount;
-
-//     };
-
-//     // 内核中引用该物理页的次数，表示该物理页的活跃程度。
-//     atomic_t _refcount;
-
-//     void *virtual;  // 内存页对应的虚拟内存地址
-
-// } _struct_page_alignment;
+	char __padding[8];
 };
 
 struct mm_struct {

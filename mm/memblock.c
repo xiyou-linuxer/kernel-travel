@@ -210,19 +210,20 @@ unsigned long __init __free_memory_core(phys_addr_t start,
 
 	if (start_pfn >= end_pfn)
 		return 0;
-	printk("start = 0x%x,end = 0x%x\n", start, end);
-	while (start < end) {
-		if (start)
-			order = (int)(min(MAX_PAGE_ORDER, __ffs(start)));
+	printk("start = 0x%x,end = 0x%x\n", start_pfn, end_pfn);
+	while (start_pfn < end_pfn) {
+		if (start_pfn)
+			order = (int)(min(MAX_PAGE_ORDER, __ffs(start_pfn)));
 		else
 			order = MAX_PAGE_ORDER;
 
-		while (start + (1UL << order) > end)
+		while (start_pfn + (1UL << order) > end_pfn)
 			order--;
 		printk("come to __free_pages_core function\n");
-		__free_pages_core((struct page *)pfn_to_page(start), order);
+		printk("start_pfn:0x%llx,mem_map:0x%llx\n", start_pfn, mem_map);
+		__free_pages_core((struct page *)pfn_to_page(start_pfn), order);
 
-		start += (1UL << order);
+		start_pfn += (1UL << order);
 	}
 
 	return end_pfn - start_pfn;

@@ -514,6 +514,7 @@ void __init __free_pages_core(struct page *page,unsigned int order)
 {
 	/*清除 struct page 中的数据*/
 	// ...
+	printk("pageaddr:0x%llx\n",page);
 	__free_pages_ok(page,order,FPI_TO_TAIL);
 }
 
