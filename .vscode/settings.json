@@ -45,6 +45,7 @@
         "unordered_map": "c",
         "unordered_set": "c",
         "pci.h": "c",
-        "sched.h": "c"
+        "sched.h": "c",
+        "sstream": "c"
     }
 }

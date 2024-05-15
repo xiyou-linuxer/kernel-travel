@@ -245,7 +245,6 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 		{
 			return NULL;
 		}
-		
 	}
 	/* 执行到此,必然是遍历了完整路径并且查找的文件或目录只有同名目录存在 */
 	/* 保存被查找目录的直接父目录 */

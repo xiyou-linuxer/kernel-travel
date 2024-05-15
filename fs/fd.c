@@ -80,15 +80,15 @@ int file_open(Dirent* file, int flag, mode_t mode)
 			return pcb_fd_install(i);
 		}
 	}
-	
 	int fd_idx = get_free_slot_in_global();
 	if (fd_idx == -1)
 	{
 		printk("exceed max open files\n");
 		return -1;
-	}
-	file_table[fd_idx].dirent->refcnt += 1;
+	}	
 	file_table[fd_idx].dirent = file;
+	file_table[fd_idx].dirent->refcnt += 1;
+	printk("file_open\n");
 	file_table[fd_idx].offset =0; // 每次打开文件,要将offset还原为0,即让文件内的指针指向开头
 	file_table[fd_idx].flags = flag;//文件打开的标志位
 	file_table[fd_idx].stat.st_mode = mode;

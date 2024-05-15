@@ -4,3 +4,4 @@ obj-y	+=fs.o
 obj-y	+=fat32/
 obj-y	+=syscall_fs.o 
 obj-y	+=fd.o
+obj-y	+=syscallfs_test.o

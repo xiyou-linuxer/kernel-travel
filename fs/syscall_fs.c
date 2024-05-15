@@ -15,13 +15,46 @@
 #include <fs/fd.h>
 #include <debug.h>
 /*本文件用于实现文件的syscall*/
+/*将路径转化为绝对路径，只支持 . 与 .. 开头的路径*/
+static void path_resolution(const char *pathname)
+{
+	char buf[MAX_NAME_LEN];
+	struct task_struct *pthread = running_thread();
+	if (pathname[0] == '/')//如果已经是绝对路径则直接返回
+	{
+		return ;
+	}else if (pathname[0] == '.')
+	{
+		strcpy(buf,pthread->cwd);//将当前工作路径复制到buf中
+		if (strcmp(buf,"/")==0)
+		{
+			strcat(buf,strchr(pathname,'/')+1);
+		}else
+		{
+			strcat(buf,strchr(pathname,'/'));//再将除.之后的
+		}
+	}else if (pathname[0] == '..')
+	{
+		strcpy(buf,pthread->cwd);
+		memset(strrchr(buf,"/"),0,MAX_NAME_LEN);//将最后一个/与他后面的内容清除
+		strcat(buf,strchr(pathname,'/'));//再将传入路径除去 .. 后其他内容与buf拼接
+	}else
+	{
+		//如果非以上三种符号开头则默认是目录/文件名，直接与当前工作目录拼接
+		strcpy(buf,pthread->cwd);
+		if (strcmp(buf,"/")!=0)
+		{
+			strcat(buf,"/");//当前工作目录不是根目录则先在路径上加上/再与传入的路径拼接
+		}
+		strcat(buf,pathname);
+	}
+	strcpy(pathname,buf);
+}
+
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
-	//只支持 / ./ 这样的路径，如果不是则默认按照根目录下处理
-	if (pathname[0]!='/'|| pathname[0]!='.' || pathname[0]!= "..")
-	{
-		strcat("/",pathname);
-	}
+	path_resolution(pathname);
+	printk("%s\n",pathname);
 	Dirent *file;
 	int fd = -1;
 	struct path_search_record searched_record;
@@ -39,7 +72,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
-
+	
 	/* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
 	if ((file == NULL) && !(flags & O_CREATE))
 	{
@@ -51,7 +84,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		printk("%s has already exist!\n", pathname);
 		return -1;
 	}
-
+	
 	switch (flags & O_CREATE)
 	{
 	case O_CREATE:
@@ -61,6 +94,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	default:
 		/* 其余情况均为打开已存在文件:
 		 * O_RDONLY,O_WRONLY,O_RDWR */
+		//printk("sys_open");
 		fd = file_open(file, flags ,mode);
 	}
 
@@ -99,6 +133,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	{
 		int _fd = fd_local2global(fd);
 		Dirent *wr_file = file_table[_fd].dirent;
+		filepnt_init(wr_file);
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
 			unsigned bytes_written = file_write(wr_file, 0, buf,file_table[_fd].offset,count);
@@ -150,6 +185,8 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
+		printk("off:%d\n",file_table[global_fd].offset);
+		filepnt_init(file_table[global_fd].dirent);
 		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
 		file_table[global_fd].offset += ret;
 	}

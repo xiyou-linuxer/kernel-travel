@@ -21,6 +21,7 @@ int is_directory(FAT32Directory *f)
  * @brief 从offset偏移开始，查询一个目录项
  * @param offset 开始查询的位置偏移
  * @param next_offset 下一个dirent的开始位置
+ * @note 目前设计为仅在初始化时使用，因此使用file_read读取，无需外部加锁
  * @return 读取的内容长度。若为0，表示读到末尾
  */
 int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offset, longEntSet *longSet) {
@@ -52,9 +53,9 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 			continue;
 
 		// 跳过"."和".." (因为我们在解析路径时使用字符串匹配，不使用FAT32内置的.和..机制)
-		/*if (strncmp((const char *)f->DIR_Name, ".          ", 11) == 0
+		if (strncmp((const char *)f->DIR_Name, ".          ", 11) == 0
 			|| strncmp((const char *)f->DIR_Name, "..         ", 11) == 0)
-			continue;*/
+			continue;
 
 		// 是长文件名项（可能属于文件也可能属于目录）
 		if (f->DIR_Attr == ATTR_LONG_NAME_MASK) {
@@ -143,6 +144,7 @@ void sync_dirent_rawdata_back(Dirent *dirent) {
  * @param dir 要分配文件的目录
  * @param ent 返回的分配了的目录项。如果要求多个，Dirent->parent_dir_off设为最后一项的偏移
  * @param cnt 需要分配的连续目录项数
+ * @update 从clusterRead/clusterWrite的写法改为file_read/file_write，以减少代码量，提高复用度
  */
 static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	
@@ -240,6 +242,7 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *path)
 
 	Dirent *dirent = dirent_alloc();//在缓存中分配目录项
 	char *name = (strrchr(path,'/')+1);
+	//name = name - 1;
 	printk("create a file using long Name! name is %s\n", name);
 	int cnt = get_entry_count_by_name(name);//计算需要几个目录
 	printk("cnt:%d\n",cnt);

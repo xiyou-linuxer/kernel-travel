@@ -54,15 +54,12 @@ char *strcpy(char *dest, const char *src)
 	return tmp;
 }
 
-uint32_t strlen(const char* str)
-{
-	const char* p = str;
-	if(str == NULL) {
-		efi_puts("BUG!!!");
-		while(1);
-	}
-	while(*p++);
-	return (p - str - 1);
+/* 返回字符串长度 */
+uint32_t strlen(const char* str) {
+    ASSERT(str != NULL);
+    const char* p = str;
+    while(*p++);                 //1、先取*p的值来进行2的判断     2、判断*p,决定是否执行循环体     3、p++(这一步的执行并不依赖2的判断为真) 
+    return (p - str - 1);        //p最后指向'\0'后面第一个元素
 }
 
 uint32_t strnlen(const char* str, uint32_t max)
@@ -97,6 +94,17 @@ char strcmp (const char* a, const char* b) {
     return *a < *b ? -1 : *a > *b;
 }
 
+/*从前往后查找首次出现字符的首地址*/
+char* strchr(const char* str, const uint8_t ch) {
+    ASSERT(str != NULL);
+    while (*str != 0) {
+        if (*str == ch) {
+	        return (char*)str;	    // 需要强制转化成和返回值类型一样,否则编译器会报const属性丢失,下同.
+        }
+        str++;
+    }
+    return NULL;
+}
 
 /* 从后往前查找字符串str中首次出现字符ch的地址(不是下标,是地址) */
 char* strrchr(const char* str, const uint8_t ch) 

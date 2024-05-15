@@ -31,4 +31,5 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 int createFile(struct Dirent* baseDir, char* path, Dirent** file);
 int makeDirAt(Dirent* baseDir, char* path, int mode);
 void file_shrink(Dirent* file, u64 newsize);
+void test_fs_all(void);
 #endif
