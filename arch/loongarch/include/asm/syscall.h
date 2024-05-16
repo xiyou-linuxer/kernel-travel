@@ -105,8 +105,11 @@ enum SYSCALL {
 	SYS_FORK,
 };
 
-#define SYS_write  64
 #define SYS_getpid 172
+#define SYS_write  64
+#define SYS_getcwd 17
+#define SYS_close 57
+#define SYS_read 63
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
