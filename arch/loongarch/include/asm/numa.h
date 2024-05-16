@@ -1,9 +1,9 @@
 #ifndef _ASM_NUMA_H_
 #define _ASM_NUMA_H_
 
-#include <linux/memory.h>
-#include <linux/types.h>
-#include <linux/list.h>
+#include <xkernel/memory.h>
+#include <xkernel/types.h>
+#include <xkernel/list.h>
 
 // 目前是 UMA 架构，只有一个伪 NUMA 节点
 #define MAX_NUMNODES 1

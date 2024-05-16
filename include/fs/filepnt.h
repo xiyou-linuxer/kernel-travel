@@ -1,6 +1,6 @@
 #ifndef _CLUSTERNO_H
 #define _CLUSTERNO_H
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 typedef struct Dirent Dirent;
 typedef struct DirentPointer DirentPointer;

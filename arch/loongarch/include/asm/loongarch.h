@@ -1,8 +1,8 @@
 #ifndef _ASM_LOONGARCH_H
 #define _ASM_LOONGARCH_H
 
-#include <linux/types.h>
-#include <linux/bits.h>
+#include <xkernel/types.h>
+#include <xkernel/bits.h>
 #include <asm/addrspace.h>
 
 #ifdef __ASSEMBLY__

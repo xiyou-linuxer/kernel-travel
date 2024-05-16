@@ -1,6 +1,6 @@
 #ifndef __PROCESS_H
 #define __PROCESS_H
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <allocator.h>
 
 #define USER_STACK_START  (USER_STACK - 0x1000)

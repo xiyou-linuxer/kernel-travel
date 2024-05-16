@@ -1,8 +1,8 @@
-#include <linux/types.h>
-#include <linux/stdio.h>
-#include <linux/thread.h>
-#include <linux/printk.h>
-#include <linux/string.h>
+#include <xkernel/types.h>
+#include <xkernel/stdio.h>
+#include <xkernel/thread.h>
+#include <xkernel/printk.h>
+#include <xkernel/string.h>
 #include <asm/loongarch.h>
 #include <asm/tlb.h>
 #include <asm/page.h>

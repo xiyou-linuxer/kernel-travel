@@ -3,8 +3,8 @@
 #include <asm/loongarch.h>
 #include <asm/page.h>
 #include <asm/tlb.h>
-#include <linux/smp.h>
-#include <linux/stdio.h>
+#include <xkernel/smp.h>
+#include <xkernel/stdio.h>
 
 unsigned long fw_arg0, fw_arg1, fw_arg2;
 unsigned long kernelsp;

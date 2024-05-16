@@ -1,10 +1,10 @@
 /*
- *  linux/lib/ctype.c
+ *  xkernel/lib/ctype.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
  */
 
-#include <linux/ctype.h>
+#include <xkernel/ctype.h>
 
 unsigned char _ctype[] = {
         _C,_C,_C,_C,_C,_C,_C,_C,			/* 0-7 */

@@ -2,7 +2,7 @@
 #define _VFS_H
 
 #include <fs/fs.h>
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 #define MAX_PATH_LEN 512 // 路径最大长度
 //该结构体用来记录搜索过的文件路径

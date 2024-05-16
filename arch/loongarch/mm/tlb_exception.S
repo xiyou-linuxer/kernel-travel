@@ -1,7 +1,7 @@
 #include <asm/asm.h>
 #include <asm/loongarch.h>
 #include <asm/stackframe.h>
-#include <linux/linkage.h>
+#include <xkernel/linkage.h>
 
 .macro la_abs reg, sym
 	la.abs	\reg, \sym

@@ -1,6 +1,6 @@
 #include <trap/softirq.h>
 #include <trap/irq.h>
-#include <linux/stdio.h>
+#include <xkernel/stdio.h>
 
 uint32_t softirq_active;
 static struct softirq_action softirq_vec[32];

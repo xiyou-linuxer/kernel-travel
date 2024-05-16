@@ -6,12 +6,12 @@
 #include <fs/fd.h>
 #include <fs/fs.h>
 #include <fs/filepnt.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
-#include <linux/types.h>
-#include <linux/sched.h>
-#include <linux/thread.h>
-#include <linux/list.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
+#include <xkernel/types.h>
+#include <xkernel/sched.h>
+#include <xkernel/thread.h>
+#include <xkernel/list.h>
 #include <debug.h>
 
 struct fd file_table[MAX_FILE_OPEN];//全局文件打开数组

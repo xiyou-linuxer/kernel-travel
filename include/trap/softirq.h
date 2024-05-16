@@ -1,7 +1,7 @@
 #ifndef __KERNEL_SOFTINTERRUPT_H
 #define __KERNEL_SOFTINTERRUPT_H
 #include <stdint.h>
-#include <linux/init.h>
+#include <xkernel/init.h>
 
 extern uint32_t softirq_active;
 extern uint32_t irq_count;

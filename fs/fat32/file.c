@@ -8,10 +8,10 @@
 #include <fs/filepnt.h>
 #include <fs/buf.h>
 #include <fs/fd.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
 #include <debug.h>
-#include <linux/memory.h>
+#include <xkernel/memory.h>
 int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
 	//lock_acquire(&mtx_file);
 	

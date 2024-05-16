@@ -1,8 +1,8 @@
 #ifndef _FS_H
 #define _FS_H
 
-#include <linux/list.h>
-#include <linux/types.h>
+#include <xkernel/list.h>
+#include <xkernel/types.h>
 #include <asm-generic/int-ll64.h>
 #include <fs/fat32.h>
 #include <asm/page.h>

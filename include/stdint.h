@@ -1,4 +1,4 @@
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 typedef signed char          int8_t;
 typedef signed short int     int16_t;

@@ -1,7 +1,7 @@
 #ifndef _ASM_CACHE_H
 #define _ASM_CACHE_H
 
-#include <linux/linkage.h>
+#include <xkernel/linkage.h>
 
 #define CONFIG_L1_CACHE_SHIFT	6
 #define L1_CACHE_SHIFT	CONFIG_L1_CACHE_SHIFT

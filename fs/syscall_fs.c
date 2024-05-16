@@ -1,10 +1,10 @@
-#include <linux/stdio.h>
-#include <linux/string.h>
-#include <linux/types.h>
-#include <linux/thread.h>
-#include <linux/list.h>
-#include <linux/console.h>
-#include <linux/string.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
+#include <xkernel/types.h>
+#include <xkernel/thread.h>
+#include <xkernel/list.h>
+#include <xkernel/console.h>
+#include <xkernel/string.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>

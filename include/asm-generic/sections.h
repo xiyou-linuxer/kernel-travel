@@ -1,7 +1,7 @@
 #ifndef _ASM_GENERIC_SECTIONS_H_
 #define _ASM_GENERIC_SECTIONS_H_
 
-#include <linux/compiler.h>
+#include <xkernel/compiler.h>
 
 extern char kernel_text_start[];
 extern char kernel_text_end[];

@@ -1,18 +1,18 @@
-#include <linux/memory.h>
+#include <xkernel/memory.h>
 #include <bitmap.h>
 #include <asm/loongarch.h>
 #include <asm/page.h>
 #include <asm/numa.h>
 #include <debug.h>
-#include <linux/stdio.h>
-#include <linux/types.h>
-#include <linux/string.h>
-#include <linux/sched.h>
-#include <linux/thread.h>
-#include <linux/memblock.h>
-#include <linux/init.h>
-#include <linux/math.h>
-#include <linux/compiler.h>
+#include <xkernel/stdio.h>
+#include <xkernel/types.h>
+#include <xkernel/string.h>
+#include <xkernel/sched.h>
+#include <xkernel/thread.h>
+#include <xkernel/memblock.h>
+#include <xkernel/init.h>
+#include <xkernel/math.h>
+#include <xkernel/compiler.h>
 
 struct pool reserve_phy_pool __initdata;
 struct pool phy_pool __initdata;

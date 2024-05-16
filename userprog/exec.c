@@ -1,9 +1,9 @@
 #include <exec.h>
-#include <linux/memory.h>
-#include <linux/thread.h>
-#include <linux/stdio.h>
+#include <xkernel/memory.h>
+#include <xkernel/thread.h>
+#include <xkernel/stdio.h>
 #include <stdint.h>
-#include <linux/string.h>
+#include <xkernel/string.h>
 #include <asm/loongarch.h>
 
 void* program_begin;

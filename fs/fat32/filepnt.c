@@ -1,10 +1,10 @@
 #include <fs/cluster.h>
 #include <fs/fs.h>
 #include <fs/fat32.h>
-#include <linux/types.h>
-#include <linux/memory.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
+#include <xkernel/types.h>
+#include <xkernel/memory.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
 #include <debug.h>
 void filepnt_setval(DirentPointer* fileptr, int i, int value) {
 	unsigned int index1 = i / PAGE_NCLUSNO;

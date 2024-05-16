@@ -1,12 +1,12 @@
 #include <asm/pci.h>
-#include <linux/printk.h>
+#include <xkernel/printk.h>
 #include <asm-generic/io.h>
-#include <linux/stdio.h>
+#include <xkernel/stdio.h>
 #include <asm/addrspace.h>
-#include <linux/ahci.h>
-#include <linux/list.h>
-#include <linux/string.h>
-#include<linux/block_device.h>
+#include <xkernel/ahci.h>
+#include <xkernel/list.h>
+#include <xkernel/string.h>
+#include<xkernel/block_device.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
 struct block_device_request_queue ahci_req_queue;

@@ -1,8 +1,8 @@
 #include <fs/fs.h>
 #include <fs/buf.h>
-#include <linux/stdio.h>
+#include <xkernel/stdio.h>
 #include <debug.h>
-#include <linux/string.h>
+#include <xkernel/string.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
 #include <fs/vfs.h>

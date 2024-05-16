@@ -4,8 +4,8 @@
 #include <fs/fat32.h>
 #include <fs/fs.h>
 #include <fs/vfs.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
 #include <sync.h>
 #include <debug.h>
 

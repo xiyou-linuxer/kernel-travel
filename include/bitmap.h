@@ -1,6 +1,6 @@
 #ifndef __LIB_KERNEL_BITMAP_H
 #define __LIB_KERNEL_BITMAP_H
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 #define BIT_MASK 1
 

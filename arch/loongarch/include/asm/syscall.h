@@ -1,6 +1,6 @@
 #ifndef _SYSCALL_H
 #define _SYSCALL_H
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <asm/pt_regs.h>
 
 #define NR_SYSCALLS 200

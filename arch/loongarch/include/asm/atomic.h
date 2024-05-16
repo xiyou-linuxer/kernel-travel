@@ -1,7 +1,7 @@
 #ifndef _ASM_ATOMIC_H
 #define _ASM_ATOMIC_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 #include <asm-generic/rwonce.h>
 #include <asm/barrier.h>
 

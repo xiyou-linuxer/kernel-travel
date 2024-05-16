@@ -1,6 +1,6 @@
-#include <linux/block_device.h>
-#include <linux/ahci.h>
-#include <linux/stdio.h>
+#include <xkernel/block_device.h>
+#include <xkernel/ahci.h>
+#include <xkernel/stdio.h>
 
 /*打包请求*/
  /*struct block_device_request_packet **/void block_make_request(int cmd, uint64_t base_addr, uint64_t count, uint64_t buffer,uint8_t port_num)

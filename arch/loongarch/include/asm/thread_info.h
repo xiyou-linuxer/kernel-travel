@@ -11,9 +11,9 @@
 #ifndef __ASSEMBLY__
 
 #include <asm/regdef.h>
-#include <linux/size.h>
-#include <linux/types.h>
-#include <linux/preempt.h>
+#include <xkernel/size.h>
+#include <xkernel/types.h>
+#include <xkernel/preempt.h>
 
 #include <asm/processor.h>
 

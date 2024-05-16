@@ -2,8 +2,8 @@
 #include <debug.h>
 #include <fs/cluster.h>
 #include <fs/fat32.h>
-#include <linux/string.h>
-#include <linux/stdio.h>
+#include <xkernel/string.h>
+#include <xkernel/stdio.h>
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 

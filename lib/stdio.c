@@ -1,8 +1,8 @@
-#include <linux/stdio.h>
-#include <linux/printk.h>
-#include <linux/efi.h>
-#include <linux/types.h>
-#include <linux/kernel.h>
+#include <xkernel/stdio.h>
+#include <xkernel/printk.h>
+#include <xkernel/efi.h>
+#include <xkernel/types.h>
+#include <xkernel/kernel.h>
 #include <asm/syscall.h>
 
 #include <asm/stdio.h>

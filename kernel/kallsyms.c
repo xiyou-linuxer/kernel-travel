@@ -1,8 +1,8 @@
 
-#include <linux/kallsyms.h>
+#include <xkernel/kallsyms.h>
 // #include <dim-sum/fs.h>
-#include <linux/sched.h>
-#include <linux/string.h>
+#include <xkernel/sched.h>
+#include <xkernel/string.h>
 #include <asm/sections.h>
 
 #ifdef CONFIG_KALLSYMS_ALL

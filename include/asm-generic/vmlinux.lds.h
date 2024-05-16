@@ -165,7 +165,7 @@
 #ifndef CONFIG_ARCH_SUPPORTS_CFI_CLANG
 /*
  * Simply points to ftrace_stub, but with the proper protocol.
- * Defined by the linker script in linux/vmlinux.lds.h
+ * Defined by the linker script in xkernel/vmlinux.lds.h
  */
 #define	FTRACE_STUB_HACK	ftrace_stub_graph = ftrace_stub;
 #else

@@ -1,9 +1,9 @@
 #include <syscall_init.h>
-#include <linux/thread.h>
-#include <linux/stdio.h>
+#include <xkernel/thread.h>
+#include <xkernel/stdio.h>
 #include <asm/stdio.h>
 #include <fork.h>
-#include <linux/console.h>
+#include <xkernel/console.h>
 #include <fs/syscall_fs.h>
 
 pid_t sys_getpid(void)

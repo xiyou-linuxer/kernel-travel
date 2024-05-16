@@ -1,7 +1,7 @@
 #ifndef _FS_SYS_H
 #define _FS_SYS_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 int sys_open(const char* pathname, int flags, mode_t mode);
 int sys_write(int fd, const void* buf, unsigned int count);

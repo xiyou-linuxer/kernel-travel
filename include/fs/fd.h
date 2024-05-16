@@ -1,7 +1,7 @@
 #ifndef __FS_FD_H
 #define __FS_FD_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 #include <fs/fs.h>
 #include <sync.h>
 

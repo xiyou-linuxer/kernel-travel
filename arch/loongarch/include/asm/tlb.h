@@ -1,7 +1,7 @@
 #ifndef _ASM_TLB_H
 #define _ASM_TLB_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 #define LOONGARCH64_ASIDBITS 10
 

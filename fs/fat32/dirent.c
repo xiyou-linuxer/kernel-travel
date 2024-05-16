@@ -4,14 +4,14 @@
 #include <fs/fs.h>
 #include <fs/vfs.h>
 #include <fs/dirent.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
 #include <sync.h>
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <fs/filepnt.h>
 #include <debug.h>
 #include <asm/errno.h>
-#include <linux/list.h>
+#include <xkernel/list.h>
 unsigned long used_dirents = 0;
 
 /**

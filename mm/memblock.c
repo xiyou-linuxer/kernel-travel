@@ -1,12 +1,12 @@
-#include <linux/memblock.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/stdio.h>
-#include <linux/printk.h>
+#include <xkernel/memblock.h>
+#include <xkernel/kernel.h>
+#include <xkernel/init.h>
+#include <xkernel/stdio.h>
+#include <xkernel/printk.h>
 #include <asm/page.h>
 #include <debug.h>
 #include <asm/numa.h>
-#include <linux/math.h>
+#include <xkernel/math.h>
 #define INIT_MEMBLOCK_MEMORY_REGIONS 32
 #define INIT_MEMBLOCK_RESERVED_REGIONS INIT_MEMBLOCK_MEMORY_REGIONS
 #define MEMBLOCK_ALLOC_ANYWHERE	(~(phys_addr_t)0)

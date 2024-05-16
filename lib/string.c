@@ -1,6 +1,6 @@
-#include <linux/string.h>
-#include <linux/printk.h>
-#include <linux/stdio.h>
+#include <xkernel/string.h>
+#include <xkernel/printk.h>
+#include <xkernel/stdio.h>
 #include <debug.h>
 void memset(void* dst_, uint8_t value, uint32_t size) {
 	

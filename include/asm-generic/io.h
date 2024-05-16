@@ -1,10 +1,10 @@
 #ifndef _ASM_GENERIC_IO_H
 #define _ASM_GENERIC_IO_H
 
-#include <linux/types.h>
-#include <linux/compiler.h>
+#include <xkernel/types.h>
+#include <xkernel/compiler.h>
 #include <asm/barrier.h>
-#include <uapi/linux/little_endian.h>
+#include <uapi/xkernel/little_endian.h>
 
 #ifndef __io_br
 #define __io_br()      barrier()

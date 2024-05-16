@@ -1,11 +1,17 @@
-#include <linux/irqflags.h>
-#include <linux/printk.h>
-#include <linux/task.h>
-#include <linux/init.h>
-#include <linux/ns16550a.h>
-#include <linux/types.h>
-#include <linux/stdio.h>
-#include <linux/smp.h>
+#include <xkernel/irqflags.h>
+#include <xkernel/printk.h>
+#include <xkernel/task.h>
+#include <xkernel/init.h>
+#include <xkernel/ns16550a.h>
+#include <xkernel/types.h>
+#include <xkernel/stdio.h>
+#include <xkernel/smp.h>
+#include <xkernel/thread.h>
+#include <xkernel/ahci.h>
+#include <xkernel/block_device.h>
+#include <xkernel/console.h>
+#include <xkernel/memory.h>
+#include <xkernel/string.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
@@ -15,13 +21,8 @@
 #include <asm/timer.h>
 #include <asm/page.h>
 #include <asm/tlb.h>
-#include <linux/thread.h>
-#include <linux/ahci.h>
-#include <linux/block_device.h>
 #include <sync.h>
 #include <process.h>
-#include <linux/memory.h>
-#include <linux/string.h>
 #include <syscall_init.h>
 #include <asm/syscall.h>
 #include <asm/stdio.h>
@@ -29,7 +30,6 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
-#include <linux/console.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;

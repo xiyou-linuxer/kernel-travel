@@ -1,12 +1,12 @@
 #include <process.h>
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <debug.h>
 #include <trap/irq.h>
 #include <allocator.h>
 #include <asm/loongarch.h>
-#include <linux/stdio.h>
-#include <linux/memory.h>
-#include <linux/string.h>
+#include <xkernel/stdio.h>
+#include <xkernel/memory.h>
+#include <xkernel/string.h>
 #include <exec.h>
 
 extern char usrprog[];

@@ -1,5 +1,5 @@
 #include "printf.h"
-#include <linux/stdarg.h>
+#include <xkernel/stdarg.h>
 #include <asm/syscall.h>
 
 char *ustrcpy(char *dest, const char *src)

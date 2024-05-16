@@ -19,7 +19,7 @@
 #ifndef __UAPI_ASM_PTRACE_H
 #define __UAPI_ASM_PTRACE_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 #include <asm/hwcap.h>
 
