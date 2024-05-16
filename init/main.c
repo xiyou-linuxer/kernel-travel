@@ -29,6 +29,7 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
+#include <linux/console.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -87,7 +88,7 @@ void __init __no_sanitize_address start_kernel(void)
 	//timer.func = timer_func;
 	//timer.data = 7;
 	//add_timer(&timer);
-
+	console_init();
 	syscall_init();
 	fs_init();
 	//thread_start("thread_a",10,thread_a,NULL);

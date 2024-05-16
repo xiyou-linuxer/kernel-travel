@@ -88,7 +88,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	switch (flags & O_CREATE)
 	{
 	case O_CREATE:
-		printk("creating file\n");
 		fd = file_create(searched_record.parent_dir, pathname, flags, mode);
 		break;
 	default:
@@ -110,7 +109,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		printk("sys_write: fd error\n");
 		return -1;
 	}
-	if (fd == stdout_no)
+	if (fd == STDOUT)
 	{
 		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
 		/*if (is_pipe(fd))
@@ -154,11 +153,11 @@ int sys_read(int fd, void *buf, unsigned int count)
 	ASSERT(buf != NULL);
 	int32_t ret = -1;
 	uint32_t global_fd = 0;
-	if (fd < 0 || fd == stdout_no || fd == stderr_no)
+	if (fd < 0 || fd == STDOUT || fd == STDERR)
 	{
 		printk("sys_read: fd error\n");
 	}
-	else if (fd == stdin_no)
+	else if (fd == STDIN)
 	{
 		/* 标准输入有可能被重定向为管道缓冲区, 因此要判断 */
 		/*if (is_pipe(fd))
@@ -221,10 +220,7 @@ int sys_close(int fd)
 
 int sys_mkdir(char* path, int mode) 
 {
-	if (path[0]!='/'|| path[0]!='.' || path[0]!= "..")
-	{
-		strcat("/",path);
-	}
+	path_resolution(path);
 	return makeDirAt(NULL, path, mode);
 }
 

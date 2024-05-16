@@ -20,26 +20,28 @@ void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
     ASSERT(fd >= 0);
-    printk("sys_open\n");
+    
     char buf[256];
     int size = sys_read(fd, buf, 256);
+	printk("sys_open\n");
     if (size < 0) {
         size = 0;
     }
-    printk("%s\n", buf);
+    sys_write(STDOUT, buf, size);
     sys_close(fd);
 	printk("sys_close\n");
 }
 
 void test_close(void) {
+	const char *str = "  close error.\n";
+	int str_len = strlen(str);
+    printk("str_len:%d\n", str_len);
     int fd = sys_open("test_close1.txt", O_CREATE | O_RDWR,660);
     ASSERT(fd > 0);
-    const char *str = "  close error.\n";
-    int str_len = strlen(str);
-    printk("str_len:%d\n", 15);
-    ASSERT(sys_write(fd, str, 15) == 15);
-    sys_write(fd, str, 15);
+    ASSERT(sys_write(fd, str, str_len) == str_len);
+    sys_write(fd, str, str_len);
     int rt = sys_close(fd);
+    printk("rt :%d", rt);
     ASSERT(rt == 0);
     printk("  close %d success.\n", fd);
 }
@@ -52,9 +54,23 @@ void test_getcwd(void){
     else printk("getcwd ERROR.\n");
 }
 
+void test_mkdir(void){
+    int rt, fd;
+    rt = sys_mkdir("test_mkdir1", 0666);
+    printk("mkdir ret: %d\n", rt);
+    ASSERT(rt != -1);
+    fd = sys_open("test_mkdir1", O_RDONLY | O_DIRECTORY,660);
+    if(fd > 0){
+        printk("  mkdir success.\n");
+        sys_close(fd);
+    }
+    else printk("  mkdir error.\n");
+}
+
 void test_fs_all(void)
 {
 	test_getcwd();
 	test_open();
     test_close();
+    test_mkdir();
 }

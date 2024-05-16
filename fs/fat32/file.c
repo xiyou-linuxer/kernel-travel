@@ -140,8 +140,6 @@ void file_extend(struct Dirent *file, int newSize) {
 */
 int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
-
-	printk("write file: %s\n", file->name);
 	ASSERT(n != 0);
 
 	// Note: 支持off在任意位置的写入（允许超过file->size），[file->size, off)的部分将被填充为0

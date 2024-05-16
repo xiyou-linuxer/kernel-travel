@@ -193,7 +193,7 @@ int countClusters(struct Dirent *file) {
 	// 如果文件不包含任何块，则直接返回0即可。
 	else {
 		while (FAT32_NOT_END_CLUSTER(clus)) {
-			printk("clus is %d\n", clus);
+			//printk("clus is %d\n", clus);
 			clus = fatRead(file->file_system, clus);
 			i += 1;
 		}

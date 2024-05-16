@@ -9,6 +9,7 @@
 
 /* 打开文件的选项 */
 enum oflags {
+	O_DIRECTORY,
 	O_RDONLY,	// 只读
 	O_WRONLY,	// 只写
 	O_RDWR,		// 读写
@@ -39,9 +40,9 @@ struct kstat {
 };
 
 enum std_fd {
-   stdin_no,   // 0 标准输入
-   stdout_no,  // 1 标准输出
-   stderr_no   // 2 标准错误
+   STDIN,   // 0 标准输入
+   STDOUT,  // 1 标准输出
+   STDERR   // 2 标准错误
 };
 
 typedef struct fd {
