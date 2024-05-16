@@ -11,7 +11,7 @@ extern void proc_1(void *);
 void pro_seek(void **program,int offset);
 void pro_read(void *program,void *buf,uint64_t count);
 void start_process(void* filename);
-void process_execute(void* filename, char* name);
+void process_execute(void* filename, char* name,int pri);
 void page_dir_activate(struct task_struct* pcb);
 
 

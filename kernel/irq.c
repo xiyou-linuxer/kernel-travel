@@ -11,15 +11,22 @@
 
 uint32_t irq_count = 0;
 uint32_t bh_count = 0;
+extern bool switching;
 
 intr_handler intr_table[INTR_NUM];
 char* intr_name[INTR_NUM];
 
-static void irq_enter(void) {
-    ++irq_count;
+void irq_enter(void) {
+	switching = 0;
+	++irq_count;
 }
-static void irq_exit(void) {
-    --irq_count;
+
+void irq_exit(void) {
+	if (switching) {
+		switching = 0;
+		return ;
+	}
+	--irq_count;
 }
 
 static void general_intr_handler(struct pt_regs* regs) {
@@ -111,7 +118,7 @@ void do_irq(struct pt_regs* regs, uint64_t virq) {
 	irq_exit();
 	if (softirq_active)
 		do_softirq();
-	//raise_softirq(TIMER_SOFTIRQ);
+	raise_softirq(TIMER_SOFTIRQ);
 }
 
 bool in_interrupt(void) {
