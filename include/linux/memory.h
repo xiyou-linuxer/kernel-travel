@@ -5,7 +5,7 @@
 #include <asm/bootinfo.h>
 #include <asm/numa.h>
 #include <linux/list.h>
-#include "asm-generic/int-ll64.h"
+#include <asm-generic/int-ll64.h>
 
 #define DIV_ROUND_UP(divd,divs) ((divd+divs-1)/divs)
 
@@ -24,6 +24,11 @@
 #define for_each_migratetype_order(order, type) \
 	for (order = 0; order <= MAX_ORDER; order++) \
 		for (type = 0; type < MIGRATE_TYPES; type++)
+
+#define for_pglist_data_each_zone(zone, node_data) \
+	for (i = 0, zone = &node_data->node_zones[i];	\
+		i < node_data->nr_zones;	\
+		++i,zone = &node_data->node_zones[i])
 
 #define MAX_PAGE_ORDER 10
 #define MAX_ORDER_NR_PAGES (1 << MAX_PAGE_ORDER)
@@ -110,6 +115,11 @@ struct page {
 	// 				 */
 	struct list_head buddy_list;
 	char __padding[8]; 
+};
+
+struct zoneref {
+	struct zone *zone;
+	int zone_idx;
 };
 
 struct mm_struct {
@@ -201,5 +211,6 @@ void free_area_init(unsigned long *max_zone_pfn);
 void memblock_init(void);
 void __free_pages_core(struct page *page, unsigned int order);
 void mem_init(void);
+struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid);
 
 #endif

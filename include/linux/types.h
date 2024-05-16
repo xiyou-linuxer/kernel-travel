@@ -5,6 +5,7 @@
 
 #include <asm-generic/bitsperlong.h>
 
+
 #undef offsetof
 #define offsetof(t,m) ((size_t)&((t *)0)->m)
 
@@ -43,6 +44,9 @@ typedef s16		    int16_t;
 
 typedef unsigned long		size_t;
 typedef unsigned long long	phys_addr_t;
+
+#define __bitwise	__attribute__((bitwise))
+typedef unsigned int __bitwise gfp_t;
 
 #define __aligned_u64 __u64 __attribute__((aligned(8)))
 

@@ -14,8 +14,8 @@
 #include <linux/math.h>
 #include <linux/compiler.h>
 
-struct pool reserve_phy_pool;
-struct pool phy_pool;
+struct pool reserve_phy_pool __initdata;
+struct pool phy_pool __initdata;
 static unsigned long arch_zone_lowest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long nr_kernel_pages __initdata;
@@ -243,6 +243,13 @@ void __init alloc_node_mem_map(struct pglist_data *pg_data)
 	}
 }
 
+static void __init calculate_zone_watermarks(struct zone * zone)
+{
+	zone->_watermark[0] = (zone->present_pages * 256) >> 10;
+	zone->_watermark[1] = (zone->present_pages * 320) >> 10;
+	zone->_watermark[2] = (zone->present_pages * 384) >> 10;
+}
+
 void calculate_node_totalpages(struct pglist_data *pg_data,
 			unsigned long node_start_pfn,unsigned long node_end_pfn)
 {
@@ -273,6 +280,7 @@ void calculate_node_totalpages(struct pglist_data *pg_data,
 
 		totalpages += spanned;
 		realtotalpages += real_size;
+		calculate_zone_watermarks(zone);
 	}
 
 	pg_data->node_spanned_pages = totalpages;
@@ -296,6 +304,7 @@ static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx,
 	zone->name = zone_names[idx];
 	zone->zone_pgdat = &node_data[nid];
 	zone->initialized = true;
+	zone->watermark_boost = 0;
 	// spin_lock_init(&zone->lock);
 	// zone_seqlock_init(zone);
 }
@@ -428,7 +437,7 @@ void __init  free_area_init(unsigned long *max_zone_pfn)
 static inline void del_page_from_free_list(struct page *page, struct zone *zone,
 					   unsigned int order)
 {
-	// list_del(&page->buddy_list);
+	list_del(&page->buddy_list);
 	set_page_private(page, 0);
 	zone->free_area[order].nr_free--;
 }
@@ -523,7 +532,6 @@ static void __free_pages_ok(struct page *page, unsigned int order,
 	int migratetype;
 	unsigned long pfn = page_to_pfn(page);
 	struct zone *zone = page_zone(page);
-	printk("come to free_one_page function\n");
 	free_one_page(zone, page, pfn, order, MIGRATE_UNMOVABLE, fpi_flags);
 }
 
@@ -533,6 +541,171 @@ void __init __free_pages_core(struct page *page,unsigned int order)
 	// ...
 	printk("pageaddr:0x%llx\n",page);
 	__free_pages_ok(page,order,FPI_TO_TAIL);   
+}
+
+// static inline
+struct page *get_page_from_free_area(struct free_area *area,
+					    int migratetype)
+{
+	return list_first_entry_or_null(&area->free_list[migratetype],
+					struct page, buddy_list);
+}
+
+// static inline
+void expand(struct zone *zone, struct page *page,
+	int low, int high, int migratetype)
+{
+	unsigned long size = 1 << high;
+
+	while (high > low) {
+		high--;
+		size >>= 1;
+		// if (set_page_guard(zone, &page[size], high, migratetype))
+		// 	continue;
+		// 更新到新的 free_list 中
+		add_to_free_list(&page[size], zone, high, migratetype);
+		// 设置 page 的 private 为 high 的 order
+		set_buddy_order(&page[size], high);
+	}
+}
+
+
+// static __always_inline
+struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
+				int migratetype)
+{
+	unsigned int current_order;
+	struct free_area *area;
+	struct page *page;
+
+	/* 从当前分配阶 order 开始在伙伴系统对应的  free_area[order]  里查找合适尺寸的内存块*/
+	for (current_order = order; current_order <= MAX_ORDER; ++current_order) {
+		area = &(zone->free_area[current_order]);
+		page = get_page_from_free_area(area, migratetype);
+		if (!page)
+			// 没有空闲页，继续向上一级寻找
+			continue;
+		// 从当前的 free_list 的链表中删除
+		del_page_from_free_list(page, zone,order);
+		// 更新到更低的 free_list 中
+		expand(zone, page, order, current_order, migratetype);
+		// 设置页面的迁移类型
+		page->index = migratetype;
+		return page;
+	}
+	// 内存分配失败返回 null
+	return NULL;
+}
+
+
+// static __always_inline
+struct page *__rmqueue(struct zone *zone, unsigned int order, int migratetype,
+                        unsigned int alloc_flags)
+{
+	struct page *page;
+
+retry:
+	page = __rmqueue_smallest(zone, order, migratetype);
+	// 如果分配失败
+	if(unlikely(!page)) {
+		/*CMA fallback*/
+		goto retry;
+	}
+	return page;
+}
+
+struct page *rmqueue(struct zone *preferred_zone,
+		     struct zone *zone, unsigned int order,
+		     gfp_t gfp_flags, unsigned int alloc_flags,
+		     int migratetype)
+{
+	struct page *page;
+	/*分配单个物理页*/
+	if (likely(order == 0)) {
+		/*先从 CPU 高速缓存列表 pcplist 中直接获取*/
+		// goto out;
+	}
+	/*加锁，关中断*/
+	do {
+		page = __rmqueue(zone, order, migratetype, alloc_flags);
+	} while (!page);
+	/*解锁*/
+	if(unlikely(!page)) {
+		goto failed;
+	}
+	/*更新 zone 信息*/
+out:
+	return page;
+failed:
+	return NULL;
+}
+
+static inline bool zone_watermark_fast(struct zone *z, unsigned int order,
+				unsigned long mark, int highest_zoneidx,
+				unsigned int alloc_flags, gfp_t gfp_mask)
+{
+	return true;
+}
+
+struct page *
+get_page_from_freelist(gfp_t gfp_mask, unsigned int order, int alloc_flags,
+						const struct alloc_context *ac)
+{
+	struct zone * zone;
+	int i;
+retry:
+	for_pglist_data_each_zone(zone, node_data) {
+	if (zone->name == zone_names[1]) {
+		struct page *page;
+		unsigned long mark;
+		mark = wmark_pages(zone, alloc_flags & ALLOC_WMARK_MASK);
+		if (!zone_watermark_fast(zone, order, mark,
+				       ac->highest_zoneidx, alloc_flags,
+				       gfp_mask)) {
+			// 如果不能快速分配，直接返回 NULL
+			return NULL;
+		}
+try_this_node:
+		// 尝试从伙伴系统获取
+		// page = rmqueue(ac->preferred_zoneref->zone, zone, order,
+		// 		gfp_mask, alloc_flags, ac->migratetype);
+		page = rmqueue(NULL, zone, order,
+				gfp_mask, alloc_flags, MIGRATE_UNMOVABLE);
+		if(page) {
+			/*初始化当前 struct page*/
+			return page;
+		} else {
+			/*分配失败重试*/
+			goto retry;
+		}
+	}
+	}
+	return NULL;
+}
+
+
+struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid)
+{
+	struct page *page;
+	unsigned int alloc_flags = ALLOC_WMARK_LOW;
+	gfp_t alloc_gfp; /* The gfp_t that was actually used for allocation */
+	struct alloc_context ac = { };
+	
+	if (order > MAX_PAGE_ORDER)
+		return NULL;
+	/* gfp 逻辑处理*/
+	
+	/*预先 alloc page*/
+	// if (!prepare_alloc_pages(gfp, order, preferred_nid, &alloc_gfp))
+	// 	return NULL;
+
+	/*第一次尝试分配*/
+	page = get_page_from_freelist(alloc_gfp, order, alloc_flags, &ac);
+	if (likely(page))
+		goto out;
+	/*slow path alloc*/
+out:
+	return page;
 }
 
 void __init mem_init(void)

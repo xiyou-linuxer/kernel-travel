@@ -29,8 +29,19 @@ struct free_area {
 	unsigned long		nr_free;
 };
 
+enum zone_watermarks {
+	WMARK_MIN,	/*最低水位线*/
+	WMARK_LOW,	/*较低水位线*/
+	WMARK_HIGH,	/*较高水位线*/
+	// WMARK_PROMO,	/*促进水位线*/
+	NR_WMARK	
+};
+
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
+
 struct zone {
+	unsigned long _watermark[NR_WMARK];
+	unsigned long watermark_boost;
 	long low_reserved_mem[MAX_NR_ZONES];
 	int node;
 	struct pglist_data	*zone_pgdat;
@@ -65,6 +76,24 @@ typedef struct pglist_data {
 	unsigned long		flags;
 
 } pg_data_t;
+
+struct alloc_context {
+	struct zonelist *zonelist;
+	void *nodemask;
+	struct zoneref *preferred_zoneref;
+	int migratetype;
+	enum zone_type highest_zoneidx;
+	bool spread_dirty_pages;
+};
+
+#define ALLOC_WMARK_MIN		WMARK_MIN
+#define ALLOC_WMARK_LOW		WMARK_LOW
+#define ALLOC_WMARK_HIGH	WMARK_HIGH
+#define ALLOC_WMARK_MASK	(ALLOC_NO_WATERMARKS-1)
+#define ALLOC_NO_WATERMARKS	0x04 /* don't check watermarks at all */
+
+
+#define wmark_pages(z, i) (z->_watermark[i] + z->watermark_boost)
 
 static unsigned long pgdat_end_pfn(struct pglist_data *pgdat)
 {
