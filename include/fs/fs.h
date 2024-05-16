@@ -19,7 +19,7 @@ typedef struct Dirent Dirent;
 typedef struct SuperBlock SuperBlock;
 
 // 对应目录、文件、设备
-typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOW} dirent_type_t;
+typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
 
 
 struct bpb{
@@ -121,8 +121,8 @@ typedef struct Dirent {
 	u32 mode;
 
 	// 各种计数
-	u16 linkcnt; // 链接计数
-	u16 refcnt;  // 引用计数
+	unsigned short linkcnt; // 链接计数
+	unsigned short refcnt;  // 引用计数
 
 	//struct holder_info holders[DIRENT_HOLDER_CNT];
 	//int holder_cnt;
@@ -155,6 +155,10 @@ enum fs_result {
 		typeof(_b) __b = (_b);                                                             \
 		__a <= __b ? __a : __b;                                                            \
 	})
+
+// 舍入到更大的页对齐地址
+#define PGROUNDUP(a) (((a) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+#define PGROUNDDOWN(a) (((a)) & ~(PAGE_SIZE - 1))
 
 
 extern FileSystem* fatFs;

@@ -40,8 +40,7 @@ user_ret:
     RESTORE_ALL_AND_RET
 
 
-
-	.align	5
+.align	5
 SYM_FUNC_START(syscall_handler)
 	move	t2, sp
 	la.abs	t1, kernelsp

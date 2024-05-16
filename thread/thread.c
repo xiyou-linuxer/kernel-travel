@@ -10,6 +10,7 @@
 #include <asm/loongarch.h>
 #include <linux/switch.h>
 #include <asm/asm-offsets.h>
+#include <linux/sched.h>
 #include <sync.h>
 #include <allocator.h>
 #include <process.h>
@@ -83,12 +84,21 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
     } else {
         pthread->status = TASK_READY;
     }
-
-    pthread->self_kstack = (uint64_t *)((uint64_t)pthread + KERNEL_STACK_SIZE);
+    pthread->self_kstack = (uint64_t*)((uint64_t)pthread + KERNEL_STACK_SIZE);
     pthread->priority = prio;
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = 0;
+    pthread->fd_table[0] = 0;
+    pthread->fd_table[1] = 1;
+    pthread->fd_table[2] = 2;
+    uint8_t fd_idx = 3;
+    while (fd_idx < MAX_FILES_OPEN_PER_PROC) {
+        pthread->fd_table[fd_idx] = -1;
+        fd_idx++;
+    }
+    pthread->cwd[0] = '/';
+    pthread->cwd_dirent = NULL;
     pthread->stack_magic = STACK_MAGIC_NUM;
 }
 

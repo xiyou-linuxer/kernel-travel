@@ -3,6 +3,8 @@
 #include <linux/stdio.h>
 #include <asm/stdio.h>
 #include <fork.h>
+#include <linux/console.h>
+#include <fs/syscall_fs.h>
 
 pid_t sys_getpid(void)
 {
@@ -18,6 +20,7 @@ void sys_pstr(char *str)
 void syscall_init(void)
 {
 	printk("syscall init start\n");
+	syscall_table[SYS_write]    = sys_write;
 	syscall_table[SYS_getpid]   = sys_getpid;
 	syscall_table[SYS_PSTR]     = sys_pstr;
 	syscall_table[SYS_FORK]     = sys_fork;

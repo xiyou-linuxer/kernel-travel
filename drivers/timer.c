@@ -12,11 +12,6 @@
 #define IRQ0_FREQUENCY     100
 #define INPUT_FREQUENCY    1193180
 #define COUNTER0_VALUE     INPUT_FREQUENCY / IRQ0_FREQUENCY
-#define CONTRER0_PORT      0x40
-#define COUNTER0_NO        0
-#define COUNTER_MODE       2
-#define READ_WRITE_LATCH   3
-#define PIT_CONTROL_PORT   0x43
 
 #define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)
 
@@ -50,6 +45,17 @@ void intr_timer_handler(struct pt_regs *regs)
 	} else {
 		cur_thread->ticks--;
 	}
+}
+
+int64_t sys_gettimeofday(struct timespec *ts)
+{
+	uint64_t clk = rdtime();
+	uint64_t usec = CLK_TO_USEC(clk) % USEC_PER_SEC;
+
+	ts->tv_sec  = CLK_TO_SEC(clk);
+	ts->tv_nsec = USEC_TO_NSEC(usec);
+
+	return 0;
 }
 
 static inline int detach_timer(struct timer_list *timer)

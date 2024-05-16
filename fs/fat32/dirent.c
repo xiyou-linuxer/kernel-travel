@@ -294,3 +294,192 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 	return 0;
 }
 
+char *path_parse(char *pathname, char *name_store)
+{
+	if (pathname[0] == '/')
+	{ // 根目录不需要单独解析
+		/* 路径中出现1个或多个连续的字符'/',将这些'/'跳过,如"///a/b" */
+		while (*(++pathname) == '/')
+		;
+	}
+
+	/* 开始一般的路径解析 */
+	while (*pathname != '/' && *pathname != 0)
+	{
+		*name_store++ = *pathname++;
+	}
+
+	if (pathname[0] == 0)
+	{ // 若路径字符串为空则返回NULL
+		return NULL;
+	}
+	return pathname;
+}
+
+/* 返回路径深度,比如/a/b/c,深度为3 */
+int32_t path_depth_cnt(char *pathname)
+{
+	ASSERT(pathname != NULL);
+	char *p = pathname;
+	char name[MAX_NAME_LEN]; // 用于path_parse的参数做路径解析
+	uint32_t depth = 0;
+
+	/* 解析路径,从中拆分出各级名称 */
+	p = path_parse(p, name);
+	while (name[0])
+	{
+		depth++;
+		memset(name, 0, MAX_NAME_LEN);
+		if (p)
+		{ // 如果p不等于NULL,继续分析路径
+			p = path_parse(p, name);
+		}
+	}
+	return depth;
+}
+
+Dirent* search_dir_tree(Dirent* parent,char *name)
+{
+	Dirent *file;
+	struct list_elem* dir_node = parent->child_list.head.next;
+	int ret = 0;
+	
+	while (dir_node!=&parent->child_list.tail)
+	{
+		file = elem2entry(struct Dirent,dirent_tag,dir_node);
+		if (strcmp(file->name, name) == 0)
+		{
+			
+			ret = 1;
+			break;
+		}
+		dir_node = dir_node->next;
+	}
+	if (ret == 1)
+	{
+		return file;
+	}else
+	{
+		return NULL;
+	}
+}
+
+static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int isDir) 
+{
+	lock_acquire(&mtx_file);
+
+	char lastElem[MAX_NAME_LEN];
+	Dirent *dir = NULL, *f = NULL;
+	int r;
+	longEntSet longSet;
+	FileSystem *fs;
+	extern FileSystem *fatFs;
+
+	if (baseDir) {
+		fs = baseDir->file_system;
+	} else {
+		fs = fatFs;
+	}
+	struct path_search_record searched_record;
+	memset(&searched_record, 0, sizeof(struct path_search_record));
+
+	/* 记录目录深度.帮助判断中间某个目录不存在的情况 */
+	unsigned int pathname_depth = path_depth_cnt((char *)path);
+
+	/* 先检查是否将全部的路径遍历 */
+	dir = search_file(path,&searched_record);
+	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
+	if (pathname_depth != path_searched_depth)
+	{ 
+		// 说明并没有访问到全部的路径,某个中间目录是不存在的
+		printk("cannot access %s: Not a directory, subpath %s is`t exist\n",path, searched_record.searched_path);
+		lock_release(&mtx_file);
+		return -1;
+	}
+	/*如果已经存在该文件则不能重复建立*/
+	if (dir != NULL)
+	{
+		//printk("1111 %d\n",dir->type);
+		if(isDir == 1 && dir->type == DIRENT_DIR)
+		{
+			printk("directory exists: %s\n", path);
+			lock_release(&mtx_file);
+
+		}else if (isDir == 0 && dir->type == DIRENT_FILE)
+		{
+			printk("file exists: %s\n", path);
+			lock_release(&mtx_file);
+		}
+		return -1;
+	}
+	
+	// 3. 分配Dirent，并获取新创建文件的引用
+	if ((r = dir_alloc_file(searched_record.parent_dir, &f, path)) < 0) {
+		lock_release(&mtx_file);
+		return r;
+	}
+	//4. 填写Dirent的各项信息
+	f->parent_dirent = searched_record.parent_dir;				   // 设置父亲节点，以安排写回
+	f->file_system = searched_record.parent_dir->file_system;
+	if (isDir == 1)
+	{
+		f->type = DIRENT_DIR;
+	}else
+	{
+		f->type = DIRENT_FILE;
+	}
+	//f->type = (isDir) ? DIRENT_FILE : DIRENT_DIR;
+
+	// 5. 目录应当以其分配了的大小为其文件大小（TODO：但写回时只写回0）
+	if (isDir) {
+		// 目录至少分配一个簇
+		int clusSize = CLUS_SIZE(searched_record.parent_dir->file_system);
+		f->first_clus = clusterAlloc(searched_record.parent_dir->file_system, 0); // 在Alloc时即将first_clus清空为全0
+		f->file_size = clusSize;
+		f->raw_dirent.DIR_Attr = ATTR_DIRECTORY;
+	} else {
+		// 空文件不分配簇
+		f->file_size = 0;
+		f->first_clus = 0;
+	}
+	
+	filepnt_init(f);
+	printk("type:%d\n",f->type);
+	// 4. 将dirent加入到上级目录的子Dirent列表
+	list_append(&searched_record.parent_dir->child_list,&f->dirent_tag);
+	// 5. 回写dirent信息
+	sync_dirent_rawdata_back(f);
+
+	if (file) {
+		*file = f;
+		printk("f:%s\n",f->name);
+	}
+
+	lock_release(&mtx_file);
+	return 0;
+}
+
+/**
+ * @brief 在dir目录下新建一个名为path的目录。忽略mode参数
+ * @return 0成功，-1失败
+ */
+int makeDirAt(Dirent *baseDir, char *path, int mode) 
+{
+	Dirent *dir = NULL;
+	int ret = createItemAt(baseDir, path, &dir, 1);
+	if (ret < 0) {
+		return ret;
+	} else {
+		//file_close(dir);
+		return 0;
+	}
+}
+
+/**
+ * @brief 创建一个文件
+ */
+int r;
+int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
+{
+	return createItemAt(baseDir, path, file, 0);
+}

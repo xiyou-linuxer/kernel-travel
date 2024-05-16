@@ -17,7 +17,7 @@ const struct loongarchlist_mem_map lalist_mem_map = {
         },
         {
             .mem_type = 0,
-            .mem_start = 0x9000000090000000,
+            .mem_start = 0x90000000a0000000,
             .mem_size = 0x30000000,
         }
     }

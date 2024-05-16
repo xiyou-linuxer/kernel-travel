@@ -24,7 +24,7 @@ static void build_dirent_tree(Dirent *parent) {
 			// 读到末尾
 			break;
 		}
-		printk("get child: %s, parent: %s\n", child->name, parent->name);
+		//printk("get child: %s, parent: %s\n", child->name, parent->name);
 
 		// 跳过.和..
 		if (strncmp(child->name, ".          ", 11) == 0 ||

@@ -7,10 +7,11 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/buf.h>
+#include <fs/fd.h>
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <debug.h>
-
+#include <linux/memory.h>
 int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
 	//lock_acquire(&mtx_file);
 	
@@ -18,27 +19,7 @@ int get_file_raw(Dirent *baseDir, char *path, Dirent **pfile) {
 	longEntSet longSet;
 	FileSystem *fs;
 
-	//FileSystem *fatFs;
-
-	/*if (baseDir) {
-		fs = baseDir->file_system;
-	} else {
-		fs = fatFs;
-	}*/
-
 	if (path == NULL) {
-		/*if (baseDir == NULL) {
-			// 一般baseDir都是以类似dirFd的形式解析出来的，所以如果baseDir为NULL，表示归属的fd无效
-			printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
-			//lock_release(&mtx_file);
-			return -1;
-		} else {
-			// 如果path为NULL，则直接返回baseDir（即上层的dirfd解析出的Dirent）
-			*pfile = baseDir;
-			dget_path(baseDir); // 此时复用一次，也需要加引用
-			//lock_release(&mtx_file);
-			return 0;
-		}*/
 		printk("get_file_raw: baseDir is NULL and path == NULL, may be the fd associate with it is invalid\n");
 	}
 	int r = walk_path(fs, path, baseDir, 0, &file, 0, &longSet);
@@ -62,17 +43,6 @@ int getFile(Dirent *baseDir, char *path, Dirent **pfile) {
 	}
 	*pfile = file;
 	return 0;
-	/*if (IS_LINK(&(file->raw_dirent))) {
-		char buf[MAX_NAME_LEN];
-		file_readlink(file, buf, MAX_NAME_LEN);
-		file_close(file);
-		printk("follow link: %s -> %s\n", path, buf);
-		ASSERT(buf[0] == '/');		  // 链接文件的路径必须是绝对路径
-		return getFile(NULL, buf, pfile); // 递归调用
-	} else {
-		*pfile = file;
-		return 0;
-	}*/
 }
 
 void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
@@ -83,11 +53,15 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
 		clusterRead(file->file_system, i, 0, (void *)(dst + 4096*i),4096,1);
 	}
 }
-
+/**
+ * @param dst 缓冲区地址
+ * @param off 文件指针的偏移
+ * @param n 要读取的长度
+*/
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
-	printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
+	//printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
 		lock_release(&mtx_file);
@@ -159,11 +133,13 @@ void file_extend(struct Dirent *file, int newSize) {
 	sync_dirent_rawdata_back(file);
 }
 
-
+/**
+ * @param dst 缓冲区地址
+ * @param off 文件指针的偏移
+ * @param n 要写入的长度
+*/
 int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
-
-	printk("write file: %s\n", file->name);
 	ASSERT(n != 0);
 
 	// Note: 支持off在任意位置的写入（允许超过file->size），[file->size, off)的部分将被填充为0
@@ -198,19 +174,127 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	lock_release(&mtx_file);
 	return n;
 }
-/*搜索文件的临时接口*/
-Dirent* search_file(Dirent* parent,char *name)
+
+/**
+ * @brief 搜索文件pathname
+ * @param pathname 搜索路径
+ * @param searched_record 用于记录搜索结果的结构体
+ * @return 如果在树上找到结构体则返回Dirent,否则返回NULL
+ */
+Dirent* search_file(const char *pathname, struct path_search_record *searched_record)
 {
-	Dirent *file;
-	struct list_elem* dir_node = parent->child_list.head.next;
-	while (dir_node!=&parent->child_list.tail)
+	/* 如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息 */
+	if (!strcmp(pathname, "/") || !strcmp(pathname, "/.") || !strcmp(pathname, "/.."))
 	{
-		file = elem2entry(struct Dirent,dirent_tag,dir_node);
-		if (strcmp(file->name, name) == 0)
-		{
-			break;
-		}
-		dir_node = dir_node->next;
+		searched_record->parent_dir = fatFs->root;
+		searched_record->file_type = DIRENT_DIR;
+		searched_record->searched_path[0] = 0; // 搜索路径置空
+		return NULL;
 	}
-	return file;
+
+	uint32_t path_len = strlen(pathname);
+	/* 保证pathname至少是这样的路径/x且小于最大长度 */
+	ASSERT(pathname[0] == '/' && path_len > 1 && path_len < MAX_PATH_LEN);
+	char *sub_path = (char *)pathname;
+	Dirent *parent_dir = fatFs->root;
+	Dirent *dir_e;
+
+	/* 记录路径解析出来的各级名称,如路径"/a/b/c",
+	* 数组name每次的值分别是"a","b","c" */
+	char name[MAX_NAME_LEN] = {0};
+
+	searched_record->parent_dir = parent_dir;
+	searched_record->file_type = DIRENT_UNKNOWN;
+
+	sub_path = path_parse(sub_path, name);
+	while (name[0])
+	{ // 若第一个字符就是结束符,结束循环
+		/* 记录查找过的路径,但不能超过searched_path的长度512字节 */
+		//ASSERT(strlen(searched_record->searched_path) < 512);
+
+		/* 记录已存在的父目录 */
+		strcat(searched_record->searched_path, "/");
+		strcat(searched_record->searched_path, name);
+		dir_e = search_dir_tree(parent_dir, name);
+		printk("name:%s",name);
+		/* 在所给的目录中查找文件 */
+		if (dir_e != NULL)
+		{
+			memset(name, 0, MAX_NAME_LEN);
+			/* 若sub_path不等于NULL,也就是未结束时继续拆分路径 */
+			if (sub_path)
+			{
+				sub_path = path_parse(sub_path, name);
+			}
+
+			if (dir_e->type == DIRENT_DIR )
+			{ // 如果被打开的是目录
+				searched_record->parent_dir = parent_dir;
+				parent_dir = dir_e;
+				continue;
+			}
+			else if (dir_e->type == DIRENT_FILE)
+			{ // 若是普通文件
+				searched_record->file_type = DIRENT_FILE;
+				return dir_e;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	/* 执行到此,必然是遍历了完整路径并且查找的文件或目录只有同名目录存在 */
+	/* 保存被查找目录的直接父目录 */
+	//searched_record->parent_dir = dir_open(cur_part, parent_inode_no);
+	searched_record->file_type = DIRENT_DIR;
+	return dir_e;
+}
+
+void file_shrink(Dirent *file, u64 newsize) 
+{
+	lock_acquire(&mtx_file);
+
+	ASSERT(file != NULL);
+	ASSERT(file->file_size >= newsize);
+
+	u32 oldsize = file->file_size;
+	u32 clusSize = CLUS_SIZE(file->file_system);
+
+	// 1. 清空文件最后一个簇的剩余内容
+	char buf[1024];
+	memset(buf, 0, sizeof(buf));
+	if (oldsize % PAGE_SIZE != 0) {
+		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
+			
+			file_write(file, 0, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
+		}
+	}
+
+	// 2. 释放后面的簇
+	u32 new_clusters = (newsize + clusSize - 1) / clusSize;
+	u32 old_clusters = (oldsize + clusSize - 1) / clusSize;
+	if (new_clusters < old_clusters) {
+		// 获取新文件大小之后的第一个簇
+		u32 last_clus = filepnt_getclusbyno(file, new_clusters);
+		if (new_clusters != 0) {
+			u32 prev_clus = filepnt_getclusbyno(file, new_clusters-1);
+			fatWrite(file->file_system, prev_clus, FAT32_EOF); // 标识最后一个簇
+		}
+		clus_sequence_free(file->file_system, last_clus);
+		for (int i = new_clusters; i < old_clusters; i++) {
+			// 清空簇号表的对应位置
+			filepnt_setval(&file->pointer, i, 0);
+		}
+	}
+
+	// 2. 缩小文件
+	file->file_size = newsize;
+	if (newsize == 0) {
+		file->first_clus = 0;
+	}
+
+	// 3. 写回
+	sync_dirent_rawdata_back(file);
+	lock_release(&mtx_file);
 }

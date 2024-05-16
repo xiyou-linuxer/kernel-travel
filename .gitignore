@@ -10,7 +10,7 @@ System.map
 Module.symvers
 Image
 asm-offsets.s
-# cross-tools/
+cross-tools/
 include/linux/version.h
 devicetable-offsets.s
 kernel/bounds.s
@@ -21,3 +21,4 @@ quick_start.sh
 .vscode/
 command/user_prog
 kernel.bin
+*.order

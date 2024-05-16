@@ -6,9 +6,10 @@
 #include <linux/memory.h>
 #include <asm/thread_info.h>
 #include <linux/memory.h>
+#include <fs/fs.h>
 
 #define TASK_NAME_LEN 16
-#define MAX_FILES_OPEN_PER_PROC 8
+#define MAX_FILES_OPEN_PER_PROC 64
 
 #define STACK_MAGIC_NUM 0x27839128
 
@@ -45,6 +46,9 @@ struct task_struct {
 	uint32_t elapsed_ticks;
 	struct virt_addr usrprog_vaddr;
 	struct list_elem general_tag;
+	int fd_table[MAX_FILES_OPEN_PER_PROC];  // 文件描述符数组
+	char cwd[MAX_NAME_LEN];					//记录工作目录的字符数组
+	struct Dirent* cwd_dirent;				//当前目录
 	struct list_elem all_list_tag;
 	uint64_t pgdir;
 	u32 asid;
