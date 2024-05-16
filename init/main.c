@@ -72,6 +72,11 @@ void __init __no_sanitize_address start_kernel(void)
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
 	mem_init();
+	/*__alloc_pages for test*/
+	// struct page *page = __alloc_pages(0, 7, 0);
+	// struct page * page2 = __alloc_pages(0, 7, 0);
+	// __free_pages_ok(page, 7, 0);
+	// __free_pages_ok(page2, 7, 0);
 	//初始化中断处理程序
 	trap_init();
 	irq_init();

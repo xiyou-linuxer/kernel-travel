@@ -213,4 +213,6 @@ void __free_pages_core(struct page *page, unsigned int order);
 void mem_init(void);
 struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid);
 
+void __free_pages_ok(struct page *page, unsigned int order,
+			    bool fpi_flags);
 #endif

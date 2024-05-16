@@ -526,7 +526,8 @@ page_zone(const struct page *page)
 	return (struct zone *)&node_data[0].node_zones[page_zonenum(page)];
 }
 
-static void __free_pages_ok(struct page *page, unsigned int order,
+// static
+void __free_pages_ok(struct page *page, unsigned int order,
 			    bool fpi_flags)
 {
 	int migratetype;
@@ -586,7 +587,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			// 没有空闲页，继续向上一级寻找
 			continue;
 		// 从当前的 free_list 的链表中删除
-		del_page_from_free_list(page, zone,order);
+		del_page_from_free_list(page, zone,current_order);
 		// 更新到更低的 free_list 中
 		expand(zone, page, order, current_order, migratetype);
 		// 设置页面的迁移类型
