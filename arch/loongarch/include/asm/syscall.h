@@ -110,6 +110,7 @@ enum SYSCALL {
 #define SYS_getcwd 17
 #define SYS_close 57
 #define SYS_read 63
+#define SYS_chdir 49
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
