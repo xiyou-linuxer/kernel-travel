@@ -156,7 +156,6 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	int start_off = 0, end_off = 0; // 分配的终止目录项的偏移
 	
 	FAT32Directory fat32_dirent;
-	printk("dir_alloc_entry");
 	int prev_size = dir->file_size;
 	
 	// 1. 分配若干连续的目录项

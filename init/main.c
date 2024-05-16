@@ -89,7 +89,7 @@ void __init __no_sanitize_address start_kernel(void)
 	//timer.func = timer_func;
 	//timer.data = 7;
 	//add_timer(&timer);
-
+	console_init();
 	syscall_init();
 	fs_init();
 	//thread_start("thread_a",10,thread_a,NULL);

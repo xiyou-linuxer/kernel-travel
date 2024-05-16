@@ -7,6 +7,7 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/buf.h>
+#include <fs/fd.h>
 #include <linux/stdio.h>
 #include <linux/string.h>
 #include <debug.h>
@@ -52,7 +53,11 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
 		clusterRead(file->file_system, i, 0, (void *)(dst + 4096*i),4096,1);
 	}
 }
-
+/**
+ * @param dst 缓冲区地址
+ * @param off 文件指针的偏移
+ * @param n 要读取的长度
+*/
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 
@@ -128,11 +133,13 @@ void file_extend(struct Dirent *file, int newSize) {
 	sync_dirent_rawdata_back(file);
 }
 
-
+/**
+ * @param dst 缓冲区地址
+ * @param off 文件指针的偏移
+ * @param n 要写入的长度
+*/
 int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
-
-	printk("write file: %s\n", file->name);
 	ASSERT(n != 0);
 
 	// Note: 支持off在任意位置的写入（允许超过file->size），[file->size, off)的部分将被填充为0
@@ -168,7 +175,12 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	return n;
 }
 
-/* 搜索文件pathname,若找到则返回其Dirent项,否则返回-1 */
+/**
+ * @brief 搜索文件pathname
+ * @param pathname 搜索路径
+ * @param searched_record 用于记录搜索结果的结构体
+ * @return 如果在树上找到结构体则返回Dirent,否则返回NULL
+ */
 Dirent* search_file(const char *pathname, struct path_search_record *searched_record)
 {
 	/* 如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息 */
@@ -231,11 +243,58 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 		{
 			return NULL;
 		}
-		
 	}
 	/* 执行到此,必然是遍历了完整路径并且查找的文件或目录只有同名目录存在 */
 	/* 保存被查找目录的直接父目录 */
 	//searched_record->parent_dir = dir_open(cur_part, parent_inode_no);
 	searched_record->file_type = DIRENT_DIR;
 	return dir_e;
+}
+
+void file_shrink(Dirent *file, u64 newsize) 
+{
+	lock_acquire(&mtx_file);
+
+	ASSERT(file != NULL);
+	ASSERT(file->file_size >= newsize);
+
+	u32 oldsize = file->file_size;
+	u32 clusSize = CLUS_SIZE(file->file_system);
+
+	// 1. 清空文件最后一个簇的剩余内容
+	char buf[1024];
+	memset(buf, 0, sizeof(buf));
+	if (oldsize % PAGE_SIZE != 0) {
+		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
+			
+			file_write(file, 0, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
+		}
+	}
+
+	// 2. 释放后面的簇
+	u32 new_clusters = (newsize + clusSize - 1) / clusSize;
+	u32 old_clusters = (oldsize + clusSize - 1) / clusSize;
+	if (new_clusters < old_clusters) {
+		// 获取新文件大小之后的第一个簇
+		u32 last_clus = filepnt_getclusbyno(file, new_clusters);
+		if (new_clusters != 0) {
+			u32 prev_clus = filepnt_getclusbyno(file, new_clusters-1);
+			fatWrite(file->file_system, prev_clus, FAT32_EOF); // 标识最后一个簇
+		}
+		clus_sequence_free(file->file_system, last_clus);
+		for (int i = new_clusters; i < old_clusters; i++) {
+			// 清空簇号表的对应位置
+			filepnt_setval(&file->pointer, i, 0);
+		}
+	}
+
+	// 2. 缩小文件
+	file->file_size = newsize;
+	if (newsize == 0) {
+		file->first_clus = 0;
+	}
+
+	// 3. 写回
+	sync_dirent_rawdata_back(file);
+	lock_release(&mtx_file);
 }
