@@ -150,7 +150,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 /* 从文件描述符fd指向的文件中读取count个字节到buf,若成功则返回读出的字节数,到文件尾则返回-1 */
 int sys_read(int fd, void *buf, unsigned int count)
 {
-	ASSERT(buf != NULL);
+	//ASSERT(buf != NULL);
 	int32_t ret = -1;
 	uint32_t global_fd = 0;
 	if (fd < 0 || fd == STDOUT || fd == STDERR)
@@ -190,6 +190,12 @@ int sys_read(int fd, void *buf, unsigned int count)
 		file_table[global_fd].offset += ret;
 	}
 	return ret;
+}
+
+void sys_lseek(int fd,unsigned long off)
+{
+	uint32_t global_fd = fd_local2global(fd);
+	file_table[global_fd].offset = off;
 }
 
 /* 成功关闭文件返回0,失败返回-1 */

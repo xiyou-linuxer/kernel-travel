@@ -26,10 +26,8 @@ void start_process(void* filename)
 	printk("start process....\n");
 	unsigned long crmd;
 	unsigned long prmd;
-	void* func = filename;
 	struct task_struct* cur = running_thread();
 	struct pt_regs *regs = (struct pt_regs*)cur->self_kstack;
-	regs->csr_era = (unsigned long)func;
 
 	regs->csr_crmd = read_csr_crmd();
 	prmd = read_csr_prmd() & ~(PLV_MASK);
@@ -39,7 +37,7 @@ void start_process(void* filename)
 	regs->regs[3] = (uint64_t)userstk_alloc(cur->pgdir);
 	regs->regs[22] = regs->regs[3];
 
-	int entry = sys_execv(filename);
+	int entry = sys_execv(filename,NULL,NULL);
 	regs->csr_era = (unsigned long)entry;
 
 	printk("jump to proc...\n");

@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <xkernel/string.h>
 #include <asm/loongarch.h>
+#include <fs/syscall_fs.h>
+#include <fs/fd.h>
 
 void* program_begin;
 
@@ -19,7 +21,7 @@ void pro_read(void *program,void *buf,uint64_t count)
 	memcpy(buf,program,count);
 }
 
-static bool load_phdr(void *program,Elf_Phdr *phdr)
+static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 {
 	uint64_t page_cnt;
 	int64_t remain_size;
@@ -41,17 +43,19 @@ static bool load_phdr(void *program,Elf_Phdr *phdr)
 		page += PAGESIZE;
 	}
 
-	pro_seek(&program,phdr->p_offset);
-	pro_read(program,(void*)phdr->p_vaddr,phdr->p_filesz);
+	sys_lseek(fd,phdr->p_offset);
+	sys_read(fd,(void*)phdr->p_vaddr,phdr->p_filesz);
 	return true;
 }
 
-int64_t load(void *program)
+int64_t load(const char *path)
 {
 	Elf_Ehdr ehdr;
 	memset(&ehdr,0,sizeof(ehdr));
-	pro_seek(&program,0);
-	pro_read(program,&ehdr,sizeof(ehdr));
+    int fd = sys_open(path, O_RDWR ,660);
+	sys_lseek(fd,0);
+	int size = sys_read(fd, &ehdr, sizeof(ehdr));
+	printk("read %d bytes\n",size);
 
 	int64_t ret;
 	if (memcmp(ehdr.e_ident,"\177ELF",4) || \
@@ -69,10 +73,10 @@ int64_t load(void *program)
 	for (uint64_t ph = 0 ; ph < ehdr.e_phnum ; ph++)
 	{
 		memset(&phdr,0,sizeof(phdr));
-		pro_seek(&program,phoff);
-		pro_read(program,&phdr,sizeof(phdr));
+		sys_lseek(fd,phoff);
+		sys_read(fd,&phdr,sizeof(phdr));
 		if (phdr.p_type == PT_LOAD) {
-			load_phdr(program,&phdr);
+			load_phdr(fd,&phdr);
 		}
 		phoff += ehdr.e_phentsize;
 	}
@@ -83,11 +87,9 @@ done:
 }
 
 
-int sys_execv(void *program)
+int sys_execv(const char *path, char *const argv[], char *const envp[])
 {
-	program_begin = program;
-	void* programp = program;
-	int64_t entry_point = load(programp);
+	int64_t entry_point = load(path);
 	if (entry_point == -1) {
 		printk("sys_execv: load failed\n");
 		return -1;

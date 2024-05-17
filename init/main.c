@@ -62,7 +62,7 @@ void timer_func(unsigned long unused){
 	printk("timer done");
 }
 
-char usrprog[2][70000];
+char usrprog[2][40000];
 int sysnums = 3;
 extern char* sysname[];
 
@@ -101,6 +101,7 @@ void __init __no_sanitize_address start_kernel(void)
 	//
 	
 	int count=0;
+	char filename[9][128] = {0};
 	for (int i = 0; i < NR_SYSCALLS; i++)
 	{
 		if (sysname[i] == NULL)
@@ -108,17 +109,9 @@ void __init __no_sanitize_address start_kernel(void)
 		Dirent *file;
 		struct path_search_record searched_record;
 		int pri=5;
-		char filename[128] = {0};
-		strcpy(filename,"/");
-		strcat(filename,sysname[i]);
-		//if (strcmp(filename,"/sleep"))
-		//	pri=40;
-		file = search_file(filename,&searched_record);
-		filepnt_init(file);
-		pre_read(file,(unsigned long)usrprog[count],file->file_size/4096+1);
-		file_read(file, 0, (unsigned long)usrprog[count], 0, file->file_size);
-		//printk("%s\n", usrprog);
-		process_execute(usrprog[count],filename,pri);
+		strcpy(filename[count],"/");
+		strcat(filename[count],sysname[i]);
+		process_execute(filename[count],filename[count],pri);
 		count++;
 	}
 

@@ -49,7 +49,7 @@ typedef struct
 	Elf_XWord p_align;
 } Elf_Phdr;
 
-int64_t load(void* program);
-int sys_execv(void* program);
+int64_t load(const char *path);
+int sys_execv(const char *path, char *const argv[], char *const envp[]);
 
 #endif

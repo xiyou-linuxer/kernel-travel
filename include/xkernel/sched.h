@@ -38,6 +38,7 @@ struct task_struct {
 	thread_func *function;
 	void *func_arg;
 	struct thread_struct thread;
+	pid_t ppid;
 	pid_t pid;
 	enum task_status status;
 	char name[TASK_NAME_LEN];
