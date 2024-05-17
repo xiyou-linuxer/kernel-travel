@@ -22,7 +22,7 @@ void do_softirq(void)
 	}
 
 	bh_disable();
-	printk("do softirq...\n");
+	//printk("do softirq...\n");
 
 	/* must be done before enable interrupt
 	 * just thinking about some hardirq intervene

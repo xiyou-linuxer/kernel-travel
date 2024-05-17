@@ -14,6 +14,8 @@
 #include <sync.h>
 #include <allocator.h>
 #include <process.h>
+#include <trap/irq.h>
+#include <asm/timer.h>
 
 struct task_struct* main_thread;
 struct task_struct* idle_thread;
@@ -21,6 +23,10 @@ struct list thread_ready_list;
 struct list thread_all_list;
 
 struct list_elem* thread_tag;
+
+extern void irq_exit(void);
+extern void irq_enter(void);
+bool switching;
 
 uint8_t pid_bitmap_bits[128] = {0};
 
@@ -64,6 +70,15 @@ static void kernel_thread(void)
     intr_enable();
     task->function(task->func_arg);
     return;
+}
+
+static void idle(void* arg)
+{
+	while (1) {
+		thread_block(TASK_BLOCKED);
+		intr_enable();
+		asm volatile("idle 0");
+	}
 }
 
 struct task_struct* running_thread()
@@ -129,13 +144,8 @@ struct task_struct *thread_start(char *name, int prio, thread_func function, voi
     ASSERT(!elem_find(&thread_all_list, &thread->all_list_tag));
     list_append(&thread_all_list, &thread->all_list_tag);
 
-    //printk("thread start thread reg01:%x\n",thread->thread.reg01);
-    //printk("thread reg01 at:%x\n",(unsigned long)&thread->thread.reg01);
-    //printk("thread+THREAD_REG01=%x\n",(unsigned long)thread+THREAD_REG01);
-
     return thread;
 }
-
 
 static void make_main_thread(void)
 {
@@ -148,75 +158,117 @@ static void make_main_thread(void)
 
 void schedule()
 {
-    printk("schedule...\n");
-    ASSERT(intr_get_status() == INTR_OFF);
+	printk("schedule...\n");
+	ASSERT(intr_get_status() == INTR_OFF);
 
-    struct task_struct* cur = running_thread(); 
-    if (cur->status == TASK_RUNNING) {
-        ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
-        list_append(&thread_ready_list, &cur->general_tag);
-        cur->ticks = cur->priority;
-        cur->status = TASK_READY;
-    } else {
+	struct task_struct* cur = running_thread();
+	if (cur->status == TASK_RUNNING) {
+		ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
+		list_append(&thread_ready_list, &cur->general_tag);
+		cur->ticks = cur->priority;
+		cur->status = TASK_READY;
+	} else {
 
-    }
+	}
 
-    /*
-    if (list_empty(&thread_ready_list)) {
-        thread_unblock(idle_thread);
-    }
-    */
+	if (list_empty(&thread_ready_list)) {
+		thread_unblock(idle_thread);
+	}
 
-    ASSERT(!list_empty(&thread_ready_list));
-    thread_tag = NULL;	  // thread_tag清空
-    thread_tag = list_pop(&thread_ready_list);
-    struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
-    page_dir_activate(next);
-    next->status = TASK_RUNNING;
+	thread_tag = NULL;	  // thread_tag清空
+	thread_tag = list_pop(&thread_ready_list);
+	struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
+	page_dir_activate(next);
+	next->status = TASK_RUNNING;
+	//printk("curticks:%d\n",cur->ticks);
+	//printk("next:%s",next->name);
 
-    switch_to(cur, next);
+	irq_exit();
+	switching = 1;
+	switch_to(cur, next);
 }
 
 void thread_block(enum task_status stat)
 {
-    enum intr_status old_status = intr_disable();
-    ASSERT(stat==TASK_BLOCKED || \
-           stat==TASK_WAITING || \
-           stat==TASK_HANGING );
+	enum intr_status old_status = intr_disable();
+	ASSERT(stat==TASK_BLOCKED || \
+		   stat==TASK_WAITING || \
+		   stat==TASK_HANGING );
 
-    struct task_struct* cur = (struct task_struct*)running_thread();
-    ASSERT(cur->status==TASK_RUNNING);
-    cur->status = stat;
-    schedule();
-    intr_set_status(old_status);
+	struct task_struct* cur = (struct task_struct*)running_thread();
+	ASSERT(cur->status==TASK_RUNNING);
+	cur->status = stat;
+	schedule();
+	intr_set_status(old_status);
 }
 
-void thread_unblock(struct task_struct* thread)
+void thread_unblock(struct task_struct *thread)
 {
-    enum intr_status old_status = intr_disable();
-    ASSERT(thread->status==TASK_BLOCKED || \
-           thread->status==TASK_WAITING || \
-           thread->status==TASK_HANGING );
+	enum intr_status old_status = intr_disable();
+	ASSERT(thread->status==TASK_BLOCKED || \
+		   thread->status==TASK_WAITING || \
+		   thread->status==TASK_HANGING );
 
-    thread->status = TASK_READY;
-    if (elem_find(&thread_ready_list,&thread->general_tag)) {
-        BUG();
-    }
-    list_push(&thread_ready_list,&thread->general_tag);
-    intr_set_status(old_status);
+	thread->status = TASK_READY;
+	if (elem_find(&thread_ready_list,&thread->general_tag)) {
+		BUG();
+	}
+	list_push(&thread_ready_list,&thread->general_tag);
+	intr_set_status(old_status);
 }
 
+void thread_preempt(struct task_struct *thread)
+{
+	thread_unblock(thread);
+	intr_disable();
+	irq_enter();
+	schedule();
+}
+
+void thread_yield(void) {
+	struct task_struct* cur = running_thread();
+	enum intr_status old_status = intr_disable();
+	ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
+	list_append(&thread_ready_list, &cur->general_tag);
+	cur->status = TASK_READY;
+	schedule();
+	intr_set_status(old_status);
+}
+
+static void wake_sleep(unsigned long sleeping_thread)
+{
+	struct task_struct *thread = (struct task_struct*)sleeping_thread;
+	thread_preempt(thread);
+}
+
+int sys_sleep(struct timespec *req,struct timespec *rem)
+{
+	struct timer_list* t = (struct timer_list*)get_page();
+	uint64_t sleep_ticks = timespec2ticks(req);
+	printk("sleep_ticks=%d\n",sleep_ticks);
+	uint64_t expire      = ticks + sleep_ticks;
+	struct task_struct *cur = running_thread();
+	t->expires = expire;
+	t->func    = wake_sleep;
+	t->data    = (unsigned long)running_thread();
+	t->elm.prev = t->elm.next = NULL;
+	add_timer(t);
+	thread_block(TASK_BLOCKED);
+
+	return (ticks-expire>=0 ? 0 : -1);
+}
 
 void thread_init(void)
 {
-    printk("thread_init start\n");
+	printk("thread_init start\n");
 
-    list_init(&thread_ready_list);
-    list_init(&thread_all_list);
-    pid_pool_init();
+	list_init(&thread_ready_list);
+	list_init(&thread_all_list);
+	pid_pool_init();
 
-    make_main_thread();
+	idle_thread = thread_start("idle",10,idle,NULL);
+	make_main_thread();
 
-    printk("thread_init done\n");
+	printk("thread_init done\n");
 }
 

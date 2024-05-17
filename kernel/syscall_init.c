@@ -3,6 +3,7 @@
 #include <xkernel/stdio.h>
 #include <asm/stdio.h>
 #include <fork.h>
+#include <asm/timer.h>
 #include <xkernel/console.h>
 #include <fs/syscall_fs.h>
 
@@ -20,8 +21,10 @@ void sys_pstr(char *str)
 void syscall_init(void)
 {
 	printk("syscall init start\n");
-	syscall_table[SYS_write]    = sys_write;
-    syscall_table[SYS_getpid]   = sys_getpid;
+	syscall_table[SYS_write]         = sys_write;
+	syscall_table[SYS_getpid]        = sys_getpid;
+	syscall_table[SYS_gettimeofday]  = sys_gettimeofday;
+	syscall_table[SYS_nanosleep]     = sys_sleep;
     syscall_table[SYS_getcwd]   = sys_getcwd;
     syscall_table[SYS_close]    = sys_close;
     syscall_table[SYS_read]     = sys_read;
