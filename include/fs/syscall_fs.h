@@ -11,4 +11,5 @@ int sys_mkdir(char* path, int mode);
 char* sys_getcwd(char* buf, int size);
 int sys_chdir(char* path);
 int sys_unlink(char* pathname);
+int sys_fstat(int fd, struct kstat* stat);
 #endif

@@ -14,6 +14,11 @@ struct path_search_record
 };
 
 
+struct Dirent; // 前向声明
+
+struct kstat; // 前向声明
+
+
 int get_entry_count_by_name(char* name);
 int countClusters(struct Dirent* file);
 int get_file_raw(struct Dirent *baseDir, char *path, Dirent **file);
@@ -32,4 +37,5 @@ int createFile(struct Dirent* baseDir, char* path, Dirent** file);
 int makeDirAt(Dirent* baseDir, char* path, int mode);
 void file_shrink(Dirent* file, u64 newsize);
 void test_fs_all(void);
+void fileStat( struct Dirent* file, struct kstat* pKStat);
 #endif

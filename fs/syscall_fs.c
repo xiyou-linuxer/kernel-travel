@@ -286,3 +286,15 @@ int sys_unlink(char *pathname)
 	int ret = rmfile(file);
 	return ret;
 }
+
+int sys_fstat(int fd,struct kstat* stat)
+{
+	int ret = 0;
+	uint32_t global_fd = fd_local2global(fd);
+	fileStat(file_table[global_fd].dirent,stat);
+	if (stat==NULL)
+	{
+		ret = -1;
+	}
+	return ret;
+}
