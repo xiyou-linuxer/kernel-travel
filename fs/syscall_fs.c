@@ -104,12 +104,13 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 
 int sys_write(int fd, const void *buf, unsigned int count)
 {
+	int _fd = fd_local2global(fd);
 	if (fd < 0)
 	{
 		printk("sys_write: fd error\n");
 		return -1;
 	}
-	if (fd == STDOUT)
+	if (_fd == STDOUT)
 	{
 		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
 		/*if (is_pipe(fd))
@@ -130,7 +131,6 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	}*/
 	else
 	{
-		int _fd = fd_local2global(fd);
 		Dirent *wr_file = file_table[_fd].dirent;
 		filepnt_init(wr_file);
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
@@ -298,6 +298,7 @@ int sys_fstat(int fd,struct kstat* stat)
 	}
 	return ret;
 }
+
 int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence)
 {
     if (fd < 0)
@@ -332,4 +333,34 @@ int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence)
     }
     pf->offset = new_pos;
     return pf->offset;
+}
+
+int sys_dup(int oldfd)
+{
+	struct task_struct* cur = running_thread();
+	unsigned int globa_fd_idx = cur->fd_table[oldfd];
+	return pcb_fd_install(globa_fd_idx);//将全局fd下载到新的局部fd当中
+}
+
+int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd)
+{
+	int ret = -1;
+	struct task_struct *cur = running_thread();
+	/* 针对恢复标准描述符 */
+	if (old_local_fd < 3)
+	{
+		cur->fd_table[new_local_fd] = old_local_fd;
+		ret = old_local_fd;
+	}
+	else
+	{
+		if (cur->fd_table[new_local_fd]!=-1)
+		{
+			file_close(cur->fd_table[new_local_fd]);
+		}
+		uint32_t new_global_fd = cur->fd_table[old_local_fd];
+		cur->fd_table[new_global_fd] = old_local_fd;
+		ret = old_local_fd;
+	}
+	return ret;
 }

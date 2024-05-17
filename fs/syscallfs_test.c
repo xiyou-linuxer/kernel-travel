@@ -100,6 +100,18 @@ void test_lseek(void)
 	printk("%s\n",buf);
 }
 
+void test_dup(void){
+	int fd = sys_dup(STDOUT);
+	ASSERT(fd >=0);
+	printk("  new fd is %d.\n", fd);
+}
+
+void test_dup2(void){
+	int fd = sys_dup2(STDOUT, 100);
+	ASSERT(fd != -1);
+	const char *str = "  from fd 100\n";
+	sys_write(100, str, strlen(str));
+}
 void test_fs_all(void)
 {
 	test_getcwd();
@@ -109,8 +121,9 @@ void test_fs_all(void)
     test_lseek();
     test_chdir();
     test_fstat();
+    test_dup();
+    test_dup2();
     while (1) {
         /* code */
     };
-	
 }

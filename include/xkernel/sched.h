@@ -9,7 +9,7 @@
 #include <fs/fs.h>
 
 #define TASK_NAME_LEN 16
-#define MAX_FILES_OPEN_PER_PROC 64
+#define MAX_FILES_OPEN_PER_PROC 101
 
 #define STACK_MAGIC_NUM 0x27839128
 

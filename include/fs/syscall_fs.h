@@ -13,4 +13,6 @@ int sys_chdir(char* path);
 int sys_unlink(char* pathname);
 int sys_fstat(int fd, struct kstat* stat);
 int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence);
+int sys_dup(int oldfd);
+int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd);
 #endif
