@@ -62,7 +62,7 @@ void timer_func(unsigned long unused){
 	printk("timer done");
 }
 
-char usrprog[2][40000];
+//char usrprog[2][40000];
 int sysnums = 3;
 extern char* sysname[];
 

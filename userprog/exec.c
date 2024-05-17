@@ -43,7 +43,7 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 		page += PAGESIZE;
 	}
 
-	sys_lseek(fd,phdr->p_offset);
+	sys_lseek(fd,phdr->p_offset,SEEK_SET);
 	sys_read(fd,(void*)phdr->p_vaddr,phdr->p_filesz);
 	return true;
 }
@@ -53,7 +53,7 @@ int64_t load(const char *path)
 	Elf_Ehdr ehdr;
 	memset(&ehdr,0,sizeof(ehdr));
     int fd = sys_open(path, O_RDWR ,660);
-	sys_lseek(fd,0);
+	sys_lseek(fd,0,SEEK_SET);
 	int size = sys_read(fd, &ehdr, sizeof(ehdr));
 	printk("read %d bytes\n",size);
 
@@ -73,7 +73,7 @@ int64_t load(const char *path)
 	for (uint64_t ph = 0 ; ph < ehdr.e_phnum ; ph++)
 	{
 		memset(&phdr,0,sizeof(phdr));
-		sys_lseek(fd,phoff);
+		sys_lseek(fd,phoff,SEEK_SET);
 		sys_read(fd,&phdr,sizeof(phdr));
 		if (phdr.p_type == PT_LOAD) {
 			load_phdr(fd,&phdr);

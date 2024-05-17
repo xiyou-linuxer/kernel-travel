@@ -77,6 +77,28 @@ void test_chdir(void){
     printk("  current working dir : %s\n", buffer);
 }
 
+void test_fstat(void) 
+{
+	int fd = sys_open("./text.txt", 0,660);
+	struct kstat kst;
+	int ret = sys_fstat(fd, &kst);
+	printk("fstat ret: %d\n", ret);
+	ASSERT(ret >= 0);
+
+	printk("fstat: dev: %d, inode: %d, mode: %d, nlink: %d, size: %d, atime: %d, mtime: %d, ctime: %d\n",
+	      kst.st_dev, kst.st_ino, kst.st_mode, kst.st_nlink, kst.st_size, kst.st_atime_sec, kst.st_mtime_sec, kst.st_ctime_sec);
+}
+
+void test_lseek(void)
+{
+	int fd = sys_open("text.txt", O_RDWR,660);
+	ASSERT(fd > 0);
+	sys_write(fd, "Catch me if you can!\n", 21);
+	sys_lseek(fd, 0, SEEK_CUR);
+	char buf[32] = {0};
+	sys_read(fd, buf, 21); 
+	printk("%s\n",buf);
+}
 
 void test_fs_all(void)
 {
@@ -84,9 +106,11 @@ void test_fs_all(void)
 	test_open();
     test_close();
     test_mkdir();
+    test_lseek();
     test_chdir();
-    while (1)
-    {
+    test_fstat();
+    while (1) {
         /* code */
     };
+	
 }

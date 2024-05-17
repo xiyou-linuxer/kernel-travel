@@ -192,12 +192,6 @@ int sys_read(int fd, void *buf, unsigned int count)
 	return ret;
 }
 
-void sys_lseek(int fd,unsigned long off)
-{
-	uint32_t global_fd = fd_local2global(fd);
-	file_table[global_fd].offset = off;
-}
-
 /* 成功关闭文件返回0,失败返回-1 */
 int sys_close(int fd)
 {
@@ -291,4 +285,52 @@ int sys_unlink(char *pathname)
 	}*/
 	int ret = rmfile(file);
 	return ret;
+}
+
+int sys_fstat(int fd,struct kstat* stat)
+{
+	int ret = 0;
+	uint32_t global_fd = fd_local2global(fd);
+	fileStat(file_table[global_fd].dirent,stat);
+	if (stat==NULL)
+	{
+		ret = -1;
+	}
+	return ret;
+}
+
+int sys_lseek(int fd, int offset, uint8_t whence)
+{
+    if (fd < 0)
+    {
+        printk("sys_lseek: fd error\n");
+        return -1;
+    }
+    ASSERT(whence > 0 && whence < 4);
+    uint32_t _fd = fd_local2global(fd);
+    struct fd *pf = &file_table[_fd];
+    int32_t new_pos = 0; // 新的偏移量必须位于文件大小之内
+    int32_t file_size = (int32_t)pf->dirent->file_size;
+    switch (whence)
+    {
+    /* SEEK_SET 新的读写位置是相对于文件开头再增加offset个位移量 */
+    case SEEK_SET:
+        new_pos = offset;
+        break;
+
+    /* SEEK_CUR 新的读写位置是相对于当前的位置增加offset个位移量 */
+    case SEEK_CUR: // offse可正可负
+        new_pos = (int32_t)pf->offset + offset;
+        break;
+
+    /* SEEK_END 新的读写位置是相对于文件尺寸再增加offset个位移量 */
+    case SEEK_END: // 此情况下,offset应该为负值
+        new_pos = file_size + offset;
+    }
+    if (new_pos < 0 || new_pos > (file_size - 1))
+    {
+        return -1;
+    }
+    pf->offset = new_pos;
+    return pf->offset;
 }

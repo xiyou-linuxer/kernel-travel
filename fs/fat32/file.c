@@ -298,3 +298,78 @@ void file_shrink(Dirent *file, u64 newsize)
 	sync_dirent_rawdata_back(file);
 	lock_release(&mtx_file);
 }
+
+static mode_t get_file_mode(struct Dirent *file) {
+	// 默认给予RWX权限
+	mode_t mode = file->mode;
+
+	if (strncmp(file->name, "ssh_host_", 9) == 0) {
+		// ssh_host_*文件的权限为600
+		mode = 0600;
+	} else if (strncmp(file->name, "empty", 5) == 0) {
+		mode = 0711;
+	}
+
+	if (file->type == DIRENT_DIR) {
+		mode |= __S_IFDIR;
+	} else if (file->type == DIRENT_FILE) {
+		mode |= __S_IFREG;
+	} else if (file->type == DIRENT_CHARDEV) {
+		// 我们默认设备总是字符设备
+		mode |= __S_IFCHR;
+	} else if (file->type == DIRENT_BLKDEV) {
+		mode |= __S_IFBLK;
+	} else {
+		printk("unknown file type: %x\n", file->type);
+		mode |= __S_IFREG; // 暂时置为REGULAR FILE
+	}
+
+	// 打印文件的类型
+	if (S_ISREG(mode)) {
+		printk("file type: regular file\n");
+	} else if (S_ISDIR(mode)) {
+		printk( "file type: directory\n");
+	} else if (S_ISCHR(mode)) {
+		printk("file type: character device\n");
+	} else if (S_ISBLK(mode)) {
+		printk( "file type: block device\n");
+	} else {
+		printk("file type: unknown\n");
+	}
+
+	return mode;
+}
+
+/**
+ * @brief 获取文件状态信息
+ * @param kstat 内核态指针，指向文件信息结构体
+ */
+void fileStat(struct Dirent *file, struct kstat *pKStat) {
+	//mtx_lock_sleep(&mtx_file);
+
+	memset(pKStat, 0, sizeof(struct kstat));
+	// P262 Linux-Unix系统编程手册
+	pKStat->st_dev = file->file_system->deviceNumber;
+
+	// 并未实现inode，使用Dirent编号替代inode编号
+	pKStat->st_ino = ((u64)file - 0x90000000ul);
+
+	pKStat->st_mode = get_file_mode(file);
+	pKStat->st_nlink = 1; // 文件的链接数，无链接时为1
+	pKStat->st_uid = 0;
+	pKStat->st_gid = 0;
+	pKStat->st_rdev = 0;
+	pKStat->st_size = file->file_size;
+	pKStat->st_blksize = CLUS_SIZE(file->file_system);
+	pKStat->st_blocks = ROUNDUP(file->file_size, pKStat->st_blksize);
+
+	// 时间相关
+	pKStat->st_atime_sec = file->time.st_atime_sec;
+	pKStat->st_atime_nsec = file->time.st_atime_nsec;
+	pKStat->st_mtime_sec = file->time.st_mtime_sec;
+	pKStat->st_mtime_nsec = file->time.st_mtime_nsec;
+	pKStat->st_ctime_sec = file->time.st_ctime_sec;
+	pKStat->st_ctime_nsec = file->time.st_ctime_nsec;
+
+	//mtx_unlock_sleep(&mtx_file);
+} 

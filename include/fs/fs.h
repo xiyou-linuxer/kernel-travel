@@ -159,7 +159,7 @@ enum fs_result {
 // 舍入到更大的页对齐地址
 #define PGROUNDUP(a) (((a) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 #define PGROUNDDOWN(a) (((a)) & ~(PAGE_SIZE - 1))
-
+#define ROUNDUP(a, x) (((a) + (x)-1) & ~((x)-1))
 
 extern FileSystem* fatFs;
 
