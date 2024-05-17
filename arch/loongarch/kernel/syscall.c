@@ -20,6 +20,7 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_nanosleep]    = "sleep",
 	[SYS_write]        = "write",
 	[SYS_getcwd]       = "getcwd",
+	//[SYS_clone]        = "fork",
 	//[SYS_close]        = "close",
 	//[SYS_read]         = "read"
 };

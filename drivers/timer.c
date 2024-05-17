@@ -35,7 +35,7 @@ void intr_timer_handler(struct pt_regs *regs)
 	ticks++;
 
 	write_csr_ticlr(read_csr_ticlr() | (0x1 << 0));
-	printk("%d  ",cur_thread->ticks);
+	//printk("%d  ",cur_thread->ticks);
 	//printk("%s : %d",cur_thread->name,cur_thread->ticks);
 
 	if (cur_thread->ticks == 0) {
@@ -124,6 +124,7 @@ static void cascade_timers(struct timer_vec *tvec)
 static void run_timers(void* unused)
 {
 	struct list *cur_list = &tvecs->vec[tvecs->index];
+	printk("run_timers\n");
 	while ((long)(ticks - timer_ticks) > 0)
 	{
 		struct timer_list *timer;

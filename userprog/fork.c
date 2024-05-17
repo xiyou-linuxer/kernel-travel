@@ -122,3 +122,9 @@ pid_t sys_fork(void)
 
 	return child->pid;
 }
+
+pid_t sys_clone(uint64_t flag,int stack)
+{
+	pid_t pid = sys_fork();
+	return (pid > 0) ? pid : -1;
+}

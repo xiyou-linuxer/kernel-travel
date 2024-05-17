@@ -3,7 +3,7 @@
 #include <xkernel/thread.h>
 #include <asm/pt_regs.h>
 
-#define NR_SYSCALLS 200
+#define NR_SYSCALLS 300
 #define ENOSYS		38
 
 static inline long __syscall0(long n)
@@ -113,6 +113,7 @@ enum SYSCALL {
 #define SYS_nanosleep     101
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
+#define SYS_clone 220
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
