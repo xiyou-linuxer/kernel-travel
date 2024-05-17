@@ -1,10 +1,10 @@
 #ifndef _DRIVER_FIRMWARE_EFI_EFISTUB_H
 #define _DRIVER_FIRMWARE_EFI_EFISTUB_H
 
-#include <linux/efi.h>
-#include <linux/types.h>
-#include <linux/compiler_attributes.h>
-#include <linux/kern_level.h>
+#include <xkernel/efi.h>
+#include <xkernel/types.h>
+#include <xkernel/compiler_attributes.h>
+#include <xkernel/kern_level.h>
 
 #undef __init
 
@@ -981,7 +981,7 @@ efi_status_t handle_cmdline_files(efi_loaded_image_t *image,
 // efi_status_t efi_load_initrd(efi_loaded_image_t *image,
 // 			     unsigned long soft_limit,
 // 			     unsigned long hard_limit,
-// 			     const struct linux_efi_initrd **out);
+// 			     const struct xkernel_efi_initrd **out);
 /*
  * This function handles the architcture specific differences between arm and
  * arm64 regarding where the kernel image must be loaded and any memory that

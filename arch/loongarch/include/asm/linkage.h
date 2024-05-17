@@ -1,7 +1,7 @@
 #ifndef _ASM_LINKAGE_H
 #define _ASM_LINKAGE_H
 
-#include <linux/linkage.h>
+#include <xkernel/linkage.h>
 
 #define __ALIGN		.align 2
 #define __ALIGN_STR	__stringify(__ALIGN)

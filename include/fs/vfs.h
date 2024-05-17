@@ -2,7 +2,7 @@
 #define _VFS_H
 
 #include <fs/fs.h>
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 #define MAX_PATH_LEN 512 // 路径最大长度
 //该结构体用来记录搜索过的文件路径
@@ -29,4 +29,7 @@ int find_fs_of_dir(FileSystem* fs, void* data);
 int dir_alloc_file(Dirent *dir, Dirent **file, char *path);
 Dirent* search_file(const char *pathname, struct path_search_record *searched_record);
 int createFile(struct Dirent* baseDir, char* path, Dirent** file);
+int makeDirAt(Dirent* baseDir, char* path, int mode);
+void file_shrink(Dirent* file, u64 newsize);
+void test_fs_all(void);
 #endif

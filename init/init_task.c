@@ -1,8 +1,8 @@
 #include <asm/thread_info.h>
 #include <asm/cache.h>
-#include <linux/init_task.h>
-#include <linux/sched.h>
-#include <linux/compiler_attributes.h>
+#include <xkernel/init_task.h>
+#include <xkernel/sched.h>
+#include <xkernel/compiler_attributes.h>
 
 struct task_struct init_task
 	__aligned(L1_CACHE_BYTES)

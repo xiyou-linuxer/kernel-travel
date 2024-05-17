@@ -1,11 +1,17 @@
-#include <linux/irqflags.h>
-#include <linux/printk.h>
-#include <linux/task.h>
-#include <linux/init.h>
-#include <linux/ns16550a.h>
-#include <linux/types.h>
-#include <linux/stdio.h>
-#include <linux/smp.h>
+#include <xkernel/irqflags.h>
+#include <xkernel/printk.h>
+#include <xkernel/task.h>
+#include <xkernel/init.h>
+#include <xkernel/ns16550a.h>
+#include <xkernel/types.h>
+#include <xkernel/stdio.h>
+#include <xkernel/smp.h>
+#include <xkernel/thread.h>
+#include <xkernel/ahci.h>
+#include <xkernel/block_device.h>
+#include <xkernel/console.h>
+#include <xkernel/memory.h>
+#include <xkernel/string.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
@@ -15,13 +21,8 @@
 #include <asm/timer.h>
 #include <asm/page.h>
 #include <asm/tlb.h>
-#include <linux/thread.h>
-#include <linux/ahci.h>
-#include <linux/block_device.h>
 #include <sync.h>
 #include <process.h>
-#include <linux/memory.h>
-#include <linux/string.h>
 #include <syscall_init.h>
 #include <asm/syscall.h>
 #include <asm/stdio.h>
@@ -29,7 +30,6 @@
 #include <fs/vfs.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
-#include <linux/console.h>
 extern void __init __no_sanitize_address start_kernel(void);
 
 bool early_boot_irqs_disabled;
@@ -62,7 +62,7 @@ void timer_func(unsigned long unused){
 	printk("timer done");
 }
 
-char usrprog[3][50000];
+char usrprog[2][70000];
 int sysnums = 3;
 extern char* sysname[];
 
@@ -70,12 +70,15 @@ void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-	printk("%lx\n", lalist_mem_map.map_count);
-	printk("%lx\n", lalist_mem_map.map->mem_type);
-	printk("%lx\n", lalist_mem_map.map->mem_start);
 	// serial_ns16550a_init(9600);
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
+	mem_init();
+	/*__alloc_pages for test*/
+	// struct page *page = __alloc_pages(0, 7, 0);
+	// struct page * page2 = __alloc_pages(0, 7, 0);
+	// __free_pages_ok(page, 7, 0);
+	// __free_pages_ok(page2, 7, 0);
 	//初始化中断处理程序
 	trap_init();
 	irq_init();
@@ -91,7 +94,7 @@ void __init __no_sanitize_address start_kernel(void)
 	//timer.func = timer_func;
 	//timer.data = 7;
 	//add_timer(&timer);
-
+	console_init();
 	syscall_init();
 	fs_init();
 	//thread_start("thread_a",10,thread_a,NULL);

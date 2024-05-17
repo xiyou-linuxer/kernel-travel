@@ -1,7 +1,7 @@
 #include <asm/pci.h>
-#include <linux/printk.h>
+#include <xkernel/printk.h>
 #include <asm-generic/io.h>
-#include <linux/stdio.h>
+#include <xkernel/stdio.h>
 #include <asm/addrspace.h>
 static void pci_scan_buses(void);
 static unsigned int pic_get_device_connected(void);

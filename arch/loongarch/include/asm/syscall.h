@@ -1,6 +1,6 @@
 #ifndef _SYSCALL_H
 #define _SYSCALL_H
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <asm/pt_regs.h>
 
 #define NR_SYSCALLS 200
@@ -105,10 +105,14 @@ enum SYSCALL {
 	SYS_FORK,
 };
 
+#define SYS_getcwd 17
+#define SYS_chdir 49
+#define SYS_close 57
+#define SYS_read 63
 #define SYS_write          64
+#define SYS_nanosleep     101
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
-#define SYS_nanosleep     101
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 

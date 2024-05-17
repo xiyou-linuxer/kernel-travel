@@ -1,7 +1,7 @@
-#include <linux/init.h>
-#include <linux/linkage.h>
-#include <linux/pe.h>
-#include <linux/size.h>
+#include <xkernel/init.h>
+#include <xkernel/linkage.h>
+#include <xkernel/pe.h>
+#include <xkernel/size.h>
 
 #include <asm/loongarch.h>
 #include <asm/regdef.h>

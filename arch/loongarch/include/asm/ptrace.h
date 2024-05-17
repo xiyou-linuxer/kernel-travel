@@ -1,7 +1,7 @@
 #ifndef _ASM_PTRACE_H
 #define _ASM_PTRACE_H
 
-#include <linux/compiler_attributes.h>
+#include <xkernel/compiler_attributes.h>
 
 /*
  * This struct defines the way the registers are stored on the stack during

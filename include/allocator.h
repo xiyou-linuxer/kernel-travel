@@ -1,8 +1,8 @@
 #ifndef __KERNEL_ALLOCATOR_H
 #define __KERNEL_ALLOCATOR_H
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <asm/bootinfo.h>
-#include <linux/compiler_attributes.h>
+#include <xkernel/compiler_attributes.h>
 
 #define USER_STACK (1 << (9+9+12))
 

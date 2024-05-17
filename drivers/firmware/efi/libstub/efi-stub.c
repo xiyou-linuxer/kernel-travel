@@ -1,4 +1,4 @@
-#include <linux/efi.h>
+#include <xkernel/efi.h>
 #include <asm/efi.h>
 
 #include "efistub.h"
@@ -61,7 +61,7 @@ efi_status_t efi_alloc_virtmap(efi_memory_desc_t **virtmap,
 
 static void install_memreserve_table(void)
 {
-	struct linux_efi_memreserve *rsv;
+	struct xkernel_efi_memreserve *rsv;
 	efi_guid_t memreserve_table_guid = LINUX_EFI_MEMRESERVE_TABLE_GUID;
 	efi_status_t status;
 

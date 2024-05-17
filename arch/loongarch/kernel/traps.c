@@ -2,10 +2,10 @@
 #include <asm/loongarch.h>
 #include <asm/pt_regs.h>
 #include <asm/cacheflush.h>
-#include <linux/printk.h>
-#include <linux/stdio.h>
-#include <linux/string.h>
-#include <linux/types.h>
+#include <xkernel/printk.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
+#include <xkernel/types.h>
 
 extern void *vector_table[];
 extern void tlb_handler(void);

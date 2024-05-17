@@ -1,9 +1,9 @@
 #include <asm/loongarch.h>
 #include <asm/timer.h>
-#include <linux/debug.h>
-#include <linux/printk.h>
-#include <linux/stdio.h>
-#include <linux/types.h>
+#include <xkernel/debug.h>
+#include <xkernel/printk.h>
+#include <xkernel/stdio.h>
+#include <xkernel/types.h>
 #include <trap/irq.h>
 #include <trap/softirq.h>
 

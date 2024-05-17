@@ -7,7 +7,7 @@
 
 #ifndef __ASSEMBLY__
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 #include <asm/boot_param.h>
 
 extern uint64_t efi_system_table;

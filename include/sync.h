@@ -1,7 +1,7 @@
 #ifndef __THREAD_SYNC_H
 #define __THREAD_SYNC_H
 #include <stdint.h>
-#include <linux/list.h>
+#include <xkernel/list.h>
 
 struct semaphore {
     uint8_t value;

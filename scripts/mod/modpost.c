@@ -20,8 +20,8 @@
 #include <errno.h>
 #include "modpost.h"
 #include "../../include/generated/autoconf.h"
-#include "../../include/linux/license.h"
-#include "../../include/linux/export.h"
+#include "../../include/xkernel/license.h"
+#include "../../include/xkernel/export.h"
 
 /* Are we using CONFIG_MODVERSIONS? */
 static int modversions = 0;

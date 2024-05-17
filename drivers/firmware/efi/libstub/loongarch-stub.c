@@ -1,7 +1,7 @@
 #include <asm/efi.h>
-#include <linux/efi.h>
-#include <linux/math.h>
-#include <linux/string.h>
+#include <xkernel/efi.h>
+#include <xkernel/math.h>
+#include <xkernel/string.h>
 
 #include "efistub.h"
 

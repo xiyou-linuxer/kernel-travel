@@ -1,7 +1,7 @@
-#include <linux/console.h>
-#include <linux/ns16550a.h>
+#include <xkernel/console.h>
+#include <xkernel/ns16550a.h>
 #include <sync.h>
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 static struct lock console_lock;    // 控制台锁
 
 /* 初始化终端 */

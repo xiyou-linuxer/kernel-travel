@@ -1,7 +1,7 @@
 #ifndef __KERNEL_INTERRUPT_H
 #define __KERNEL_INTERRUPT_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 #include <asm/pt_regs.h>
 
 typedef void (*intr_handler)(struct pt_regs *regs);

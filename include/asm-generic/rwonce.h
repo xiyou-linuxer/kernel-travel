@@ -1,7 +1,7 @@
 #ifndef __ASM_GENERIC_RWONCE_H
 #define __ASM_GENERIC_RWONCE_H
 
-#include <linux/compiler_types.h>
+#include <xkernel/compiler_types.h>
 
 #define compiletime_assert_rwonce_type(t)					\
 	compiletime_assert(__native_word(t) || sizeof(t) == sizeof(long long),	\

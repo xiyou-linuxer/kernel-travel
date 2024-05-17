@@ -1,7 +1,7 @@
 #include <bitmap.h>
 #include <debug.h>
-#include <linux/string.h>
-#include <linux/stdio.h>
+#include <xkernel/string.h>
+#include <xkernel/stdio.h>
 
 void bitmap_init(struct bitmap* btmp)
 {

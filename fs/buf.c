@@ -1,8 +1,8 @@
-#include <linux/block_device.h>
+#include <xkernel/block_device.h>
 #include <fs/buf.h>
-#include <linux/stdio.h>
+#include <xkernel/stdio.h>
 #include <debug.h>
-#include<linux/string.h>
+#include<xkernel/string.h>
 
 struct list Buflist;
 

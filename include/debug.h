@@ -1,6 +1,6 @@
 #ifndef KERNEL_DEBUG_H
 #define KERNEL_DEBUG_H
-#include <linux/debug.h>
+#include <xkernel/debug.h>
 
 #ifdef NDEBUG
     #define ASSERT(CONDITION) ((void)0)

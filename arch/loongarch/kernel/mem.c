@@ -1,7 +1,7 @@
-#include <linux/memblock.h>
-#include <linux/init.h>
-#include <linux/stdio.h>
-#include <linux/memory.h>
+#include <xkernel/memblock.h>
+#include <xkernel/init.h>
+#include <xkernel/stdio.h>
+#include <xkernel/memory.h>
 #include <asm/bootinfo.h>
 #include <asm/boot_param.h>
 #include <asm/page.h>

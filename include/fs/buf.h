@@ -2,8 +2,8 @@
 #define _FS_BUF_H
 
 
-#include <linux/types.h>
-#include <linux/list.h>
+#include <xkernel/types.h>
+#include <xkernel/list.h>
 #include <sync.h>
 #include <asm/page.h>
 

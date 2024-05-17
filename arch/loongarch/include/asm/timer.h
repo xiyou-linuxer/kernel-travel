@@ -1,7 +1,7 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 #include <stdint.h>
-#include <linux/list.h>
+#include <xkernel/list.h>
 #include <asm/pt_regs.h>
 
 /* seconds */

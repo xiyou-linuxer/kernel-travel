@@ -2,7 +2,7 @@
 #define _FS_CLUSTER_H
 
 #include <fs/fs.h>
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 // 7个f，最高4位保留
 #define FAT32_EOF 0xffffffful

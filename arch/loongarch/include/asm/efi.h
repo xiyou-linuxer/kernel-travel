@@ -2,8 +2,8 @@
 #define _ASM_LOONGARCH_EFI_H
 
 #include <asm/addrspace.h>
-#include <linux/types.h>
-#include <linux/efi.h>
+#include <xkernel/types.h>
+#include <xkernel/efi.h>
 
 #define EFI_ALLOC_ALIGN		SZ_64K
 #define EFI_RT_VIRTUAL_OFFSET	CSR_DMW0_BASE

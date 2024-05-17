@@ -204,7 +204,7 @@ USERINCLUDE    := \
 		-I$(srctree)/include/uapi \
 		-Iinclude/generated/uapi \
 		-Iadapter/klibc/include/klibc/uapi \
-        -include $(srctree)/include/linux/kconfig.h        
+        -include $(srctree)/include/xkernel/kconfig.h        
 
 KLIBCINCLUDE	:=	\
 		-include include/generated/autoconf.h \

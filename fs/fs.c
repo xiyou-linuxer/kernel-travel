@@ -1,10 +1,11 @@
 #include <fs/fs.h>
 #include <fs/buf.h>
-#include <linux/stdio.h>
+#include <xkernel/stdio.h>
 #include <debug.h>
-#include <linux/string.h>
+#include <xkernel/string.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
+#include <fs/vfs.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
@@ -152,5 +153,6 @@ void fs_init(void)
 	dirent_init();
 	init_root_fs();		//初始化根文件系统
 	printk("init_root_fs down\n");
+	//test_fs_all();
 	printk("fs_init down\n");
 }

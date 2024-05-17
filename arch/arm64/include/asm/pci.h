@@ -1,7 +1,7 @@
 #ifndef _ASM_PCI_H
 #define _ASM_PCI_H
 
-#include <linux/types.h>
+#include <xkernel/types.h>
 
 #define PCI_CONFIG0_BASE 0xfe00000000	/*PCI配置空间数据端口,type0 一般设备*/
 #define PCI_CONFIG1_BASE 0xfe10000000   /*PCI配置空间数据端口,type1 PCI Bridge*/

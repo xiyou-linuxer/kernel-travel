@@ -1,12 +1,12 @@
 #include <fork.h>
-#include <linux/stdio.h>
-#include <linux/memory.h>
-#include <linux/thread.h>
+#include <xkernel/stdio.h>
+#include <xkernel/memory.h>
+#include <xkernel/thread.h>
 #include <debug.h>
-#include <linux/string.h>
+#include <xkernel/string.h>
 #include <process.h>
 #include <asm/pt_regs.h>
-#include <linux/switch.h>
+#include <xkernel/switch.h>
 #include <asm/loongarch.h>
 
 extern void user_ret(void);

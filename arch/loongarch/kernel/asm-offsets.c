@@ -1,6 +1,6 @@
 #include <asm/pt_regs.h>
-#include <linux/kbuild.h>
-#include <linux/thread.h>
+#include <xkernel/kbuild.h>
+#include <xkernel/thread.h>
 
 void output_ptreg_defines(void);
 

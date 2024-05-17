@@ -1,13 +1,13 @@
 #include <asm/timer.h>
-#include <linux/thread.h>
+#include <xkernel/thread.h>
 #include <debug.h>
-#include <linux/printk.h>
+#include <xkernel/printk.h>
 #include <asm/pt_regs.h>
 #include <asm/loongarch.h>
 #include <trap/irq.h>
 #include <trap/softirq.h>
-#include <linux/stdio.h>
-#include <linux/switch.h>
+#include <xkernel/stdio.h>
+#include <xkernel/switch.h>
 
 #define IRQ0_FREQUENCY     100
 #define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)

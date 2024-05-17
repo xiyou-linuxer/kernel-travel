@@ -1,4 +1,4 @@
-#include <linux/ns16550a.h>
+#include <xkernel/ns16550a.h>
 #include <asm-generic/io.h>
 
 /* 波特率计算公式：Baud = Clock / (16 * Divisor) */

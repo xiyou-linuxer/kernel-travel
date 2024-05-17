@@ -1,8 +1,8 @@
 #ifndef _FS_FAT32_H
 #define _FS_FAT32_H
 
-#include <linux/block_device.h>
-#include <linux/types.h>
+#include <xkernel/block_device.h>
+#include <xkernel/types.h>
 #include <fs/fs.h>
 typedef struct FAT32BootParamBlock {
 	// 通用的引导扇区属性
