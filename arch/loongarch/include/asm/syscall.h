@@ -114,7 +114,9 @@ enum SYSCALL {
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
 #define SYS_clone 220
-
+#define SYS_dup 23
+#define SYS_dup2 24
+#define SYS_fstat 80
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {

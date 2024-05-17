@@ -124,7 +124,6 @@ static void cascade_timers(struct timer_vec *tvec)
 static void run_timers(void* unused)
 {
 	struct list *cur_list = &tvecs->vec[tvecs->index];
-	printk("run_timers\n");
 	while ((long)(ticks - timer_ticks) > 0)
 	{
 		struct timer_list *timer;
