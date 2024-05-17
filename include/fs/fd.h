@@ -16,6 +16,12 @@ enum oflags {
 	O_CREATE = 4 // 创建
 };
 
+enum whence
+{
+    SEEK_SET = 1,
+    SEEK_CUR,
+    SEEK_END
+};
 
 struct kstat {
 	unsigned long st_dev;

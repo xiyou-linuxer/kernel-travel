@@ -98,24 +98,26 @@ void __init __no_sanitize_address start_kernel(void)
 	//thread_start("thread_a",10,thread_a,NULL);
 	//block_read(5,50,(uint64_t)usrprog,1);
 	//process_execute(usrprog,"proc_1");
-	//Dirent *file;
-	//struct path_search_record searched_record;
-	//file = search_file("/getpid",&searched_record);
-	//filepnt_init(file);
-	//pre_read(file,(unsigned long)usrprog,file->file_size/4096+1);
+	Dirent *file,*file1;
+	struct path_search_record searched_record;
+	file = search_file("/getpid",&searched_record);
+	filepnt_init(file);
+	pre_read(file,(unsigned long)usrprog,file->file_size/4096+1);
 	////printk("%s\n", buf);
-	//file_read(file, 0, (unsigned long)usrprog, 0, file->file_size);
+	file_read(file, 0, (unsigned long)usrprog, 0, file->file_size);
 	//printk("%s\n", usrprog);
-	//process_execute(usrprog,"proc1");
-	
-
-
+	process_execute(usrprog,"proc1");
+	file1 = search_file("/sleep",&searched_record);
+	filepnt_init(file1);
+	pre_read(file1,(unsigned long)usrprog,file1->file_size/4096+1);
+	file_read(file1, 0, (unsigned long)usrprog, 0, file1->file_size);
+	process_execute(usrprog,"proc2");
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
 	struct timespec ts;
 	while (1) {
 		sys_gettimeofday(&ts);
-		printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
+		//printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
 		//unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%llx  ",time);
 		//printk("main pid=%d\n ",sys_getpid());

@@ -77,16 +77,23 @@ void test_chdir(void){
     printk("  current working dir : %s\n", buffer);
 }
 
+void test_lseek(void)
+{
+	int fd = sys_open("text.txt", O_RDWR,660);
+	ASSERT(fd > 0);
+	sys_write(fd, "Catch me if you can!\n", 21);
+	sys_lseek(fd, 0, SEEK_CUR);
+	char buf[32] = {0};
+	sys_read(fd, buf, 21); 
+	printk("%s\n",buf);
+}
 
 void test_fs_all(void)
 {
-	test_getcwd();
+	/*test_getcwd();
 	test_open();
     test_close();
     test_mkdir();
-    test_chdir();
-    while (1)
-    {
-        /* code */
-    };
+    test_chdir();*/
+	test_lseek();
 }
