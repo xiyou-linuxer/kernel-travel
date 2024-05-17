@@ -86,7 +86,7 @@ static inline long __syscall4(long n,long ag0,long ag1,long ag2,long ag3)
 #define _tl(x) ((long)x)
 #define _syscall0(n) __syscall0(_tl(n))
 #define _syscall1(n,a0) __syscall1(_tl(n),_tl(a0))
-#define _syscall2(n,a0,a1) __syscall2(_tl(n),_tl(a0),tl(a1))
+#define _syscall2(n,a0,a1) __syscall2(_tl(n),_tl(a0),_tl(a1))
 #define _syscall3(n,a0,a1,a2) __syscall3(_tl(n),_tl(a0),_tl(a1),_tl(a2))
 #define _syscall4(n,a0,a1,a2,a3) __syscall4(_tl(n),_tl(a0),_tl(a1),_tl(a2),_tl(a3))
 #define _syscall5(n,a0,a1,a2,a3,a4) __syscall5(_tl(n),_tl(a0),_tl(a1),_tl(a2),_tl(a3),_tl(a4))
@@ -105,12 +105,14 @@ enum SYSCALL {
 	SYS_FORK,
 };
 
-#define SYS_getpid 172
-#define SYS_write  64
 #define SYS_getcwd 17
+#define SYS_chdir 49
 #define SYS_close 57
 #define SYS_read 63
-#define SYS_chdir 49
+#define SYS_write          64
+#define SYS_nanosleep     101
+#define SYS_gettimeofday  169
+#define SYS_getpid        172
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
@@ -120,6 +122,14 @@ static inline int64_t write(int fd,const void* buf,size_t count) {
 
 static inline pid_t getpid(void) {
 	return syscall(SYS_getpid);
+}
+
+static inline int gettimeofday(struct timespec *ts) {
+	return syscall(SYS_gettimeofday,ts);
+}
+
+static inline int sleep(struct timespec *req,struct timespec *rem) {
+	return syscall(SYS_nanosleep,req,rem);
 }
 
 static inline void pstr(char *str) {

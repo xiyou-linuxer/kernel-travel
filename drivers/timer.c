@@ -10,10 +10,8 @@
 #include <xkernel/switch.h>
 
 #define IRQ0_FREQUENCY     100
-#define INPUT_FREQUENCY    1193180
-#define COUNTER0_VALUE     INPUT_FREQUENCY / IRQ0_FREQUENCY
-
 #define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)
+
 
 unsigned long ticks;
 unsigned long timer_ticks;
@@ -41,13 +39,14 @@ void intr_timer_handler(struct pt_regs *regs)
 	//printk("%s : %d",cur_thread->name,cur_thread->ticks);
 
 	if (cur_thread->ticks == 0) {
+		printk("timer to schedule...");
 		schedule();
 	} else {
 		cur_thread->ticks--;
 	}
 }
 
-int64_t sys_gettimeofday(struct timespec *ts)
+int sys_gettimeofday(struct timespec *ts)
 {
 	uint64_t clk = rdtime();
 	uint64_t usec = CLK_TO_USEC(clk) % USEC_PER_SEC;

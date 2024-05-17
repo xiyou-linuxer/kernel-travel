@@ -46,19 +46,19 @@ void start_process(void* filename)
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 }
 
-void process_execute(void* filename, char* name) {
-   struct task_struct* pcb = task_alloc();
-   init_thread(pcb, name, 10);
-   create_user_vaddr_bitmap(pcb);
-   thread_create(pcb, start_process, filename);
-   pcb->pgdir = get_page();
-   enum intr_status old_status = intr_disable();
-   ASSERT(!elem_find(&thread_ready_list, &pcb->general_tag));
-   list_append(&thread_ready_list, &pcb->general_tag);
+void process_execute(void* filename, char* name,int pri) {
+	struct task_struct* pcb = task_alloc();
+	init_thread(pcb, name, pri);
+	create_user_vaddr_bitmap(pcb);
+	thread_create(pcb, start_process, filename);
+	pcb->pgdir = get_page();
+	enum intr_status old_status = intr_disable();
+	ASSERT(!elem_find(&thread_ready_list, &pcb->general_tag));
+	list_append(&thread_ready_list, &pcb->general_tag);
 
-   ASSERT(!elem_find(&thread_all_list, &pcb->all_list_tag));
-   list_append(&thread_all_list, &pcb->all_list_tag);
-   intr_set_status(old_status);
+	ASSERT(!elem_find(&thread_all_list, &pcb->all_list_tag));
+	list_append(&thread_all_list, &pcb->all_list_tag);
+	intr_set_status(old_status);
 }
 
 

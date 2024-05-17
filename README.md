@@ -1,6 +1,6 @@
 # kernel-travel
 
-kernel-travel 是由西安邮电大学 Linux 兴趣小组成员共同开发的基于 LoongArch 的架构的64位操作系统。
+kernel-travel 是由 重启之我是loader 三名成员共同开发的基于 LoongArch 的架构的64位操作系统。
 
 ## 编译并运行该项目
 

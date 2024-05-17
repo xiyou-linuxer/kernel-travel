@@ -1,6 +1,7 @@
 #ifndef __EXEC_H
 #define __EXEC_H
 #include <stdint.h>
+#include <xkernel/thread.h>
 
 #define NIDENT	16
 

@@ -12,4 +12,5 @@ char* sys_getcwd(char* buf, int size);
 int sys_chdir(char* path);
 int sys_unlink(char* pathname);
 int sys_fstat(int fd, struct kstat* stat);
+int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence);
 #endif

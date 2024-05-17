@@ -340,8 +340,11 @@ static mode_t get_file_mode(struct Dirent *file) {
 	return mode;
 }
 
-void fileStat(struct Dirent *file, struct kstat *pKStat) 
-{
+/**
+ * @brief 获取文件状态信息
+ * @param kstat 内核态指针，指向文件信息结构体
+ */
+void fileStat(struct Dirent *file, struct kstat *pKStat) {
 	//mtx_lock_sleep(&mtx_file);
 
 	memset(pKStat, 0, sizeof(struct kstat));

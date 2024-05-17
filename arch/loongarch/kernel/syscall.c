@@ -14,6 +14,11 @@ void* syscall_table[NR_SYSCALLS] = {
 	[0 ... NR_SYSCALLS-1] = sys_ni_syscall
 };
 
+char* sysname[NR_SYSCALLS] = {
+	//[SYS_getpid]       = "getpid",
+	//[SYS_gettimeofday] = "gettimeofday",
+	[SYS_nanosleep]    = "sleep"
+};
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
 {

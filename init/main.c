@@ -62,7 +62,9 @@ void timer_func(unsigned long unused){
 	printk("timer done");
 }
 
-char usrprog[90000];
+char usrprog[5][70000];
+int sysnums = 3;
+extern char* sysname[];
 
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -96,26 +98,39 @@ void __init __no_sanitize_address start_kernel(void)
 	syscall_init();
 	fs_init();
 	//thread_start("thread_a",10,thread_a,NULL);
-	//block_read(5,50,(uint64_t)usrprog,1);
-	//process_execute(usrprog,"proc_1");
-	//Dirent *file;
-	//struct path_search_record searched_record;
-	//file = search_file("/getpid",&searched_record);
-	//filepnt_init(file);
-	//pre_read(file,(unsigned long)usrprog,file->file_size/4096+1);
-	////printk("%s\n", buf);
-	//file_read(file, 0, (unsigned long)usrprog, 0, file->file_size);
-	//printk("%s\n", usrprog);
-	//process_execute(usrprog,"proc1");
+	//
 	
-
+	int count=0;
+	for (int i = 0; i < NR_SYSCALLS; i++)
+	{
+		if (sysname[i] == NULL)
+			continue;
+		Dirent *file;
+		struct path_search_record searched_record;
+		int pri=5;
+		char filename[128] = {0};
+		strcpy(filename,"/");
+		strcat(filename,sysname[i]);
+		//if (strcmp(filename,"/sleep"))
+		//	pri=40;
+		file = search_file(filename,&searched_record);
+		filepnt_init(file);
+		pre_read(file,(unsigned long)usrprog[count],file->file_size/4096+1);
+		file_read(file, 0, (unsigned long)usrprog[count], 0, file->file_size);
+		//printk("%s\n", usrprog);
+		process_execute(usrprog[count],filename,pri);
+		count++;
+	}
 
 	// early_boot_irqs_disabled = true;
 	printk("cpu = %d\n", cpu);
-	struct timespec ts;
+	//struct timespec ts;
+	struct timespec req;
+	req.tv_sec=1;req.tv_nsec=0;
 	while (1) {
-		sys_gettimeofday(&ts);
-		printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
+		//sys_gettimeofday(&ts);
+		//printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
+		//sys_sleep(&req,&req);
 		//unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
 		//printk("%llx  ",time);
 		//printk("main pid=%d\n ",sys_getpid());

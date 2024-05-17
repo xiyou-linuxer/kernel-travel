@@ -77,7 +77,6 @@ void test_chdir(void){
     printk("  current working dir : %s\n", buffer);
 }
 
-static struct kstat kst;
 void test_fstat(void) 
 {
 	int fd = sys_open("./text.txt", 0,660);
@@ -90,15 +89,28 @@ void test_fstat(void)
 	      kst.st_dev, kst.st_ino, kst.st_mode, kst.st_nlink, kst.st_size, kst.st_atime_sec, kst.st_mtime_sec, kst.st_ctime_sec);
 }
 
+void test_lseek(void)
+{
+	int fd = sys_open("text.txt", O_RDWR,660);
+	ASSERT(fd > 0);
+	sys_write(fd, "Catch me if you can!\n", 21);
+	sys_lseek(fd, 0, SEEK_CUR);
+	char buf[32] = {0};
+	sys_read(fd, buf, 21); 
+	printk("%s\n",buf);
+}
+
 void test_fs_all(void)
 {
 	test_getcwd();
 	test_open();
     test_close();
     test_mkdir();
+    test_lseek();
     test_chdir();
     test_fstat();
     while (1) {
         /* code */
     };
+	
 }

@@ -10,6 +10,7 @@
 
 .globl switch_to
 .globl prepare_switch
+.globl irq_count
 switch_to:
 	csrrd	t1, LOONGARCH_CSR_PRMD
 	stptr.d	t1, a0, THREAD_CSRPRMD
