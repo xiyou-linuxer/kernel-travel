@@ -55,7 +55,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 	if (local_fd_idx == MAX_FILES_OPEN_PER_PROC)
 	{
 		printk("exceed max open files_per_proc\n");
-		return -1;
+		return 0;
 	}
 	return local_fd_idx;
 }

@@ -20,11 +20,12 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_nanosleep]    = "sleep",
 	[SYS_write]        = "write",
 	[SYS_getcwd]       = "getcwd",
+	[SYS_chdir]        = "chdir",
 	[SYS_dup2]         = "dup2",
 	[SYS_dup]          = "dup",
 	[SYS_fstat]        = "fstat",
-	[SYS_close]        = "close",
-	[SYS_read]         = "read"
+	//[SYS_close]        = "close",
+	//[SYS_read]         = "read"
 };
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)

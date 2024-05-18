@@ -234,19 +234,10 @@ char * sys_getcwd(char *buf, int size)
 int sys_chdir(char* path)
 {
 	struct task_struct* pthread = running_thread();
-	char new_cwd[MAX_NAME_LEN];
-	if (path[0] == '/')//如果是绝对路径
-	{
-		strcpy(new_cwd,path);
-	}else//如果不是绝对路径
-	{
-		strcpy(new_cwd, pthread->cwd);
-		strcat(new_cwd, "/");
-		strcat(new_cwd, path);
-	}
+	path_resolution(path);
 	struct path_search_record searched_record;
 	memset(&searched_record, 0, sizeof(struct path_search_record));
-	Dirent *cwd_dirent = search_file(new_cwd,&searched_record);
+	Dirent *cwd_dirent = search_file(path,&searched_record);
 	if (cwd_dirent == NULL)//如果没有这个路径
 	{
 		return -1;
@@ -254,7 +245,7 @@ int sys_chdir(char* path)
 	{
 		printk("It's file\n");
 	}
-	strcpy(pthread->cwd, new_cwd);
+	strcpy(pthread->cwd, path);
 	pthread->cwd_dirent = cwd_dirent;
 	return 0;
 } 
