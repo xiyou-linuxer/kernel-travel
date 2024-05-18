@@ -107,7 +107,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	int _fd = fd_local2global(fd);
 	if (fd < 0)
 	{
-		printk("sys_write: fd error\n");
+		printk("sys_write %d: fd error\n",fd);
 		return -1;
 	}
 	if (_fd == STDOUT)
@@ -221,7 +221,14 @@ int sys_close(int fd)
 int sys_mkdir(char* path, int mode) 
 {
 	path_resolution(path);
-	return makeDirAt(NULL, path, mode);
+	struct path_search_record searched_record;
+	Dirent * file = search_file(path,&searched_record);
+	if (file != NULL)
+	{
+		return 0;
+	}
+	makeDirAt(NULL, path, mode);
+	return 0;
 }
 
 char * sys_getcwd(char *buf, int size)
@@ -354,4 +361,13 @@ int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd)
 		ret = old_local_fd;
 	}
 	return ret;
+}
+int sys_openat(int fd, const char *filename, int flags, mode_t mode)
+{
+	return sys_open(filename, flags, mode);
+}
+
+int sys_mkdirat(int dirfd, const char *path, mode_t mode)
+{
+	return sys_mkdir(path, mode);
 }

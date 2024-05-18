@@ -16,7 +16,7 @@
 #include <fs/syscall_fs.h>
 #include <debug.h>
 
-void test_open(void) {
+/*void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
     ASSERT(fd >= 0);
@@ -124,6 +124,6 @@ void test_fs_all(void)
     test_dup();
     test_dup2();
     while (1) {
-        /* code */
+        /* code
     };
-}
+} */

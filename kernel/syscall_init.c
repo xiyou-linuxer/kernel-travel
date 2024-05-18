@@ -32,6 +32,8 @@ void syscall_init(void)
 	syscall_table[SYS_dup]		= sys_dup;
 	syscall_table[SYS_dup2]		= sys_dup2;
 	syscall_table[SYS_fstat]	= sys_fstat;
+	syscall_table[SYS_openat]	= sys_openat;
+	syscall_table[SYS_mkdirat]	= sys_mkdirat;
     syscall_table[SYS_PSTR]     = sys_pstr;
     syscall_table[SYS_FORK]     = sys_fork;
 
