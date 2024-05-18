@@ -27,14 +27,14 @@ typedef struct
     Elf_Word e_version;
     Elf_Addr e_entry;
     Elf_Off e_phoff;
-    Elf_Off e_shoff;
+    Elf_Off e_shoff;		/*节头表（Section Header Table）在文件中的偏移量*/
     Elf_Word e_flags;
     Elf_Half e_ehsize;
     Elf_Half e_phentsize;
     Elf_Half e_phnum;
-    Elf_Half e_shentsize;
-    Elf_Half e_shnum;
-    Elf_Half e_shstrndx;
+    Elf_Half e_shentsize;	/*节头表中每个条目的大小（字节）*/
+    Elf_Half e_shnum;		/*节头表中的条目数*/
+    Elf_Half e_shstrndx;	/*节头表字符串表*/
 } Elf_Ehdr;
 
 typedef struct

@@ -122,8 +122,29 @@ struct zoneref {
 	int zone_idx;
 };
 
+#define PROT_READ	0x1		/* page can be read */
+#define PROT_WRITE	0x2		/* page can be written */
+#define PROT_EXEC	0x4		/* page can be executed */
+#define PROT_NONE	0x0		/* page can not be accessed */
+
+// 虚拟内存区域描述符
+struct vm_area_struct {
+	// vma 在 mm_struct->mmap 双向链表中的前驱节点和后继节点
+	struct vm_area_struct *vm_next, *vm_prev;
+	// vma 在 mm_struct->mm_rb 红黑树中的节点
+	// struct rb_node vm_rb;
+	// pgprot_t vm_page_prot;
+	unsigned long vm_flags; 
+	struct file * vm_file;      /* File we map to (can be NULL). */
+	unsigned long vm_pgoff;     /* Offset (within vm_file) in PAGE_SIZE */
+};
+
+// 进程虚拟内存空间描述符
 struct mm_struct {
-	u64 pgd;
+	// 串联组织进程空间中所有的 VMA  的双向链表 
+	struct vm_area_struct *mmap;  /* list of VMAs */
+	// 管理进程空间中所有 VMA 的红黑树
+	// struct rb_root mm_rb;
 };
 
 extern struct pool reserve_phy_pool;

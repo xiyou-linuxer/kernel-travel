@@ -52,7 +52,7 @@ int64_t load(const char *path)
 {
 	Elf_Ehdr ehdr;
 	memset(&ehdr,0,sizeof(ehdr));
-    int fd = sys_open(path, O_RDWR ,660);
+	int fd = sys_open(path, O_RDWR ,660);
 	sys_lseek(fd,0,SEEK_SET);
 	int size = sys_read(fd, &ehdr, sizeof(ehdr));
 	printk("read %d bytes\n",size);

@@ -493,14 +493,14 @@ void free_one_page(struct zone *zone,
 	printk("%lu\n",order);
 	printk("%lu\n",pfn);
 	while (order < MAX_PAGE_ORDER) {
-		printk("find_buddy_page_pfn function done\n");
+		// printk("find_buddy_page_pfn function done\n");
 		buddy = find_buddy_page_pfn(page, pfn, order, &buddy_pfn);
 		if (!buddy)
 			// 不需要合并
 			goto done_merging;
 		
 		del_page_from_free_list(buddy, zone, order);
-		printk("del page for list done \n");
+		// printk("del page for list done \n");
 		combined_pfn = buddy_pfn & pfn;
 		page = page + (combined_pfn - pfn);
 		pfn = combined_pfn;
@@ -540,7 +540,7 @@ void __init __free_pages_core(struct page *page,unsigned int order)
 {
 	/*清除 struct page 中的数据*/
 	// ...
-	printk("pageaddr:0x%llx\n",page);
+	// printk("pageaddr:0x%llx\n",page);
 	__free_pages_ok(page,order,FPI_TO_TAIL);   
 }
 
