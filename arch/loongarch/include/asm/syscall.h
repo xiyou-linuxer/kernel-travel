@@ -3,7 +3,7 @@
 #include <xkernel/thread.h>
 #include <asm/pt_regs.h>
 
-#define NR_SYSCALLS 200
+#define NR_SYSCALLS 300
 #define ENOSYS		38
 
 static inline long __syscall0(long n)
@@ -116,6 +116,8 @@ enum SYSCALL {
 #define SYS_dup 23
 #define SYS_dup2 24
 #define SYS_fstat 80
+#define SYS_mmap 222
+
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {

@@ -12,6 +12,7 @@
 #include <xkernel/console.h>
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
+#include <xkernel/mmap.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
@@ -99,7 +100,7 @@ void __init __no_sanitize_address start_kernel(void)
 	fs_init();
 	//thread_start("thread_a",10,thread_a,NULL);
 	//
-	
+	// test_mmap();
 	int count=0;
 	char filename[9][128] = {0};
 	for (int i = 0; i < NR_SYSCALLS; i++)
