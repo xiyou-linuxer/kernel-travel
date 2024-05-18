@@ -54,7 +54,7 @@ static void path_resolution(const char *pathname)
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
 	path_resolution(pathname);
-	printk("%s\n",pathname);
+	//printk("%s\n",pathname);
 	Dirent *file;
 	int fd = -1;
 	struct path_search_record searched_record;
@@ -81,7 +81,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	}
 	else if ((file != NULL) && flags & O_CREATE)
 	{ // 若要创建的文件已存在
-		printk("%s has already exist!\n", pathname);
+		//printk("%s has already exist!\n", pathname);
 		return file_open(file, flags ,mode);
 	}
 	
@@ -184,7 +184,7 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
-		printk("off:%d\n",file_table[global_fd].offset);
+		//printk("off:%d\n",file_table[global_fd].offset);
 		filepnt_init(file_table[global_fd].dirent);
 		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
 		file_table[global_fd].offset += ret;
