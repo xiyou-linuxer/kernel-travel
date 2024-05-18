@@ -69,8 +69,8 @@ void test_mkdir(void){
 
 void test_chdir(void){
     char buffer[30];
-    sys_mkdir("test_chdir", 0666);
-    int ret = sys_chdir("test_chdir");
+    sys_mkdir("/test_chdir", 0666);
+    int ret = sys_chdir("/test_chdir");
     printk("chdir ret: %d\n", ret);
     ASSERT(ret == 0);
     sys_getcwd(buffer, 30);
