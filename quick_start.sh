@@ -7,24 +7,25 @@ if [ -z $ARCH ]; then
 fi
 
 if [ $ARCH == "loongarch" ]; then
-	TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
+	TOOLCHAINS=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
+	# TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
 elif [ $ARCH == "arm64" ]; then
 	TOOLCHAINS=../toolchains/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 fi
 
 function distclean()
 {
-	make ARCH=$ARCH distclean
+	make -f Makefile_back ARCH=$ARCH distclean
 }
 
 function defconfig()
 {
-	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS defconfig
+	make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS defconfig
 }
 
 function menuconfig()
 {
-	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS menuconfig
+	make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS menuconfig
 }
 
 function run()
@@ -49,10 +50,10 @@ function rungdb()
 function image()
 {
 	if [ $ARCH == "loongarch" ]; then
-		make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image
+		make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image
 		
 	elif [ $ARCH == "arm64" ]; then
-		make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image
+		make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image
 	fi
 
 	sudo docker cp ./arch/loongarch/boot/Image  os-contest:/srv/tftp/Image
@@ -62,12 +63,12 @@ function image()
 
 function gdb()
 {
-	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image && rungdb && exit
+	make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS -j1 Image && rungdb && exit
 }
 
 function all()
 {
-	make ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS Image && run && exit
+	make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS Image && run && exit
 }
 
 #

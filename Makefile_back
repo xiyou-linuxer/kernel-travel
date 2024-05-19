@@ -1,4 +1,3 @@
-
 VERSION = 0
 PATCHLEVEL = 0
 SUBLEVEL = 1
@@ -363,7 +362,6 @@ $(KCONFIG_CONFIG) include/config/auto.conf.cmd: ;
 # if auto.conf.cmd is missing then we are probably in a cleaned tree so
 # we execute the config step to be sure to catch updated Kconfig files
 include/config/%.conf: $(KCONFIG_CONFIG) include/config/auto.conf.cmd
-	$(Q)$(MAKE) -f $(srctree)/Makefile defconfig
 	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
 
 else
@@ -373,8 +371,6 @@ endif # $(dot-config)
 
 # 默认的构建目标，在体系特定的Makefile中，一般还会添加其他目标到all中
 all: vmlinux
-	mv arch/loongarch/boot/Image kernel.bin
-	md5sum kernel.bin
 
 #CONFIG_CC_OPTIMIZE_FOR_SIZE在auto.conf中被添加进来了
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
@@ -1269,4 +1265,3 @@ FORCE:
 # Declare the contents of the .PHONY variable as phony.  We keep that
 # information in a variable so we can use it in if_changed and friends.
 .PHONY: $(PHONY)
-
