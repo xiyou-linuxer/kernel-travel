@@ -85,13 +85,9 @@ endif
 KBUILD_DTBS	:= dtbs
 
 #all:	$(KBUILD_IMAGE) $(KBUILD_DTBS) Image
-all:	config $(KBUILD_DTBS) Image
+all:	$(KBUILD_DTBS) Image
 
 boot := arch/loongarch/boot
-
-
-config:
-	cp defconfig .config
 
 Image Image.gz: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
