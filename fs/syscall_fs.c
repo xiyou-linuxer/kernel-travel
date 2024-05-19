@@ -93,8 +93,10 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	default:
 		/* 其余情况均为打开已存在文件:
 		 * O_RDONLY,O_WRONLY,O_RDWR */
-		//printk("sys_open");
+		//printk("sys_open %s",file->name);
 		fd = file_open(file, flags ,mode);
+		int _fd = fd_local2global(fd);
+		file_table[_fd].offset = 0;
 	}
 
 	/* 此fd是指任务pcb->fd_table数组中的元素下标,
@@ -110,7 +112,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		printk("sys_write %d: fd error\n",fd);
 		return -1;
 	}
-	if (_fd == STDOUT)
+	if (_fd == STDOUT || fd == STDOUT)
 	{
 		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
 		/*if (is_pipe(fd))
@@ -119,6 +121,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		}
 		else*/
 		//{
+			//printk("buf:%s\n",buf);
 			char tmp_buf[1024] = {0};
 			memcpy(tmp_buf, buf, count);
 			console_put_str(tmp_buf);
@@ -184,12 +187,11 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
-		//printk("off:%d\n",file_table[global_fd].offset);
 		filepnt_init(file_table[global_fd].dirent);
 		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
 		file_table[global_fd].offset += ret;
 	}
-	return ret;
+	return count;
 }
 
 /* 成功关闭文件返回0,失败返回-1 */
