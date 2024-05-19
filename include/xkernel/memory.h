@@ -6,6 +6,11 @@
 #include <asm/numa.h>
 #include <xkernel/list.h>
 #include <asm-generic/int-ll64.h>
+#include <xkernel/compiler.h>
+#include <xkernel/rbtree.h>
+#include <asm/page.h>
+
+#define MAX_ADDRESS_SPACE_SIZE 0xffffffffffffffff
 
 #define DIV_ROUND_UP(divd,divs) ((divd+divs-1)/divs)
 
@@ -129,22 +134,38 @@ struct zoneref {
 
 // 虚拟内存区域描述符
 struct vm_area_struct {
+	unsigned long vm_start;
+	unsigned long vm_end;
 	// vma 在 mm_struct->mmap 双向链表中的前驱节点和后继节点
 	struct vm_area_struct *vm_next, *vm_prev;
 	// vma 在 mm_struct->mm_rb 红黑树中的节点
-	// struct rb_node vm_rb;
+	struct rb_node vm_rb;
 	// pgprot_t vm_page_prot;
 	unsigned long vm_flags; 
-	struct file * vm_file;      /* File we map to (can be NULL). */
-	unsigned long vm_pgoff;     /* Offset (within vm_file) in PAGE_SIZE */
+	struct file * vm_file;		/* File we map to (can be NULL). */
+	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE */
+	void * vm_opts;
 };
 
 // 进程虚拟内存空间描述符
 struct mm_struct {
 	// 串联组织进程空间中所有的 VMA  的双向链表 
+	unsigned long mmap_base;
 	struct vm_area_struct *mmap;  /* list of VMAs */
 	// 管理进程空间中所有 VMA 的红黑树
-	// struct rb_root mm_rb;
+	struct rb_root mm_rb;
+	struct vm_area_struct * mmap_cache;
+	unsigned long free_area_cache;	/*记录上次成功分配的起始地址的缓存*/
+
+	unsigned long start_code, end_code, start_data, end_data;
+	unsigned long start_brk, brk, start_stack;
+	unsigned long arg_start, arg_end, env_start, env_end;
+	unsigned long map_count;
+	unsigned long (*get_unmapped_area) (struct file *filp,
+				unsigned long addr, unsigned long len,
+				unsigned long pgoff, unsigned long flags);
+	unsigned long rss;
+	struct file * vm_file;		/* 映射的文件，匿名映射即为nullptr*/
 };
 
 extern struct pool reserve_phy_pool;

@@ -37,6 +37,7 @@ typedef struct
     Elf_Half e_shstrndx;	/*节头表字符串表*/
 } Elf_Ehdr;
 
+/*ELF 64 位适用*/
 typedef struct
 {
 	Elf_Word p_type;
@@ -48,6 +49,16 @@ typedef struct
 	Elf_XWord p_memsz;
 	Elf_XWord p_align;
 } Elf_Phdr;
+
+#define PF_R		0x4
+#define PF_W		0x2
+#define PF_X		0x1
+
+#define ELF_MIN_ALIGN	PAGE_SIZE
+#define ELF_CORE_EFLAGS	0
+#define ELF_PAGESTART(_v) ((_v) & ~(unsigned long)(ELF_MIN_ALIGN-1))
+#define ELF_PAGEOFFSET(_v) ((_v) & (ELF_MIN_ALIGN-1))
+#define ELF_PAGEALIGN(_v) (((_v) + ELF_MIN_ALIGN - 1) & ~(ELF_MIN_ALIGN - 1))
 
 int64_t load(const char *path);
 int sys_execv(const char *path, char *const argv[], char *const envp[]);
