@@ -1,20 +1,22 @@
 #include "printf.h"
 #include <asm/syscall.h>
-//
+
 char* sysname[NR_SYSCALLS] = {
 	[SYS_getpid]       = "getpid",
 	[SYS_gettimeofday] = "gettimeofday",
 	[SYS_nanosleep]    = "sleep",
 	[SYS_write]        = "write",
 	[SYS_getcwd]       = "getcwd",
-	[SYS_dup]          = "dup",
+	[SYS_chdir]        = "chdir",
 	[SYS_dup2]         = "dup2",
-	//[SYS_chdir]        = "chdir",
-	//[SYS_fstat]        = "fstat"
-	//[SYS_clone]        = "fork",
-	//[SYS_close]        = "close",
-	//[SYS_read]         = "read"
+	[SYS_dup]          = "dup",
+	[SYS_fstat]        = "fstat",
+	[SYS_close]        = "close",
+	[SYS_openat]       = "open",
+	[SYS_read]         = "read",
+	[SYS_mkdirat]      = "mkdir_"
 };
+
 
 
 int main(void)

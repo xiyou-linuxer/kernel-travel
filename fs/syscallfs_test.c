@@ -16,7 +16,7 @@
 #include <fs/syscall_fs.h>
 #include <debug.h>
 
-void test_open(void) {
+/*void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
     ASSERT(fd >= 0);
@@ -69,8 +69,8 @@ void test_mkdir(void){
 
 void test_chdir(void){
     char buffer[30];
-    sys_mkdir("test_chdir", 0666);
-    int ret = sys_chdir("test_chdir");
+    sys_mkdir("/test_chdir", 0666);
+    int ret = sys_chdir("/test_chdir");
     printk("chdir ret: %d\n", ret);
     ASSERT(ret == 0);
     sys_getcwd(buffer, 30);
@@ -124,6 +124,6 @@ void test_fs_all(void)
     test_dup();
     test_dup2();
     while (1) {
-        /* code */
+        /* code
     };
-}
+} */

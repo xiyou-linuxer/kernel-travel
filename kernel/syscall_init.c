@@ -29,17 +29,18 @@ void syscall_init(void)
 	syscall_table[SYS_nanosleep]     = sys_sleep;
 	syscall_table[SYS_exit]     = sys_exit;
 	syscall_table[SYS_wait4]    = sys_wait;
-	syscall_table[SYS_wait4]    = sys_wait;
 	syscall_table[SYS_execve]   = sys_execve;
 	syscall_table[SYS_getcwd]   = sys_getcwd;
 	syscall_table[SYS_close]    = sys_close;
 	syscall_table[SYS_read]     = sys_read;
 	syscall_table[SYS_chdir]    = sys_chdir;
-	syscall_table[SYS_dup]      = sys_dup;
-	syscall_table[SYS_dup2]     = sys_dup2;
-	syscall_table[SYS_fstat]    = sys_fstat;
-	syscall_table[SYS_PSTR]     = sys_pstr;
-	syscall_table[SYS_FORK]     = sys_fork;
+	syscall_table[SYS_dup]		= sys_dup;
+	syscall_table[SYS_dup2]		= sys_dup2;
+	syscall_table[SYS_fstat]	= sys_fstat;
+	syscall_table[SYS_openat]	= sys_openat;
+	syscall_table[SYS_mkdirat]	= sys_mkdirat;
+    syscall_table[SYS_PSTR]     = sys_pstr;
+    syscall_table[SYS_FORK]     = sys_fork;
 
 	printk("syscall init done\n");
 }

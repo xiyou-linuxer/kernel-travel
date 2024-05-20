@@ -36,7 +36,6 @@ void filepnt_init(Dirent *file) {
 			// 文件的大小为0，返回
 			return;
 		}
-		printk("filepnt_init\n");
 		DirentPointer *fileptr = &file->pointer;
 		for (int i = 0; FAT32_NOT_END_CLUSTER(clus); i++) {
 			// 更新pointer值

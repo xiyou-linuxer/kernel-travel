@@ -483,3 +483,4 @@ int createFile(struct Dirent *baseDir, char *path, Dirent **file)
 {
 	return createItemAt(baseDir, path, file, 0);
 }
+

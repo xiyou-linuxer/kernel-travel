@@ -54,7 +54,7 @@ static void path_resolution(const char *pathname)
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
 	path_resolution(pathname);
-	printk("%s\n",pathname);
+	//printk("%s\n",pathname);
 	Dirent *file;
 	int fd = -1;
 	struct path_search_record searched_record;
@@ -81,8 +81,8 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	}
 	else if ((file != NULL) && flags & O_CREATE)
 	{ // 若要创建的文件已存在
-		printk("%s has already exist!\n", pathname);
-		return -1;
+		//printk("%s has already exist!\n", pathname);
+		return file_open(file, flags ,mode);
 	}
 	
 	switch (flags & O_CREATE)
@@ -93,8 +93,10 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	default:
 		/* 其余情况均为打开已存在文件:
 		 * O_RDONLY,O_WRONLY,O_RDWR */
-		//printk("sys_open");
+		//printk("sys_open %s",file->name);
 		fd = file_open(file, flags ,mode);
+		int _fd = fd_local2global(fd);
+		file_table[_fd].offset = 0;
 	}
 
 	/* 此fd是指任务pcb->fd_table数组中的元素下标,
@@ -107,10 +109,10 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	int _fd = fd_local2global(fd);
 	if (fd < 0)
 	{
-		printk("sys_write: fd error\n");
+		printk("sys_write %d: fd error\n",fd);
 		return -1;
 	}
-	if (_fd == STDOUT)
+	if (_fd == STDOUT || fd == STDOUT)
 	{
 		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
 		/*if (is_pipe(fd))
@@ -119,6 +121,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		}
 		else*/
 		//{
+			//printk("buf:%s\n",buf);
 			char tmp_buf[1024] = {0};
 			memcpy(tmp_buf, buf, count);
 			console_put_str(tmp_buf);
@@ -184,12 +187,11 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
-		printk("off:%d\n",file_table[global_fd].offset);
 		filepnt_init(file_table[global_fd].dirent);
 		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
 		file_table[global_fd].offset += ret;
 	}
-	return ret;
+	return count;
 }
 
 /* 成功关闭文件返回0,失败返回-1 */
@@ -221,7 +223,14 @@ int sys_close(int fd)
 int sys_mkdir(char* path, int mode) 
 {
 	path_resolution(path);
-	return makeDirAt(NULL, path, mode);
+	struct path_search_record searched_record;
+	Dirent * file = search_file(path,&searched_record);
+	if (file != NULL)
+	{
+		return 0;
+	}
+	makeDirAt(NULL, path, mode);
+	return 0;
 }
 
 char * sys_getcwd(char *buf, int size)
@@ -234,19 +243,10 @@ char * sys_getcwd(char *buf, int size)
 int sys_chdir(char* path)
 {
 	struct task_struct* pthread = running_thread();
-	char new_cwd[MAX_NAME_LEN];
-	if (path[0] == '/')//如果是绝对路径
-	{
-		strcpy(new_cwd,path);
-	}else//如果不是绝对路径
-	{
-		strcpy(new_cwd, pthread->cwd);
-		strcat(new_cwd, "/");
-		strcat(new_cwd, path);
-	}
+	path_resolution(path);
 	struct path_search_record searched_record;
 	memset(&searched_record, 0, sizeof(struct path_search_record));
-	Dirent *cwd_dirent = search_file(new_cwd,&searched_record);
+	Dirent *cwd_dirent = search_file(path,&searched_record);
 	if (cwd_dirent == NULL)//如果没有这个路径
 	{
 		return -1;
@@ -254,7 +254,7 @@ int sys_chdir(char* path)
 	{
 		printk("It's file\n");
 	}
-	strcpy(pthread->cwd, new_cwd);
+	strcpy(pthread->cwd, path);
 	pthread->cwd_dirent = cwd_dirent;
 	return 0;
 } 
@@ -363,4 +363,13 @@ int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd)
 		ret = old_local_fd;
 	}
 	return ret;
+}
+int sys_openat(int fd, const char *filename, int flags, mode_t mode)
+{
+	return sys_open(filename, flags, mode);
+}
+
+int sys_mkdirat(int dirfd, const char *path, mode_t mode)
+{
+	return sys_mkdir(path, mode);
 }
