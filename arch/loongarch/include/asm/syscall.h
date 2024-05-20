@@ -105,8 +105,10 @@ enum SYSCALL {
 	SYS_FORK,
 };
 #define AT_FDCWD 0;
+
 #define open(filename, flags) openat(AT_FDCWD, (filename), (flags), (066))
 #define mkdir(path, mode) mkdirat(AT_FDCWD,(path),(mode))
+#define unlink(path) unlinkat(AT_FDCWD,(path),0)
 
 #define SYS_mkdirat 34
 #define SYS_getcwd 17
@@ -120,6 +122,9 @@ enum SYSCALL {
 #define SYS_getpid        172
 #define SYS_dup 23
 #define SYS_dup2 24
+#define SYS_unlinkat 35
+#define SYS_umount2 39
+#define SYS_mount 40
 #define SYS_fstat 80
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 

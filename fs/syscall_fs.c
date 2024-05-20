@@ -69,14 +69,14 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	if (pathname_depth != path_searched_depth)
 	{ 
 		// 说明并没有访问到全部的路径,某个中间目录是不存在的
-		printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
+		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
 	
 	/* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
 	if ((file == NULL) && !(flags & O_CREATE))
 	{
-		printk("in path %s, file %s is`t exist\n",searched_record.searched_path,(strrchr(searched_record.searched_path, '/') + 1));
+		//printk("in path %s, file %s is`t exist\n",searched_record.searched_path,(strrchr(searched_record.searched_path, '/') + 1));
 		return -1;
 	}
 	else if ((file != NULL) && flags & O_CREATE)
@@ -263,6 +263,7 @@ int sys_unlink(char *pathname)
 {
 	Dirent *file;
 	int fd = -1;
+	path_resolution(pathname);
 	struct path_search_record searched_record;
 	memset(&searched_record, 0, sizeof(struct path_search_record));
 
@@ -270,12 +271,13 @@ int sys_unlink(char *pathname)
 	unsigned int pathname_depth = path_depth_cnt((char *)pathname);
 
 	/* 先检查是否将全部的路径遍历 */
-	file = search_file(pathname,&searched_record);
+	
 	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
+	file = search_file(pathname,&searched_record);
 	if (pathname_depth != path_searched_depth)
 	{ 
 		// 说明并没有访问到全部的路径,某个中间目录是不存在的
-		printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
+		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
 	/*if (file->type == DIRENT_DIR)//不能直接删除目录
@@ -284,6 +286,7 @@ int sys_unlink(char *pathname)
 		return -1;
 	}*/
 	int ret = rmfile(file);
+
 	return ret;
 }
 
@@ -372,4 +375,21 @@ int sys_openat(int fd, const char *filename, int flags, mode_t mode)
 int sys_mkdirat(int dirfd, const char *path, mode_t mode)
 {
 	return sys_mkdir(path, mode);
+}
+
+int sys_unlinkat(int dirfd, char *path, unsigned int flags)
+{
+	return sys_unlink(path);
+}
+
+int sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data)
+{
+	path_resolution(dir);
+	return mount_fs(special,dir);
+}
+
+int sys_umount(const char* special) 
+{
+	path_resolution(special);
+	return umount_fs(special);
 }
