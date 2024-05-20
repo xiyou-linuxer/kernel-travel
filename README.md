@@ -1,6 +1,6 @@
 # kernel-travel
 
-kernel-travel 是由 重启之我是loader 三名成员共同开发的基于 LoongArch 的架构的64位操作系统。
+kernel-travel 是由 重启之我是loader 三名成员共同开发的基于 LoongArch 的架构的64位操作系统。系统采用 kbuild 编译框架，从 0 开发内核，部分头文件移植自 Linux 。
 
 ## 编译并运行该项目
 
@@ -122,6 +122,8 @@ bash quick_start.sh distclean
 ```
 
 ## 文档列表
+
+文档位于 kernel-travel/doc 目录下。
 
 * [磁盘驱动](./doc/磁盘驱动.md)
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
