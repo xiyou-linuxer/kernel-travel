@@ -105,18 +105,22 @@ enum SYSCALL {
 	SYS_FORK,
 };
 
-#define SYS_getcwd 17
-#define SYS_chdir 49
-#define SYS_close 57
-#define SYS_read 63
+#define SYS_getcwd         17
+#define SYS_dup            23
+#define SYS_dup2           24
+#define SYS_chdir          49
+#define SYS_close          57
+#define SYS_read           63
 #define SYS_write          64
+#define SYS_fstat          80
+#define SYS_exit           93
 #define SYS_nanosleep     101
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
-#define SYS_clone 220
-#define SYS_dup 23
-#define SYS_dup2 24
-#define SYS_fstat 80
+#define SYS_wait4         260
+#define SYS_clone         220
+#define SYS_execve        221
+
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {
@@ -135,6 +139,18 @@ static inline int sleep(struct timespec *req,struct timespec *rem) {
 	return syscall(SYS_nanosleep,req,rem);
 }
 
+static inline void exit(int status) {
+	syscall(SYS_exit,status);
+}
+
+static inline pid_t wait(int* status) {
+	return syscall(SYS_wait4,status);
+}
+
+static inline int execve(const char *path, char *const argv[], char *const envp[]) {
+	return syscall(SYS_execve,path,argv,envp);
+}
+
 static inline void pstr(char *str) {
 	syscall(SYS_PSTR,str);
 }
@@ -142,6 +158,7 @@ static inline void pstr(char *str) {
 static inline int fork(void) {
 	return syscall(SYS_FORK);
 }
+
 
 
 #endif

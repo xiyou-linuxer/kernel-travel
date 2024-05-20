@@ -1,5 +1,6 @@
 #include <xkernel/list.h>
 #include <trap/irq.h>
+#include <debug.h>
 
 void list_init(struct list* list)
 {

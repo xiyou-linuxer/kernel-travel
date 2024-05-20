@@ -19,6 +19,7 @@ obj-y += debug.o
 obj-y += allocators.o
 obj-y += syscall_init.o
 obj-y += ../userprog/fork.o
+obj-y += ../userprog/wait.o
 
 
 # obj-y	+= sched/ sh_kapi/ irq/ time/ locking/ count/

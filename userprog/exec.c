@@ -7,6 +7,7 @@
 #include <asm/loongarch.h>
 #include <fs/syscall_fs.h>
 #include <fs/fd.h>
+#include <allocator.h>
 
 void* program_begin;
 
@@ -87,14 +88,36 @@ done:
 }
 
 
-int sys_execv(const char *path, char *const argv[], char *const envp[])
+int sys_exeload(const char *path, char *const argv[], char *const envp[])
 {
 	int64_t entry_point = load(path);
 	if (entry_point == -1) {
-		printk("sys_execv: load failed\n");
+		printk("sys_exeload: load failed\n");
 		return -1;
 	}
 
 	return entry_point;
+}
+
+int sys_execve(const char *path, char *const argv[], char *const envp[])
+{
+	unsigned long crmd;
+	unsigned long prmd;
+	struct task_struct* cur = running_thread();
+	struct pt_regs* regs = (struct pt_regs*)((uint64_t)cur->self_kstack - sizeof(struct pt_regs));
+
+	regs->csr_crmd = read_csr_crmd();
+	prmd = read_csr_prmd() & ~(PLV_MASK);
+	prmd |= PLV_USER;
+	regs->csr_prmd = prmd;
+
+	regs->regs[3]  = USER_STACK;
+	regs->regs[22] = regs->regs[3];
+	int entry = sys_exeload(path,NULL,NULL);
+	regs->csr_era = (unsigned long)entry;
+
+	printk("jump to proc...\n");
+	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
+	return -1;
 }
 

@@ -2,6 +2,13 @@
 #include <xkernel/stdarg.h>
 #include <asm/syscall.h>
 
+void umemset(void* dst_, uint8_t value, uint32_t size) {
+	uint8_t* dst = (uint8_t*)dst_;
+	while (size-- > 0){
+		*dst++ = value;
+	}
+}
+
 char *ustrcpy(char *dest, const char *src)
 {
 	char *tmp = dest;
@@ -10,6 +17,16 @@ char *ustrcpy(char *dest, const char *src)
 	/* nothing */;
 	return tmp;
 }
+
+char* ustrcat(char* dst_, const char* src_) 
+{
+	char* str = dst_;
+	while (*str++);
+	--str;
+	while((*str++ = *src_++));
+	return dst_;
+}
+
 
 uint32_t ustrlen(const char* str)
 {

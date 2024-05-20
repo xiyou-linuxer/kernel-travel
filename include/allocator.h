@@ -16,6 +16,7 @@ struct user_stack_page {
 }__aligned(KERNEL_STACK_SIZE);
 
 struct task_struct *task_alloc(void);
+void task_free(struct task_struct* task);
 void* userstk_alloc(uint64_t pdir);
 
 #endif

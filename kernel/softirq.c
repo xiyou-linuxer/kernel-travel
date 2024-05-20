@@ -5,10 +5,10 @@
 uint32_t softirq_active;
 static struct softirq_action softirq_vec[32];
 
-static void bh_enable(void) {
+void bh_enable(void) {
 	bh_count--;
 }
-static void bh_disable(void) {
+void bh_disable(void) {
 	bh_count++;
 }
 
@@ -18,6 +18,8 @@ void do_softirq(void)
 	 * first->  Nested hardirq(impossible)
 	 * second-> in softirq */
 	if (in_interrupt()) {
+		printk("bh_count=%d\n",bh_count);
+		printk("irq count=%d\n",irq_count);
 		return ;
 	}
 

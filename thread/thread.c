@@ -26,6 +26,7 @@ struct list_elem* thread_tag;
 
 extern void irq_exit(void);
 extern void irq_enter(void);
+extern void bh_enable(void);
 bool switching;
 
 uint8_t pid_bitmap_bits[128] = {0};
@@ -63,6 +64,25 @@ void release_pid(pid_t pid) {
    lock_release(&pid_pool.pid_lock);
 }
 
+static int checkpid(struct list_elem* pelm,void* id)
+{
+	pid_t pid = (int64_t)id;
+	struct task_struct* pcb = elem2entry(struct task_struct,all_list_tag,pelm);
+	if (pcb->pid == pid) {
+		return true;
+	}
+	return false;
+}
+
+struct task_struct* pid2thread(int64_t pid)
+{
+	struct list_elem* elm = list_traversal(&thread_all_list,checkpid,(void*)pid);
+	if (elm == NULL) {
+		return NULL;
+	}
+	return elem2entry(struct task_struct,all_list_tag,elm);
+}
+
 static void kernel_thread(void)
 {
     printk("kernel_thread...");
@@ -90,70 +110,72 @@ struct task_struct* running_thread()
 
 void init_thread(struct task_struct *pthread, char *name, int prio)
 {
-    memset(pthread, 0, sizeof(*pthread));
-    strcpy(pthread->name, name);
-    pthread->pid = allocate_pid();
+	memset(pthread, 0, sizeof(*pthread));
+	strcpy(pthread->name, name);
+	pthread->pid  = allocate_pid();
+	pthread->ppid = -1;
 
-    if (pthread == main_thread) {
-        pthread->status = TASK_RUNNING;
-    } else {
-        pthread->status = TASK_READY;
-    }
-    pthread->self_kstack = (uint64_t*)((uint64_t)pthread + KERNEL_STACK_SIZE);
-    pthread->priority = prio;
-    pthread->ticks = prio;
-    pthread->elapsed_ticks = 0;
-    pthread->pgdir = 0;
-    pthread->fd_table[0] = 0;
-    pthread->fd_table[1] = 1;
-    pthread->fd_table[2] = 2;
-    uint8_t fd_idx = 3;
-    while (fd_idx < MAX_FILES_OPEN_PER_PROC) {
-        pthread->fd_table[fd_idx] = -1;
-        fd_idx++;
-    }
-    pthread->cwd[0] = '/';
-    pthread->cwd_dirent = NULL;
-    pthread->stack_magic = STACK_MAGIC_NUM;
+
+	if (pthread == main_thread) {
+		pthread->status = TASK_RUNNING;
+	} else {
+		pthread->status = TASK_READY;
+	}
+	pthread->self_kstack = (uint64_t*)((uint64_t)pthread + KERNEL_STACK_SIZE);
+	pthread->priority = prio;
+	pthread->ticks = prio;
+	pthread->elapsed_ticks = 0;
+	pthread->pgdir = 0;
+	pthread->fd_table[0] = 0;
+	pthread->fd_table[1] = 1;
+	pthread->fd_table[2] = 2;
+	uint8_t fd_idx = 3;
+	while (fd_idx < MAX_FILES_OPEN_PER_PROC) {
+		pthread->fd_table[fd_idx] = -1;
+		fd_idx++;
+	}
+	pthread->cwd[0] = '/';
+	pthread->cwd_dirent = NULL;
+	pthread->stack_magic = STACK_MAGIC_NUM;
 }
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg)
 {
-    pthread->self_kstack = (uint64_t*)((uint64_t)pthread->self_kstack - sizeof(struct pt_regs));
-    pthread->function = function;
-    pthread->func_arg = func_arg;
+	pthread->self_kstack = (uint64_t*)((uint64_t)pthread->self_kstack - sizeof(struct pt_regs));
+	pthread->function = function;
+	pthread->func_arg = func_arg;
 
-    struct thread_struct *kthread_stack = &pthread->thread;
-    memset(kthread_stack, 0, sizeof(struct thread_struct));
-    kthread_stack->reg01 = (uint64_t)kernel_thread;
-    printk("thread reg01=%x\n",kthread_stack->reg01);
-    kthread_stack->csr_crmd = read_csr_crmd();
-    kthread_stack->csr_prmd = read_csr_prmd();
-    kthread_stack->reg03 = (uint64_t)pthread->self_kstack;
+	struct thread_struct *kthread_stack = &pthread->thread;
+	memset(kthread_stack, 0, sizeof(struct thread_struct));
+	kthread_stack->reg01 = (uint64_t)kernel_thread;
+	printk("thread reg01=%x\n",kthread_stack->reg01);
+	kthread_stack->csr_crmd = read_csr_crmd();
+	kthread_stack->csr_prmd = read_csr_prmd();
+	kthread_stack->reg03 = (uint64_t)pthread->self_kstack;
 }
 
 struct task_struct *thread_start(char *name, int prio, thread_func function, void *func_arg)
 {
-    struct task_struct *thread = task_alloc();
-    init_thread(thread, name, prio);
-    thread_create(thread, function, func_arg);
+	struct task_struct *thread = task_alloc();
+	init_thread(thread, name, prio);
+	thread_create(thread, function, func_arg);
 
-    ASSERT(!elem_find(&thread_ready_list, &thread->general_tag));
-    list_append(&thread_ready_list, &thread->general_tag);
+	ASSERT(!elem_find(&thread_ready_list, &thread->general_tag));
+	list_append(&thread_ready_list, &thread->general_tag);
 
-    ASSERT(!elem_find(&thread_all_list, &thread->all_list_tag));
-    list_append(&thread_all_list, &thread->all_list_tag);
+	ASSERT(!elem_find(&thread_all_list, &thread->all_list_tag));
+	list_append(&thread_all_list, &thread->all_list_tag);
 
-    return thread;
+	return thread;
 }
 
 static void make_main_thread(void)
 {
-    main_thread = running_thread();
-    init_thread(main_thread, "main", 10);
+	main_thread = running_thread();
+	init_thread(main_thread, "main", 10);
 
-    ASSERT(!elem_find(&thread_all_list, &main_thread->all_list_tag));
-    list_append(&thread_all_list, &main_thread->all_list_tag);
+	ASSERT(!elem_find(&thread_all_list, &main_thread->all_list_tag));
+	list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
 void schedule()
@@ -198,6 +220,7 @@ void thread_block(enum task_status stat)
 	struct task_struct* cur = (struct task_struct*)running_thread();
 	ASSERT(cur->status==TASK_RUNNING);
 	cur->status = stat;
+	irq_enter();
 	schedule();
 	intr_set_status(old_status);
 }
@@ -238,14 +261,37 @@ void thread_yield(void) {
 static void wake_sleep(unsigned long sleeping_thread)
 {
 	struct task_struct *thread = (struct task_struct*)sleeping_thread;
+	bh_enable();
 	thread_preempt(thread);
 }
 
-int sys_sleep(struct timespec *req,struct timespec *rem)
+//static int snap(uint64_t sleep_ticks)
+//{
+//	uint64_t expire = ticks + sleep_ticks;
+//	intr_enable();
+//	while (ticks < expire) {
+//		printk("ticks:%d expire:%d\n",ticks,expire);
+//	}
+//	return (ticks-expire>=0 ? 0 : -1);
+//}
+
+static int snap(struct timespec *req)
+{
+	struct timespec cur_timer;
+	struct timespec end_timer;
+	sys_gettimeofday(&cur_timer);
+	uint64_t nsec = cur_timer.tv_nsec + req->tv_nsec;
+	end_timer.tv_sec = cur_timer.tv_sec + req->tv_sec + nsec/NSEC_PER_SEC;
+	end_timer.tv_nsec = nsec % NSEC_PER_SEC;
+	while (cur_timer.tv_sec < end_timer.tv_sec || (cur_timer.tv_sec==end_timer.tv_sec && cur_timer.tv_nsec < end_timer.tv_nsec)) {
+		sys_gettimeofday(&cur_timer);
+	}
+	return 0;
+}
+
+static int normal_sleep(uint64_t sleep_ticks)
 {
 	struct timer_list* t = (struct timer_list*)get_page();
-	uint64_t sleep_ticks = timespec2ticks(req);
-	printk("sleep_ticks=%d\n",sleep_ticks);
 	uint64_t expire      = ticks + sleep_ticks;
 	struct task_struct *cur = running_thread();
 	t->expires = expire;
@@ -258,6 +304,32 @@ int sys_sleep(struct timespec *req,struct timespec *rem)
 	return (ticks-expire>=0 ? 0 : -1);
 }
 
+int sys_sleep(struct timespec *req,struct timespec *rem)
+{
+	uint64_t sleep_ticks = timespec2ticks(req);
+	if (sleep_ticks >= 20) {
+		return normal_sleep(sleep_ticks);
+	}
+	return snap(req);
+}
+
+void thread_exit(struct task_struct* exit)
+{
+	intr_disable();
+	exit->status = TASK_DIED;
+	if (elem_find(&thread_ready_list,&exit->general_tag)) {
+		printk("find zombie in thread_ready_list");
+		BUG();
+	}
+	list_remove(&exit->all_list_tag);
+
+	if (exit != main_thread) {
+		task_free(exit);
+	}
+
+	release_pid(exit->pid);
+}
+
 void thread_init(void)
 {
 	printk("thread_init start\n");
@@ -266,6 +338,7 @@ void thread_init(void)
 	list_init(&thread_all_list);
 	pid_pool_init();
 
+	process_execute("initcode","init",30);
 	idle_thread = thread_start("idle",10,idle,NULL);
 	make_main_thread();
 
