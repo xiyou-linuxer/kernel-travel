@@ -242,11 +242,11 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *path)
 	Dirent *dirent = dirent_alloc();//在缓存中分配目录项
 	char *name = (strrchr(path,'/')+1);
 	//name = name - 1;
-	printk("create a file using long Name! name is %s\n", name);
+	//printk("create a file using long Name! name is %s\n", name);
 	int cnt = get_entry_count_by_name(name);//计算需要几个目录
-	printk("cnt:%d\n",cnt);
+	//printk("cnt:%d\n",cnt);
 	int ret = dir_alloc_entry(dir, &dirent, cnt);//在磁盘上为目录项分配空间
-	printk("ret:%d\n",ret);
+	//printk("ret:%d\n",ret);
 	ASSERT(ret == 0);
 	strcpy(dirent->name, name);
 	strcpy((char *)dirent->raw_dirent.DIR_Name, name);

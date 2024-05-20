@@ -392,7 +392,7 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 	if (pathname_depth != path_searched_depth)
 	{ 
 		// 说明并没有访问到全部的路径,某个中间目录是不存在的
-		printk("cannot access %s: Not a directory, subpath %s is`t exist\n",path, searched_record.searched_path);
+		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",path, searched_record.searched_path);
 		lock_release(&mtx_file);
 		return -1;
 	}
@@ -444,7 +444,6 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 	}
 	
 	filepnt_init(f);
-	printk("type:%d\n",f->type);
 	// 4. 将dirent加入到上级目录的子Dirent列表
 	list_append(&searched_record.parent_dir->child_list,&f->dirent_tag);
 	// 5. 回写dirent信息
@@ -452,7 +451,6 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 
 	if (file) {
 		*file = f;
-		printk("f:%s\n",f->name);
 	}
 
 	lock_release(&mtx_file);
