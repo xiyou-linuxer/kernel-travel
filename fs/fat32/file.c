@@ -195,7 +195,6 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 	char *sub_path = (char *)pathname;
 	Dirent *parent_dir = fatFs->root;
 	Dirent *dir_e;
-
 	/* 记录路径解析出来的各级名称,如路径"/a/b/c",
 	* 数组name每次的值分别是"a","b","c" */
 	char name[MAX_NAME_LEN] = {0};
@@ -208,7 +207,6 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 	{ // 若第一个字符就是结束符,结束循环
 		/* 记录查找过的路径,但不能超过searched_path的长度512字节 */
 		//ASSERT(strlen(searched_record->searched_path) < 512);
-
 		/* 记录已存在的父目录 */
 		strcat(searched_record->searched_path, "/");
 		strcat(searched_record->searched_path, name);

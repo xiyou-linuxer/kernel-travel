@@ -17,6 +17,10 @@ char* sysname[NR_SYSCALLS] = {
 	//[SYS_openat]       = "open",
 	//[SYS_read]         = "read",
 	//[SYS_mkdirat]      = "mkdir_"
+	//[SYS_unlinkat]     = "unlink",
+//	[SYS_mount]        = "mount",
+//	[SYS_umount2]      = "umount",
+//	[1]                = "openat",
 };
 
 

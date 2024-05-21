@@ -44,7 +44,8 @@ void syscall_init(void)
 	syscall_table[SYS_mount]    = sys_mount;
 	syscall_table[SYS_umount2]  = sys_umount;
     syscall_table[SYS_PSTR]     = sys_pstr;
-
+	syscall_table[SYS_PSTR]     = sys_pstr;
+	//syscall_table[SYS_FORK]     = sys_fork;
 	printk("syscall init done\n");
 }
 
