@@ -127,7 +127,8 @@ bash quick_start.sh distclean
 
 * [磁盘驱动](./doc/磁盘驱动.md)
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
-
+* [文件系统](./doc/文件系统.md)
+  
 ## 参考资料
 
 * [操作系统真相还原](https://github.com/yifengyou/os-elephant)
