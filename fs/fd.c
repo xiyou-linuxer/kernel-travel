@@ -179,7 +179,7 @@ int rmfile(struct Dirent *file)
 		printk("File is in use\n");
 		return -1;
 	}
-
+	//return 0;
 	return rm_unused_file(file);
 }
 
