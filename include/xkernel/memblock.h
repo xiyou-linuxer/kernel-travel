@@ -47,16 +47,25 @@ struct memblock_type {
 	char *name;
 };
 
+/**
+ * struct memblock - 内存块分配器元数据
+ * @bottom_up: 指示内存块分配的方向，为真时从低向高分配，否则从高向低分配
+ * @current_limit: 内存块可分配的限制
+ * @memory: 可用的内存区域
+ * @reserved: 保留的内存区域
+ */
 struct memblock {
-	bool bottom_up;  /* is bottom up direction? */
+	bool bottom_up;  /* 为真时从低向高分配，否则从高向低分配 */
 	phys_addr_t current_limit;
 	struct memblock_type memory;
 	struct memblock_type reserved;
 };
+
 extern unsigned long max_low_pfn;
 extern unsigned long min_low_pfn;
 extern unsigned long max_pfn;
 extern unsigned long long max_possible_pfn;
+
 void memblock_init(void);
 int memblock_add(phys_addr_t base, phys_addr_t size);
 int memblock_reserve(phys_addr_t base, phys_addr_t size);
