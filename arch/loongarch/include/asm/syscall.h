@@ -104,9 +104,10 @@ enum SYSCALL {
 	SYS_PSTR,
 	SYS_FORK,
 };
-#define AT_FDCWD 0;
+#define AT_FDCWD 0
+#define AT_OPEN -100
 
-#define open(filename, flags) openat(AT_FDCWD, (filename), (flags), (066))
+#define open(filename, flags) openat(AT_OPEN, (filename), (flags), (066))
 #define mkdir(path, mode) mkdirat(AT_FDCWD,(path),(mode))
 #define unlink(path) unlinkat(AT_FDCWD,(path),0)
 

@@ -270,7 +270,6 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *path)
 			break;
 		}
 	}
-	printk("dir_alloc_file\n");
 	*file = dirent;
 	return 0;
 }

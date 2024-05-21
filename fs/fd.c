@@ -205,3 +205,24 @@ int unlinkat(struct Dirent *dir, char *path) {
 	lock_release(&mtx_file);
 	return ret;
 }
+
+int filename2path(Dirent *file,char *newpath)
+{
+    Dirent *dir = file;
+    char buf[MAX_PATH_LEN];
+	strcpy(buf,file->name);
+    while (strcmp(dir->parent_dirent->name,"/"))
+    {
+        strcat(buf,dir->parent_dirent->name);
+        
+        dir = dir->parent_dirent;
+    }
+    strcpy(newpath, "/");
+    while (strchrs(buf,'/')!=0)
+    {
+        strcat(newpath,strrchr(buf,'/'));
+		memset(strrchr(buf,'/'),0,MAX_NAME_LEN);
+    }
+    strcat(newpath,buf);
+    return 1;
+}

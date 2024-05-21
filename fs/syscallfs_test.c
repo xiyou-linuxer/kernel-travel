@@ -111,7 +111,7 @@ void test_dup2(void){
 	ASSERT(fd != -1);
 	const char *str = "  from fd 100\n";
 	sys_write(100, str, strlen(str));
-}
+}*/
 void test_unlink(void)
 {
 
@@ -154,10 +154,20 @@ void test_mount(void) {
     
 	
 }
+void test_openat(void) {
+    int fd_dir = sys_open("./mnt", O_DIRECTORY,0);
+    printk("open dir fd: %d\n", fd_dir);
+    int fd = sys_openat(fd_dir, "test_openat.txt", O_CREATE | O_RDWR,0);
+    printk("openat fd: %d\n", fd);
+    ASSERT(fd > 0);
+    printk("openat success.\n");
+    sys_close(fd);	
+}
 void test_fs_all(void)
 {
     test_mount();
-    //test_unlink();
+    test_unlink();
+    test_openat();
     while (1) {
     };
-} */
+} 

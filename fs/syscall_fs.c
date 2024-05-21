@@ -14,6 +14,7 @@
 #include <fs/fs.h>
 #include <fs/fd.h>
 #include <debug.h>
+#include <asm/syscall.h>
 /*本文件用于实现文件的syscall*/
 /*将路径转化为绝对路径，只支持 . 与 .. 开头的路径*/
 static void path_resolution(const char *pathname)
@@ -84,7 +85,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		//printk("%s has already exist!\n", pathname);
 		return file_open(file, flags ,mode);
 	}
-	
 	switch (flags & O_CREATE)
 	{
 	case O_CREATE:
@@ -259,11 +259,11 @@ int sys_chdir(char* path)
 	return 0;
 } 
 
+
 int sys_unlink(char *pathname)
 {
 	Dirent *file;
 	int fd = -1;
-	path_resolution(pathname);
 	struct path_search_record searched_record;
 	memset(&searched_record, 0, sizeof(struct path_search_record));
 
@@ -271,9 +271,8 @@ int sys_unlink(char *pathname)
 	unsigned int pathname_depth = path_depth_cnt((char *)pathname);
 
 	/* 先检查是否将全部的路径遍历 */
-	
-	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
 	file = search_file(pathname,&searched_record);
+	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
 	if (pathname_depth != path_searched_depth)
 	{ 
 		// 说明并没有访问到全部的路径,某个中间目录是不存在的
@@ -286,9 +285,9 @@ int sys_unlink(char *pathname)
 		return -1;
 	}*/
 	int ret = rmfile(file);
-
 	return ret;
 }
+
 
 int sys_fstat(int fd,struct kstat* stat)
 {
@@ -367,9 +366,22 @@ int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd)
 	}
 	return ret;
 }
+
 int sys_openat(int fd, const char *filename, int flags, mode_t mode)
 {
-	return sys_open(filename, flags, mode);
+	if (fd == AT_OPEN || filename[0] == '/' || fd == AT_FDCWD)//如果是open系统调用或者文件路径为绝对路径则直接打开
+	{
+		return sys_open(filename, flags, mode);	
+	}else //路径为fd的路径
+	{
+		char buf[MAX_PATH_LEN];
+		int global_fd = fd_local2global(fd);
+		Dirent *file = file_table[global_fd].dirent;
+		filename2path(file,buf);
+		strcat(buf,"/");
+		strcat(buf,filename);
+		return sys_open(buf,flags,mode);
+	}
 }
 
 int sys_mkdirat(int dirfd, const char *path, mode_t mode)
