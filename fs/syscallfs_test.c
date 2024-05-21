@@ -111,19 +111,63 @@ void test_dup2(void){
 	ASSERT(fd != -1);
 	const char *str = "  from fd 100\n";
 	sys_write(100, str, strlen(str));
+}*/
+void test_unlink(void)
+{
+
+    char *fname = "./test_unlink";
+    int fd, ret;
+
+    fd = sys_open(fname, O_CREATE | O_WRONLY,660);
+    ASSERT(fd > 0);
+    sys_close(fd);
+
+    // unlink test
+    ret = sys_unlink(fname);
+    ASSERT(ret == 0);
+    fd = sys_open(fname, O_RDONLY,660);
+    if(fd < 0){
+        printk("  unlink success!\n");
+    }else{
+	printk("  unlink error!\n");
+        sys_close(fd);
+    }
+    // It's Ok if you don't delete the inode and data blocks.
+}
+static char mntpoint[64] = "./mnt";
+    static char device[64] = "/dev/vda2";
+    static const char *fs_type = "vfat";
+void test_mount(void) {
+
+
+    
+	printk("Mounting dev:%s to %s\n", device, mntpoint);
+	int ret = sys_mount(device, mntpoint, fs_type, 0, NULL);
+    printk("mount return: %d\n", ret);
+	ASSERT(ret == 0);
+
+	if (ret == 0) {
+		printk("mount successfully\n");
+		ret = sys_umount(mntpoint);
+		printk("umount return: %d\n", ret);
+	}
+    
+	
+}
+void test_openat(void) {
+    int fd_dir = sys_open("./mnt", O_DIRECTORY,0);
+    printk("open dir fd: %d\n", fd_dir);
+    int fd = sys_openat(fd_dir, "test_openat.txt", O_CREATE | O_RDWR,0);
+    printk("openat fd: %d\n", fd);
+    ASSERT(fd > 0);
+    printk("openat success.\n");
+    sys_close(fd);	
 }
 void test_fs_all(void)
 {
-	test_getcwd();
-	test_open();
-    test_close();
-    test_mkdir();
-    test_lseek();
-    test_chdir();
-    test_fstat();
-    test_dup();
-    test_dup2();
+    test_mount();
+    test_unlink();
+    test_openat();
     while (1) {
-        /* code
     };
-} */
+} 

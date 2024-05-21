@@ -76,4 +76,5 @@ int file_open(Dirent* file, int flag, mode_t mode);  // 打开文件
 int file_create(struct Dirent* baseDir, char* path, int flag, mode_t mode);//创建文件
 int file_close(struct fd *_fd);
 int rmfile(struct Dirent* file);
+int filename2path(Dirent* file, char* newpath);
 #endif

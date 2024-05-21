@@ -38,7 +38,6 @@ void allocFs(FileSystem **pFs)
 			return;
 		}
 	}
-	PANIC();
 }
 
 /**

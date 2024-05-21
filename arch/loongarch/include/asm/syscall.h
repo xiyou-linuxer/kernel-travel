@@ -100,18 +100,22 @@ static inline long __syscall4(long n,long ag0,long ag1,long ag2,long ag3)
 
 extern void* syscall_table[NR_SYSCALLS];
 
-enum SYSCALL {
-	SYS_PSTR,
-	SYS_FORK,
-};
-#define AT_FDCWD 0;
-#define open(filename, flags) openat(AT_FDCWD, (filename), (flags), (066))
+#define SYS_PSTR 222
+
+#define AT_FDCWD 0
+#define AT_OPEN -100
+
+#define open(filename, flags) openat(AT_OPEN, (filename), (flags), (066))
 #define mkdir(path, mode) mkdirat(AT_FDCWD,(path),(mode))
+#define unlink(path) unlinkat(AT_FDCWD,(path),0)
 
 #define SYS_getcwd         17
 #define SYS_dup            23
 #define SYS_dup2           24
 #define SYS_mkdirat        34
+#define SYS_unlinkat       35
+#define SYS_umount2        39
+#define SYS_mount          40
 #define SYS_chdir          49
 #define SYS_openat         56
 #define SYS_close          57
@@ -122,9 +126,9 @@ enum SYSCALL {
 #define SYS_nanosleep     101
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
-#define SYS_wait4         260
 #define SYS_clone         220
 #define SYS_execve        221
+#define SYS_wait4         260
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
@@ -161,7 +165,7 @@ static inline void pstr(char *str) {
 }
 
 static inline int fork(void) {
-	return syscall(SYS_FORK,0,0);
+	return syscall(SYS_clone,0,0);
 }
 
 

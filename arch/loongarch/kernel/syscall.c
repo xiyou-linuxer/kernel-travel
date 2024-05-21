@@ -27,7 +27,11 @@ void* syscall_table[NR_SYSCALLS] = {
 //	[SYS_close]        = "close",
 //	[SYS_openat]       = "open",
 //	[SYS_read]         = "read",
-//	[SYS_mkdirat]      = "mkdir_"
+//	[SYS_mkdirat]      = "mkdir_",
+//	[SYS_unlinkat]     = "unlink",
+//	[SYS_mount]        = "mount",
+//	[SYS_umount2]      = "umount",
+//	[1]                = "openat",
 //};
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
