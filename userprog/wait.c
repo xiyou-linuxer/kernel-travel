@@ -99,7 +99,7 @@ void sys_exit(int status)
 	thread_block(TASK_HANGING);
 }
 
-pid_t sys_wait(int* status)
+pid_t sys_wait(pid_t pid,int* status,int options)
 {
 	struct task_struct* parent = running_thread();
 	while(1)

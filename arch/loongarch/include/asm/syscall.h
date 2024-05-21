@@ -149,7 +149,7 @@ static inline void exit(int status) {
 }
 
 static inline pid_t wait(int* status) {
-	return syscall(SYS_wait4,status);
+	return syscall(SYS_wait4,-1,status,0);
 }
 
 static inline int execve(const char *path, char *const argv[], char *const envp[]) {
@@ -161,7 +161,7 @@ static inline void pstr(char *str) {
 }
 
 static inline int fork(void) {
-	return syscall(SYS_FORK);
+	return syscall(SYS_FORK,0,0);
 }
 
 

@@ -3,7 +3,7 @@
 #include <xkernel/thread.h>
 
 void sys_exit(int status);
-pid_t sys_wait(int* status);
+pid_t sys_wait(pid_t pid,int* status,int options);
 
 
 

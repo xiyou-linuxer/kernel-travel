@@ -2,19 +2,21 @@
 #include <asm/syscall.h>
 
 char* sysname[NR_SYSCALLS] = {
-	[SYS_getpid]       = "getpid",
-	[SYS_gettimeofday] = "gettimeofday",
-	[SYS_nanosleep]    = "sleep",
-	[SYS_write]        = "write",
-	[SYS_getcwd]       = "getcwd",
-	[SYS_chdir]        = "chdir",
-	[SYS_dup2]         = "dup2",
-	[SYS_dup]          = "dup",
-	[SYS_fstat]        = "fstat",
-	[SYS_close]        = "close",
-	[SYS_openat]       = "open",
-	[SYS_read]         = "read",
-	[SYS_mkdirat]      = "mkdir_"
+	//[SYS_getpid]       = "getpid",
+	//[SYS_gettimeofday] = "gettimeofday",
+	//[SYS_nanosleep]    = "sleep",
+	[SYS_wait4]        = "wait",
+	[SYS_clone]        = "fork",
+	//[SYS_write]        = "write",
+	//[SYS_getcwd]       = "getcwd",
+	//[SYS_chdir]        = "chdir",
+	//[SYS_dup2]         = "dup2",
+	//[SYS_dup]          = "dup",
+	//[SYS_fstat]        = "fstat",
+	//[SYS_close]        = "close",
+	//[SYS_openat]       = "open",
+	//[SYS_read]         = "read",
+	//[SYS_mkdirat]      = "mkdir_"
 };
 
 

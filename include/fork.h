@@ -2,6 +2,6 @@
 #define __FORK_H
 #include <xkernel/thread.h>
 
-pid_t sys_fork(void);
+pid_t sys_fork(uint64_t flag,int stack);
 
 #endif

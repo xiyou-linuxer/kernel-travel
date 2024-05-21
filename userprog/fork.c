@@ -101,7 +101,7 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 	return 0;
 }
 
-pid_t sys_fork(void)
+pid_t sys_fork(uint64_t flag,int stack)
 {
 	struct task_struct* cur = running_thread();
 	struct task_struct* child = (struct task_struct*)get_page();
@@ -121,10 +121,4 @@ pid_t sys_fork(void)
 	list_append(&thread_ready_list,&child->general_tag);
 
 	return child->pid;
-}
-
-pid_t sys_clone(uint64_t flag,int stack)
-{
-	pid_t pid = sys_fork();
-	return (pid > 0) ? pid : -1;
 }
