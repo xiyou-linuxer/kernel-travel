@@ -86,11 +86,88 @@ full_search:
 	return (unsigned long)vma;
 }
 
+static void
+__vma_link(struct mm_struct *mm, struct vm_area_struct *vma,
+	struct vm_area_struct *prev, struct rb_node **rb_link,
+	struct rb_node *rb_parent)
+{
+	/*VMA 链表初始化*/
+	if (prev) {
+		vma->vm_next = prev->vm_next;
+		prev->vm_next = vma;
+	} else {
+		/*第一个初始化*/
+		mm->mmap = vma;
+		if (rb_parent)
+			vma->vm_next = rb_entry(rb_parent,
+					struct vm_area_struct, vm_rb);
+		else
+			vma->vm_next = NULL;
+	}
+	/*更新管理VMA的红黑树*/
+	rb_link_node(&vma->vm_rb, rb_parent, rb_link);
+	rb_insert_color(&vma->vm_rb, &mm->mm_rb);
+}
+
+static void vma_link(struct mm_struct *mm, struct vm_area_struct *vma,
+			struct vm_area_struct *prev, struct rb_node **rb_link,
+			struct rb_node *rb_parent)
+{
+	__vma_link(mm, vma, prev, rb_link, rb_parent);
+	// __vma_link_file(vma);
+
+	mm->map_count++;
+}
+
+static struct vm_area_struct *
+find_vma_prepare(struct mm_struct *mm, unsigned long addr,
+		struct vm_area_struct **prev_vma, struct rb_node ***rb_link,
+		struct rb_node ** rb_parent)
+{
+	struct vm_area_struct * vma;
+	struct rb_node ** __rb_link, * __rb_parent, * rb_prev;
+
+	__rb_link = &mm->mm_rb.rb_node;
+	rb_prev = __rb_parent = NULL;
+	vma = NULL;
+
+	while (*__rb_link) {
+		struct vm_area_struct *vma_tmp;
+		/*保存迭代前的节点*/
+		__rb_parent = *__rb_link;
+		vma_tmp = rb_entry(__rb_parent, struct vm_area_struct, vm_rb);
+
+		if (vma_tmp->vm_end > addr) {
+			vma = vma_tmp;
+			/*当前VMA包含该 addr*/
+			if (vma_tmp->vm_start <= addr)
+				return vma;
+			/*当前 VMA 过大*/
+			__rb_link = &__rb_parent->rb_left;
+		} else {
+			/*当前 VMA 过小*/
+			rb_prev = __rb_parent;
+			__rb_link = &__rb_parent->rb_right;
+		}
+	}
+
+	*prev_vma = NULL;
+	if (rb_prev)
+		*prev_vma = rb_entry(rb_prev, struct vm_area_struct, vm_rb);
+	*rb_link = __rb_link;
+	*rb_parent = __rb_parent;
+	/*未找到，返回最接近的VMA*/
+	return vma;
+}
+
 unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 			unsigned long len, unsigned long prot,
 			unsigned long flags, unsigned long pgoff)
 {
 	struct mm_struct *mm = running_thread()->mm;	/* 获取该进程的memory descriptor*/
+	struct vm_area_struct *vma, *prev;
+	struct rb_node ** rb_link, * rb_parent;
+
 	len = PAGE_ALIGN(len);
 	if (!len)
 		return -1;
@@ -98,20 +175,34 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 		return -1;
 	if (mm->map_count > sysctl_max_map_count)
 		return -1;
-
-	printk("addr:0x%llx\n",addr);
+	/*获取没被分配的虚拟地址*/
 	addr = running_thread()->mm->get_unmapped_area(file, addr, len, pgoff, flags);
-	printk("addr:0x%llx\n",addr);
-	return 0;
+	/*获取 addr 对应 VMA*/
+	vma = find_vma_prepare(mm, addr, &prev, &rb_link, &rb_parent);
+
+	/*VMA 分配物理内存并初始化*/
+	malloc_usrpage(running_thread()->pgdir, (unsigned long)vma);
+	memset(vma, 0, sizeof(*vma));
+	vma->vm_mm = mm;
+	vma->vm_start = addr;
+	vma->vm_end = addr + len;
+	vma->vm_flags = flags;
+	vma->vm_pgoff = pgoff;
+
+	if(!file) {
+		vma_link(mm, vma, prev, rb_link, rb_parent);
+	}
+
+out:
+	mm->total_vm += len >> PAGE_SHIFT;
+	return addr;
 }
 
 
-void* sys_mmap(void* addr, size_t len, int prot,
+void *sys_mmap(void* addr, size_t len, int prot,
 		int flags, int fd, off_t pgoff)
 {
-	char * tmp = (char*)get_page();
-	tmp = "mmap content:   Hello, mmap successfully!";
-	return tmp;
+	return (void *)do_mmap(NULL, (unsigned long)addr, len, prot, flags, pgoff);
 }
 
 int sys_munmap(void *start, size_t len)
@@ -128,6 +219,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 		goto out;
 	if (!(offset & ~PAGE_MASK))
 		ret = do_mmap_pgoff(file, addr, len, prot, flag, offset >> PAGE_SHIFT);
+		
 out:
 	return ret;
 }

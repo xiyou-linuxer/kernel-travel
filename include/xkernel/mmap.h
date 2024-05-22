@@ -41,7 +41,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 // 	return ret;
 // }
 
-void* sys_mmap(void* addr, size_t len,
+void *sys_mmap(void* addr, size_t len,
 			int prot, int flags,
 			int fd, off_t pgoff);
 int sys_munmap(void *start, size_t len);

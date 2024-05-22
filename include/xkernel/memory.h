@@ -140,6 +140,7 @@ struct zoneref {
 
 // 虚拟内存区域描述符
 struct vm_area_struct {
+	struct mm_struct * vm_mm;
 	unsigned long vm_start;
 	unsigned long vm_end;
 	// vma 在 mm_struct->mmap 双向链表中的前驱节点和后继节点
@@ -150,7 +151,7 @@ struct vm_area_struct {
 	unsigned long vm_flags; 
 	struct file * vm_file;		/* File we map to (can be NULL). */
 	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE */
-	void * vm_opts;
+	// void * vm_opts;
 };
 
 // 进程虚拟内存空间描述符
@@ -162,7 +163,7 @@ struct mm_struct {
 	struct rb_root mm_rb;
 	struct vm_area_struct * mmap_cache;
 	unsigned long free_area_cache;	/*记录上次成功分配的起始地址的缓存*/
-
+	unsigned long total_vm;
 	unsigned long start_code, end_code, start_data, end_data;
 	unsigned long start_brk, brk, start_stack;
 	unsigned long arg_start, arg_end, env_start, env_end;

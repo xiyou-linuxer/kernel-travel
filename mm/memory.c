@@ -505,10 +505,10 @@ void free_one_page(struct zone *zone,
 	unsigned long combined_pfn;
 	bool to_tail;
 	ASSERT(zone_is_initialized(zone) == true);
-	printk("%p\n",zone);
-	printk("%p\n",zone);
-	printk("%lu\n",order);
-	printk("%lu\n",pfn);
+	// printk("%p\n",zone);
+	// printk("%p\n",zone);
+	// printk("%lu\n",order);
+	// printk("%lu\n",pfn);
 	while (order < MAX_PAGE_ORDER) {
 		// printk("find_buddy_page_pfn function done\n");
 		buddy = find_buddy_page_pfn(page, pfn, order, &buddy_pfn);
@@ -746,6 +746,7 @@ void mm_struct_init(struct mm_struct *mm)
 	mm->arg_start = mm->arg_end = 0;
 	mm->env_start = mm->env_start = 0;
 	mm->start_brk = mm->brk = mm->start_stack = 0;
+	mm->total_vm = 0;
 	
 	/* 后面可以给不同架构做适配*/
 	mm->get_unmapped_area = get_unmapped_area;
