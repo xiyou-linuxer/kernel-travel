@@ -118,7 +118,6 @@ void do_irq(struct pt_regs* regs, uint64_t virq) {
 	irq_exit();
 	if (softirq_active)
 		do_softirq();
-	raise_softirq(TIMER_SOFTIRQ);
 }
 
 bool in_interrupt(void) {

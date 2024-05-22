@@ -35,7 +35,7 @@ void intr_timer_handler(struct pt_regs *regs)
 	ticks++;
 
 	write_csr_ticlr(read_csr_ticlr() | (0x1 << 0));
-	printk("%d  ",cur_thread->ticks);
+	//printk("%d  ",cur_thread->ticks);
 	//printk("%s : %d",cur_thread->name,cur_thread->ticks);
 
 	if (cur_thread->ticks == 0) {
@@ -66,7 +66,7 @@ static inline int detach_timer(struct timer_list *timer)
 
 static inline unsigned int calc_index(unsigned long expire,unsigned int lvl)
 {
-	unsigned int lvl_vecidx = (expire >> LVL_SHIFT(lvl)) + 1;  // vec[0]==NULL
+	unsigned int lvl_vecidx = (expire >> LVL_SHIFT(lvl));  // vec[0]==NULL
 	return (lvl_vecidx&LVL_MASK) + LVL_OFF(lvl);
 }
 
@@ -109,12 +109,11 @@ static void cascade_timers(struct timer_vec *tvec)
 	struct list *vec_list = &tvec->vec[tvec->index];
 	struct list_elem *cur = vec_list->head.next;
 
-	printk("   index=%d\n",tvec->index);
+	//printk("   index=%d\n",tvec->index);
 	struct timer_list *cur_timer;
 	while (cur != &vec_list->tail)
 	{
 		cur_timer = elem2entry(struct timer_list,elm,cur);
-		internal_add_timer(cur_timer);
 		cur = cur->next;
 	}
 	list_init(vec_list);
@@ -124,12 +123,13 @@ static void cascade_timers(struct timer_vec *tvec)
 static void run_timers(void* unused)
 {
 	struct list *cur_list = &tvecs->vec[tvecs->index];
+	//printk("run_timers..\n");
 	while ((long)(ticks - timer_ticks) > 0)
 	{
 		struct timer_list *timer;
 		if (!tvecs[0].index) {
 			for (int n = 1 ; n < LVL_DEPTH ; n++) {
-				printk("level %d",n);
+				//printk("level %d",n);
 				cascade_timers(&tvecs[n]);
 				if (tvecs[n].index != 1) break;
 			}
@@ -142,6 +142,7 @@ static void run_timers(void* unused)
 		timer_ticks++;
 		tvecs[0].index = (tvecs[0].index + 1)&LVL_MASK;
 	}
+	raise_softirq(TIMER_SOFTIRQ);
 }
 
 void add_timer(struct timer_list *timer) 
@@ -173,6 +174,7 @@ void timer_init() {
 	register_handler(EXCCODE_TIMER, intr_timer_handler);
 	tvecs_init();
 	open_softirq(TIMER_SOFTIRQ,run_timers,NULL);
+	raise_softirq(TIMER_SOFTIRQ);
 
 	printk("timer_init done\n");
 }

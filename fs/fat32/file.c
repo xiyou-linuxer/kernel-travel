@@ -60,14 +60,11 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
 */
 int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
-
-	//printk("read from file %s: off = %d, n = %d\n", file->name, off, n);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
 		lock_release(&mtx_file);
 		return 0;
 	} else if (off + n > file->file_size) {
-		printk("read too much. shorten read length from %d to %d!\n", n,file->file_size - off);
 		n = file->file_size - off;
 	}
 	if (n == 0) {
@@ -198,7 +195,6 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 	char *sub_path = (char *)pathname;
 	Dirent *parent_dir = fatFs->root;
 	Dirent *dir_e;
-
 	/* 记录路径解析出来的各级名称,如路径"/a/b/c",
 	* 数组name每次的值分别是"a","b","c" */
 	char name[MAX_NAME_LEN] = {0};
@@ -211,12 +207,10 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 	{ // 若第一个字符就是结束符,结束循环
 		/* 记录查找过的路径,但不能超过searched_path的长度512字节 */
 		//ASSERT(strlen(searched_record->searched_path) < 512);
-
 		/* 记录已存在的父目录 */
 		strcat(searched_record->searched_path, "/");
 		strcat(searched_record->searched_path, name);
 		dir_e = search_dir_tree(parent_dir, name);
-		printk("name:%s",name);
 		/* 在所给的目录中查找文件 */
 		if (dir_e != NULL)
 		{

@@ -25,6 +25,11 @@ struct task_struct *task_alloc(void)
     return task;
 }
 
+void task_free(struct task_struct* task)
+{
+	void* vaddr = task;
+	free_page((uint64_t)vaddr);
+}
 
 void* userstk_alloc(uint64_t pdir)
 {

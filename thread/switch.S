@@ -35,3 +35,5 @@ prepare_switch:
 	cpu_save_nonscratch a0
 	stptr.d	a1, a0, THREAD_REG01
 	stptr.d a2, a0, THREAD_REG03
+
+	jr ra

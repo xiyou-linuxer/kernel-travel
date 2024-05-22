@@ -7,6 +7,7 @@
 #include <asm/thread_info.h>
 #include <xkernel/memory.h>
 #include <fs/fs.h>
+#include <stdint.h>
 
 #define TASK_NAME_LEN 16
 #define MAX_FILES_OPEN_PER_PROC 101
@@ -41,6 +42,7 @@ struct task_struct {
 	pid_t ppid;
 	pid_t pid;
 	enum task_status status;
+	int8_t exit_status;
 	char name[TASK_NAME_LEN];
 	uint8_t priority;
 	uint8_t ticks;

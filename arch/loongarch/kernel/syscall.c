@@ -14,20 +14,25 @@ void* syscall_table[NR_SYSCALLS] = {
 	[0 ... NR_SYSCALLS-1] = sys_ni_syscall
 };
 
-char* sysname[NR_SYSCALLS] = {
-	// [SYS_getpid]		= "getpid",
-	// [SYS_gettimeofday]	= "gettimeofday",
-	// [SYS_nanosleep]		= "sleep",
-	// [SYS_write]		= "write",
-	// [SYS_getcwd]		= "getcwd",
-	// [SYS_chdir]		= "chdir",
-	// [SYS_dup2]		= "dup2",
-	// [SYS_dup]		= "dup",
-	// [SYS_fstat]		= "fstat",
-	// [SYS_close]		= "close",
-	// [SYS_read]		= "read",
-	[SYS_mmap]		= "mmap",
-};
+//char* sysname[NR_SYSCALLS] = {
+//	[SYS_getpid]       = "getpid",
+//	[SYS_gettimeofday] = "gettimeofday",
+//	[SYS_nanosleep]    = "sleep",
+//	[SYS_write]        = "write",
+//	[SYS_getcwd]       = "getcwd",
+//	[SYS_chdir]        = "chdir",
+//	[SYS_dup2]         = "dup2",
+//	[SYS_dup]          = "dup",
+//	[SYS_fstat]        = "fstat",
+//	[SYS_close]        = "close",
+//	[SYS_openat]       = "open",
+//	[SYS_read]         = "read",
+//	[SYS_mkdirat]      = "mkdir_",
+//	[SYS_unlinkat]     = "unlink",
+//	[SYS_mount]        = "mount",
+//	[SYS_umount2]      = "umount",
+//	[1]                = "openat",
+//};
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
 {

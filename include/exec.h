@@ -61,6 +61,7 @@ typedef struct
 #define ELF_PAGEALIGN(_v) (((_v) + ELF_MIN_ALIGN - 1) & ~(ELF_MIN_ALIGN - 1))
 
 int64_t load(const char *path);
-int sys_execv(const char *path, char *const argv[], char *const envp[]);
+int sys_exeload(const char *path, char *const argv[], char *const envp[]);
+int sys_execve(const char *path, char *const argv[], char *const envp[]);
 
 #endif

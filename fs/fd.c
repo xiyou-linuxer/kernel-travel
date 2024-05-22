@@ -30,7 +30,7 @@ int32_t get_free_slot_in_global(void)
 	}
 	if (fd_idx == MAX_FILE_OPEN)
 	{
-		printk("exceed max open files\n");
+		//printk("exceed max open files\n");
 		return -1;
 	}
 	return fd_idx;
@@ -54,7 +54,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 	}
 	if (local_fd_idx == MAX_FILES_OPEN_PER_PROC)
 	{
-		printk("exceed max open files_per_proc\n");
+		//printk("exceed max open files_per_proc\n");
 		return 0;
 	}
 	return local_fd_idx;
@@ -88,8 +88,7 @@ int file_open(Dirent* file, int flag, mode_t mode)
 	}	
 	file_table[fd_idx].dirent = file;
 	file_table[fd_idx].dirent->refcnt += 1;
-	printk("file_open\n");
-	file_table[fd_idx].offset =0; // 每次打开文件,要将offset还原为0,即让文件内的指针指向开头
+	file_table[fd_idx].offset = 0; // 每次打开文件,要将offset还原为0,即让文件内的指针指向开头
 	file_table[fd_idx].flags = flag;//文件打开的标志位
 	file_table[fd_idx].stat.st_mode = mode;
 	file_table[fd_idx].type = dev_file;
@@ -143,7 +142,7 @@ int rm_unused_file(struct Dirent *file) {
 
 	// 2. 断开父子关系
 	ASSERT(file->parent_dirent != NULL); // 不处理根目录的情况
-	// 先递归删除子Dirent（由于存在意向锁，因此这样）
+	// 先递归删除子Dirent
 	if (file->type == DIRENT_DIR) {
 		struct list_elem *tmp = file->child_list.head.next;
 		while (tmp!=&file->child_list.tail) {
@@ -180,7 +179,7 @@ int rmfile(struct Dirent *file)
 		printk("File is in use\n");
 		return -1;
 	}
-
+	//return 0;
 	return rm_unused_file(file);
 }
 
@@ -205,4 +204,25 @@ int unlinkat(struct Dirent *dir, char *path) {
 	ret = rmfile(file);
 	lock_release(&mtx_file);
 	return ret;
+}
+
+int filename2path(Dirent *file,char *newpath)
+{
+    Dirent *dir = file;
+    char buf[MAX_PATH_LEN];
+	strcpy(buf,file->name);
+    while (strcmp(dir->parent_dirent->name,"/"))
+    {
+        strcat(buf,dir->parent_dirent->name);
+        
+        dir = dir->parent_dirent;
+    }
+    strcpy(newpath, "/");
+    while (strchrs(buf,'/')!=0)
+    {
+        strcat(newpath,strrchr(buf,'/'));
+		memset(strrchr(buf,'/'),0,MAX_NAME_LEN);
+    }
+    strcat(newpath,buf);
+    return 1;
 }

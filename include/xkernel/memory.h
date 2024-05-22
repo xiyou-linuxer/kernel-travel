@@ -240,6 +240,8 @@ u64 *pmd_ptr(u64 pd,u64 vaddr);
 u64 *pte_ptr(u64 pd,u64 vaddr);
 u64 get_page(void);
 u64 get_pages(u64 count);
+void free_page(u64 vaddr);
+void free_pages(u64 vstart,u64 count);
 unsigned long get_kernel_pge(void);
 void free_kernel_pge(void* k_page);
 void page_table_add(uint64_t pd,uint64_t _vaddr,uint64_t _paddr,uint64_t attr);

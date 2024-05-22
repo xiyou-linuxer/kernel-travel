@@ -10,6 +10,7 @@ extern struct list thread_ready_list;
 extern struct list thread_all_list;
 extern struct list_elem* thread_tag;
 
+struct task_struct* pid2thread(int64_t pid);
 void init_thread(struct task_struct *pthread, char *name, int prio);
 struct task_struct *running_thread(void);
 void thread_init(void);
@@ -22,5 +23,6 @@ void thread_yield(void);
 pid_t fork_pid(void);
 void release_pid(pid_t pid);
 int sys_sleep(struct timespec *req,struct timespec *rem);
+void thread_exit(struct task_struct* exit);
 
 #endif

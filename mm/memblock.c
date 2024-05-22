@@ -7,6 +7,7 @@
 #include <debug.h>
 #include <asm/numa.h>
 #include <xkernel/math.h>
+
 #define INIT_MEMBLOCK_MEMORY_REGIONS 32
 #define INIT_MEMBLOCK_RESERVED_REGIONS INIT_MEMBLOCK_MEMORY_REGIONS
 #define MEMBLOCK_ALLOC_ANYWHERE	(~(phys_addr_t)0)
@@ -16,7 +17,6 @@
 		if (memblock_debug)					\
 			pr_info(fmt, ##__VA_ARGS__);			\
 	} while (0)
-
 
 static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS];
 static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS];
@@ -36,9 +36,6 @@ struct memblock memblock = {
 	.bottom_up		= false,
 	.current_limit		= MEMBLOCK_ALLOC_ANYWHERE,
 };
-
-
-
 
 unsigned long max_low_pfn = 0;
 unsigned long min_low_pfn = 0;

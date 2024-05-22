@@ -36,6 +36,13 @@ uint64_t get_page(void)
 	return page;
 }
 
+void free_page(u64 vaddr)
+{
+	u64 bit_off = ((vaddr|CSR_DMW1_BASE) - phy_pool.paddr_start) >> 12;
+	ASSERT(bit_off < phy_pool.btmp.btmp_bytes_len);
+	bitmap_set(&phy_pool.btmp,bit_off,0);
+}
+
 u64 get_pages(u64 count)
 {
 	unsigned long page;
@@ -50,6 +57,14 @@ u64 get_pages(u64 count)
 	memset((void *)page,0,(int)(PAGE_SIZE)*count);
 	return page;
 }
+
+void free_pages(u64 vstart,u64 count)
+{
+	u64 bit_off = (vstart&~CSR_DMW1_BASE - phy_pool.paddr_start) >> 12;
+	for (u64 i = 0,b = bit_off ; i < count ; i++,b++)
+		bitmap_set(&phy_pool.btmp,b,0);
+}
+
 
 u64 *pgd_ptr(u64 pd,u64 vaddr)
 {
@@ -107,6 +122,7 @@ void malloc_usrpage_withoutopmap(u64 pd,u64 vaddr)
 {
 	unsigned long paddr = get_page();
 	page_table_add(pd,vaddr,paddr,PTE_V | PTE_PLV | PTE_D);
+	//memset((void *)vaddr,0,(int)(PAGE_SIZE));
 }
 
 unsigned long get_kernel_pge(void)

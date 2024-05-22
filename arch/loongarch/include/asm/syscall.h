@@ -100,23 +100,35 @@ static inline long __syscall4(long n,long ag0,long ag1,long ag2,long ag3)
 
 extern void* syscall_table[NR_SYSCALLS];
 
-enum SYSCALL {
-	SYS_PSTR,
-	SYS_FORK,
-};
+#define SYS_PSTR 222
 
-#define SYS_getcwd 17
-#define SYS_chdir 49
-#define SYS_close 57
-#define SYS_read 63
+#define AT_FDCWD 0
+#define AT_OPEN -100
+
+#define open(filename, flags) openat(AT_OPEN, (filename), (flags), (066))
+#define mkdir(path, mode) mkdirat(AT_FDCWD,(path),(mode))
+#define unlink(path) unlinkat(AT_FDCWD,(path),0)
+
+#define SYS_getcwd         17
+#define SYS_dup            23
+#define SYS_dup2           24
+#define SYS_mkdirat        34
+#define SYS_unlinkat       35
+#define SYS_umount2        39
+#define SYS_mount          40
+#define SYS_chdir          49
+#define SYS_openat         56
+#define SYS_close          57
+#define SYS_read           63
 #define SYS_write          64
+#define SYS_fstat          80
+#define SYS_exit           93
 #define SYS_nanosleep     101
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
-#define SYS_dup 23
-#define SYS_dup2 24
-#define SYS_fstat 80
-#define SYS_mmap 222
+#define SYS_clone         220
+#define SYS_execve        221
+#define SYS_wait4         260
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
@@ -136,13 +148,26 @@ static inline int sleep(struct timespec *req,struct timespec *rem) {
 	return syscall(SYS_nanosleep,req,rem);
 }
 
+static inline void exit(int status) {
+	syscall(SYS_exit,status);
+}
+
+static inline pid_t wait(int* status) {
+	return syscall(SYS_wait4,-1,status,0);
+}
+
+static inline int execve(const char *path, char *const argv[], char *const envp[]) {
+	return syscall(SYS_execve,path,argv,envp);
+}
+
 static inline void pstr(char *str) {
 	syscall(SYS_PSTR,str);
 }
 
 static inline int fork(void) {
-	return syscall(SYS_FORK);
+	return syscall(SYS_clone,0,0);
 }
+
 
 
 #endif

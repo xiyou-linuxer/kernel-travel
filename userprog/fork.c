@@ -15,7 +15,8 @@ static int copy_pcb(struct task_struct* parent,struct task_struct* child)
 {
 	memcpy(child,parent,PAGESIZE);
 	child->self_kstack = (uint64_t*)((uint64_t)child + PAGESIZE);
-	child->pid = fork_pid();
+	child->pid  = fork_pid();
+	child->ppid = parent->pid;
 	child->ticks    = parent->priority;
 	child->elapsed_ticks = 0;
 	child->status   = TASK_READY;
@@ -67,8 +68,7 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 
 static void make_switch_prepare(struct task_struct* child)
 {
-	struct pt_regs* regs = (struct pt_regs*)\
-						   ((uint64_t)child->self_kstack - sizeof(struct pt_regs));
+	struct pt_regs* regs = (struct pt_regs*)((uint64_t)child->self_kstack - sizeof(struct pt_regs));
 	//child->self_kstack = (uint64_t*)((uint64_t)child->self_kstack - sizeof(struct pt_regs));
 
 	regs->regs[4] = 0;
@@ -101,7 +101,7 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 	return 0;
 }
 
-pid_t sys_fork(void)
+pid_t sys_fork(uint64_t flag,int stack)
 {
 	struct task_struct* cur = running_thread();
 	struct task_struct* child = (struct task_struct*)get_page();
