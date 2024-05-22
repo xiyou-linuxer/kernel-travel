@@ -3,6 +3,8 @@
 #include <xkernel/list.h>
 #include <xkernel/thread.h>
 #include <xkernel/stdio.h>
+#include <fs/syscall_fs.h>
+#include <trap/irq.h>
 
 static int init_adopt_child(struct list_elem* child,void* id)
 {
@@ -35,6 +37,7 @@ static int find_child(struct list_elem* elm,void* parent_pid)
 
 static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 {
+	printk("exit: release %x",pdir);
 	uint64_t* pgdp = pgd_ptr(pdir,0);
 	uint64_t vaddr = 0;
 	for (int pgd_idx = 0; pgd_idx < 512; pgd_idx++,pgdp++)
@@ -58,10 +61,13 @@ static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 				if (!*ptep) {
 					continue;
 				}
+				//printk("exit: release  *ptep %x\n",*ptep&0xfffffffffffff000);
 				free_page(*ptep&0xfffffffffffff000);
 			}
+			//printk("exit: release *pmdp %x\n",*pmdp&0xfffffffffffff000);
 			free_page(*pmdp&0xfffffffffffff000);
 		}
+		//printk("exit: release *pgdp %x\n",*pgdp&0xfffffffffffff000);
 		free_page(*pgdp&0xfffffffffffff000);
 	}
 
@@ -96,6 +102,11 @@ void sys_exit(int status)
 	if (parent->status == TASK_WAITING) {
 		thread_unblock(parent);
 	}
+	for (uint64_t fd = 3 ; fd < MAX_FILES_OPEN_PER_PROC ; fd++) {
+		if (child->fd_table[fd] != -1) {
+			sys_close(fd);
+		}
+	}
 	thread_block(TASK_HANGING);
 }
 
@@ -109,13 +120,15 @@ pid_t sys_wait(pid_t pid,int* status,int options)
 		{
 			struct task_struct* exit_child = elem2entry(struct task_struct,all_list_tag,exit_elm);
 			*status = exit_child->exit_status;
+			int ret_pid = exit_child->pid;
 			thread_exit(exit_child);
 
-			return exit_child->pid;
+			return ret_pid;
 		}
 
 		exit_elm = list_traversal(&thread_all_list,find_child,(void*)(int64_t)parent->pid);
 		if (exit_elm == NULL) {
+			//printk("%s wait end\n",parent->name);
 			return -1;
 		}
 		thread_block(TASK_WAITING);

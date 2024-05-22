@@ -13,9 +13,11 @@
 #include <xkernel/init.h>
 #include <xkernel/math.h>
 #include <xkernel/compiler.h>
+#include <sync.h>
 
 struct pool reserve_phy_pool __initdata;
 struct pool phy_pool __initdata;
+struct lock pool_lock;
 static unsigned long arch_zone_lowest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long nr_kernel_pages __initdata;
@@ -25,12 +27,14 @@ struct page *mem_map;
 
 uint64_t get_page(void)
 {
+	//lock_acquire(&pool_lock);
 	unsigned long page;
 	u64 bit_off = bit_scan(&phy_pool.btmp,1);
 	if (bit_off == -1){
 		return 0;
 	}
 	bitmap_set(&phy_pool.btmp,bit_off,1);
+	//lock_release(&pool_lock);
 	page = (((bit_off << 12) + phy_pool.paddr_start) | CSR_DMW1_BASE);
 	memset((void *)page,0,(int)(PAGE_SIZE));
 	return page;
@@ -45,6 +49,7 @@ void free_page(u64 vaddr)
 
 u64 get_pages(u64 count)
 {
+	//lock_acquire(&pool_lock);
 	unsigned long page;
 	u64 bit_off = bit_scan(&phy_pool.btmp,count);
 	if (bit_off == -1){
@@ -52,6 +57,7 @@ u64 get_pages(u64 count)
 	}
 	for (u64 i = 0,b = bit_off ; i < count ; i++,b++)
 		bitmap_set(&phy_pool.btmp,b,1);
+	//lock_release(&pool_lock);
 
 	page = (((bit_off << 12) + phy_pool.paddr_start) | CSR_DMW1_BASE);
 	memset((void *)page,0,(int)(PAGE_SIZE)*count);
@@ -729,4 +735,5 @@ void __init mem_init(void)
 {
 	high_memory = (void *) __va(max_low_pfn << PAGE_SHIFT);
 	memblock_free_all();
+	lock_init(&pool_lock);
 }

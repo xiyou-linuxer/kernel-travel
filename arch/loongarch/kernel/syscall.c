@@ -1,6 +1,7 @@
 #include <asm/syscall.h>
 #include <asm/pt_regs.h>
 #include <xkernel/types.h>
+#include <xkernel/stdio.h>
 
 asmlinkage long sys_ni_syscall(void) {
 	return -ENOSYS;

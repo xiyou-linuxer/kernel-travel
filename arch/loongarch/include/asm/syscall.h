@@ -168,6 +168,4 @@ static inline int fork(void) {
 	return syscall(SYS_clone,0,0);
 }
 
-
-
 #endif

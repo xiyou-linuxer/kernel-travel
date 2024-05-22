@@ -203,7 +203,7 @@ void schedule()
 	page_dir_activate(next);
 	next->status = TASK_RUNNING;
 	//printk("curticks:%d\n",cur->ticks);
-	//printk("next:%s",next->name);
+	printk("next:%s\n",next->name);
 
 	irq_exit();
 	switching = 1;

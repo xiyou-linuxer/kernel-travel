@@ -4,7 +4,7 @@
 #include <allocator.h>
 
 #define USER_STACK_START  (USER_STACK - 0x1000)
-#define USER_VADDR_START 0x8048000
+#define USER_VADDR_START 0
 
 extern void proc_1(void *);
 

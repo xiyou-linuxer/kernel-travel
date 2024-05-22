@@ -39,7 +39,7 @@ void intr_timer_handler(struct pt_regs *regs)
 	//printk("%s : %d",cur_thread->name,cur_thread->ticks);
 
 	if (cur_thread->ticks == 0) {
-		printk("timer to schedule...");
+		printk("time to schedule...");
 		schedule();
 	} else {
 		cur_thread->ticks--;
