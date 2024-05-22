@@ -8,7 +8,7 @@
 #include <fs/syscall_fs.h>
 #include <fs/fd.h>
 #include <xkernel/mmap.h>
-#include "xkernel/types.h"
+#include <xkernel/types.h>
 #include <allocator.h>
 
 void* program_begin;
@@ -34,7 +34,7 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 	} else {
 		page_cnt = 1;
 	}
-
+	/* 这里 pd 为 0 导致错误*/
 	uint64_t pd = running_thread()->pgdir;
 	uint64_t pg_start = phdr->p_vaddr&0xfffffffffffff000;
 	for (uint64_t p = 0 ,page = pg_start ; p < page_cnt ; p++)

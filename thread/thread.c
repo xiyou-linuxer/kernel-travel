@@ -16,6 +16,7 @@
 #include <process.h>
 #include <trap/irq.h>
 #include <asm/timer.h>
+#include <xkernel/memory.h>
 
 struct task_struct* main_thread;
 struct task_struct* idle_thread;
@@ -137,6 +138,17 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	pthread->cwd[0] = '/';
 	pthread->cwd_dirent = NULL;
 	pthread->stack_magic = STACK_MAGIC_NUM;
+	pthread->mm = (struct mm_struct*)get_page();
+	mm_struct_init(pthread->mm);
+
+	if (!pthread->mm) {
+		goto error;
+	}
+	return;
+error:
+	// __free_pages_ok((struct page *)pthread->mm, 0, 0);
+	printk("[Error] : 没有足够内存为 mm_struct 分配。");
+	return;
 }
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg)

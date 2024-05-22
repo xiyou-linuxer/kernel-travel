@@ -54,9 +54,13 @@ static inline int __ffs(unsigned int x)
 #define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
 #define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
 				 ARCH_PFN_OFFSET)
-
+#ifndef page_to_pfn
 #define page_to_pfn __page_to_pfn
+#endif
+
+#ifndef pfn_to_page 
 #define pfn_to_page __pfn_to_page
+#endif
 
 #ifndef pfn_valid
 static inline int pfn_valid(unsigned long pfn)
@@ -67,6 +71,8 @@ static inline int pfn_valid(unsigned long pfn)
 	return pfn >= pfn_offset && (pfn - pfn_offset) < max_mapnr;
 }
 #endif
+
+#define INVAILD_MMAP_CACHE ((struct vm_area_struct *)NULL)
 
 struct virt_addr {
     u64 vaddr_start;
@@ -259,4 +265,5 @@ struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid);
 
 void __free_pages_ok(struct page *page, unsigned int order,
 			    bool fpi_flags);
+void mm_struct_init(struct mm_struct *mm);
 #endif

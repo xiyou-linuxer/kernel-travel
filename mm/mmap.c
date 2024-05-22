@@ -3,6 +3,7 @@
 #include <xkernel/memory.h>
 #include <xkernel/thread.h>
 #include <xkernel/rbtree.h>
+#include "xkernel/stdio.h"
 
 unsigned long sysctl_max_map_count = 1024;
 
@@ -27,6 +28,7 @@ struct vm_area_struct * find_vma(struct mm_struct * mm, unsigned long addr)
 
 				if (vma_tmp->vm_end > addr) {
 					vma = vma_tmp;
+					/*会使用红黑树维护虚拟内存的一致性，不会出现VMA之间有交集*/
 					if (vma_tmp->vm_start <= addr)
 						break;
 					rb_node = rb_node->rb_left;
@@ -97,7 +99,9 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	if (mm->map_count > sysctl_max_map_count)
 		return -1;
 
+	printk("addr:0x%llx\n",addr);
 	addr = running_thread()->mm->get_unmapped_area(file, addr, len, pgoff, flags);
+	printk("addr:0x%llx\n",addr);
 	return 0;
 }
 
@@ -113,4 +117,17 @@ void* sys_mmap(void* addr, size_t len, int prot,
 int sys_munmap(void *start, size_t len)
 {
 	return 0;
+}
+
+unsigned long do_mmap(struct file *file, unsigned long addr,
+	unsigned long len, unsigned long prot,
+	unsigned long flag, unsigned long offset)
+{
+	unsigned long ret = -1;
+	if ((offset + PAGE_ALIGN(len)) < offset)
+		goto out;
+	if (!(offset & ~PAGE_MASK))
+		ret = do_mmap_pgoff(file, addr, len, prot, flag, offset >> PAGE_SHIFT);
+out:
+	return ret;
 }

@@ -13,6 +13,7 @@
 #include <xkernel/init.h>
 #include <xkernel/math.h>
 #include <xkernel/compiler.h>
+#include "xkernel/mmap.h"
 
 struct pool reserve_phy_pool __initdata;
 struct pool phy_pool __initdata;
@@ -729,4 +730,25 @@ void __init mem_init(void)
 {
 	high_memory = (void *) __va(max_low_pfn << PAGE_SHIFT);
 	memblock_free_all();
+}
+
+void mm_struct_init(struct mm_struct *mm)
+{
+	mm->mmap = NULL;
+	mm->mm_rb = RB_ROOT;
+	mm->mmap_cache = INVAILD_MMAP_CACHE;
+	mm->free_area_cache = 0;
+	mm->map_count = 0;
+	mm->rss = 0;
+	mm->vm_file = NULL;
+	mm->start_code = mm->end_code = 0;
+	mm->start_data = mm->end_data = 0;
+	mm->arg_start = mm->arg_end = 0;
+	mm->env_start = mm->env_start = 0;
+	mm->start_brk = mm->brk = mm->start_stack = 0;
+	
+	/* 后面可以给不同架构做适配*/
+	mm->get_unmapped_area = get_unmapped_area;
+	
+	return;
 }

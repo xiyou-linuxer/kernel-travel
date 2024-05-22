@@ -99,41 +99,40 @@ void __init __no_sanitize_address start_kernel(void)
 	console_init();
 	syscall_init();
 	fs_init();
+	unsigned long map = do_mmap(NULL, 0x90004124515, 0x123, 1, 0x12345, 0x123000);
 	//thread_start("thread_a",10,thread_a,NULL);
 	//
 	// test_mmap();
-	int count=0;
-	char filename[9][128] = {0};
-	for (int i = 0; i < NR_SYSCALLS; i++)
-	{
-		if (sysname[i] == NULL)
-			continue;
-		Dirent *file;
-		struct path_search_record searched_record;
-		int pri=5;
-		strcpy(filename[count],"/");
-		strcat(filename[count],sysname[i]);
-		process_execute(filename[count],filename[count],pri);
-		count++;
-	}
+	// int count=0;
+	// char filename[9][128] = {0};
+	// for (int i = 0; i < NR_SYSCALLS; i++)
+	// {
+	// 	if (sysname[i] == NULL)
+	// 		continue;
+	// 	Dirent *file;
+	// 	struct path_search_record searched_record;
+	// 	int pri=5;
+	// 	strcpy(filename[count],"/");
+	// 	strcat(filename[count],sysname[i]);
+	// 	process_execute(filename[count],filename[count],pri);
+	// 	count++;
+	// }
 
 	// early_boot_irqs_disabled = true;
-	
-	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	if (fd == -1) {
-		printk("open failed");
-	}
-	sys_write(fd,init_code,init_code_len);
-	bufSync();
-
+	// int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	// if (fd == -1) {
+	// 	printk("open failed");
+	// }
+	// sys_write(fd,init_code,init_code_len);
+	// bufSync();
 	struct timespec req;
 	req.tv_sec=1;req.tv_nsec=0;
 	while (1) {
-		//sys_gettimeofday(&ts);
-		//printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
-		//sys_sleep(&req,&req);
-		//unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
-		//printk("%llx  ",time);
-		//printk("main pid=%d\n ",sys_getpid());
+		// sys_gettimeofday(&ts);
+		// printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
+		// sys_sleep(&req,&req);
+		unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
+		printk("%llx  ",time);
+		printk("main pid=%d\n ",sys_getpid());
 	}
 }

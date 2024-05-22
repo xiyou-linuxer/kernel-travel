@@ -27,19 +27,19 @@ extern unsigned long do_mmap_pgoff(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot,
 	unsigned long flag, unsigned long pgoff);
 
-static inline
+// static inline
 unsigned long do_mmap(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot,
-	unsigned long flag, unsigned long offset)
-{
-	unsigned long ret = -1;
-	if ((offset + PAGE_ALIGN(len)) < offset)
-		goto out;
-	if (!(offset & ~PAGE_MASK))
-		ret = do_mmap_pgoff(file, addr, len, prot, flag, offset >> PAGE_SHIFT);
-out:
-	return ret;
-}
+	unsigned long flag, unsigned long offset);
+// {
+// 	unsigned long ret = -1;
+// 	// if ((offset + PAGE_ALIGN(len)) < offset)
+// 		// goto out;
+// 	if (!(offset & ~PAGE_MASK))
+// 		ret = do_mmap_pgoff(file, addr, len, prot, flag, offset >> PAGE_SHIFT);
+// out:
+// 	return ret;
+// }
 
 void* sys_mmap(void* addr, size_t len,
 			int prot, int flags,
