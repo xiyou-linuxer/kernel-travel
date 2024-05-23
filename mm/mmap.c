@@ -3,11 +3,13 @@
 #include <xkernel/memory.h>
 #include <xkernel/thread.h>
 #include <xkernel/rbtree.h>
-#include "xkernel/stdio.h"
+#include <xkernel/stdio.h>
+#include <asm-generic/errno.h>
 
 unsigned long sysctl_max_map_count = 1024;
 
-struct vm_area_struct * find_vma(struct mm_struct * mm, unsigned long addr)
+struct vm_area_struct * 
+find_vma(struct mm_struct * mm, unsigned long addr)
 {
 	struct vm_area_struct *vma = NULL;
 
@@ -83,7 +85,7 @@ full_search:
 		}
 		addr = vma->vm_end;
 	}
-	return (unsigned long)vma;
+	return (unsigned long)addr;
 }
 
 static void
@@ -160,6 +162,44 @@ find_vma_prepare(struct mm_struct *mm, unsigned long addr,
 	return vma;
 }
 
+static inline 
+bool file_mmap_ok(struct file *file, unsigned long pgoff, 
+				unsigned long len)
+{
+	/*这里目前只有普通文件*/
+	u64 maxsize = MAX_LFS_FILESIZE;
+
+	if (maxsize && len > maxsize)
+		return false;
+	maxsize -= len;
+	/*给定的页面偏移量超出了剩余可用的映射范围*/
+	if (pgoff > maxsize >> PAGE_SHIFT)
+		return false;
+	return true;
+}
+
+/*检查映射的虚拟内存是否超过内核限制*/
+static 
+bool check_vaddr_limit(void)
+{
+	return true;
+}
+
+static void find_vma_links(void)
+{
+	return;
+}
+
+/* 当前用不到，直接返回NULL */
+struct vm_area_struct *vma_merge(struct mm_struct *mm,
+		struct vm_area_struct *prev, unsigned long addr,
+		unsigned long end, unsigned long vm_flags,
+		struct anon_vma *anon_vma, struct file *file,
+		pgoff_t pgoff)
+{
+	return NULL;
+}
+
 unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 			unsigned long len, unsigned long prot,
 			unsigned long flags, unsigned long pgoff)
@@ -173,27 +213,87 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 		return -1;
 	if ((pgoff + (len >> PAGE_SHIFT)) < pgoff)
 		return -1;
+	/*如果超过最大 map 数量*/
 	if (mm->map_count > sysctl_max_map_count)
 		return -1;
-	/*获取没被分配的虚拟地址*/
-	addr = running_thread()->mm->get_unmapped_area(file, addr, len, pgoff, flags);
+	/*查找没被分配的虚拟地址*/
+	addr = running_thread()->mm->get_unmapped_area(file, addr + TASK_UNMAPPED_BASE, len, pgoff, flags);
+
+	/*根据 file 和 flages 设置最终的 vm_flags*/
+
+	/*用于后续扩展*/
+	if (file) {
+		unsigned long flags_mask;
+
+		if (!file_mmap_ok(file, pgoff, len))
+			return -EOVERFLOW;
+
+		flags_mask = LEGACY_MAP_MASK;
+
+		switch (flags & MAP_TYPE) {
+		case MAP_SHARED:
+			break;
+		case MAP_PRIVATE:
+			break;
+		default:
+			return -EINVAL;
+		}
+	} else {
+		switch (flags & MAP_TYPE) {
+		case MAP_SHARED:
+			break;
+		case MAP_PRIVATE:
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	/*检查是否超过地址空间虚拟地址用量的限制
+	* 如果超过报异常*/
+	check_vaddr_limit();
+
+	/*检查是否有重叠映射：
+	* 如果有就解除旧的映射*/
+	// find_vma_links();
+		/*do_munmap 解除映射*/
+
 	/*获取 addr 对应 VMA*/
 	vma = find_vma_prepare(mm, addr, &prev, &rb_link, &rb_parent);
 
+
+	/*尝试与相邻的VMA进行合并
+	* 可以合并：返回*/
+	// vma = vma_merge(mm, prev, addr, addr + len, flags,
+	// 	NULL, file, pgoff);
+ 
+	/*初始化 VMA 结构
+	* 文件映射： call_mmap
+	* 共享匿名映射: shmem_zero_setup
+	* 私有匿名映射: vma_set_anonyumous*/
+
 	/*VMA 分配物理内存并初始化*/
+	printk("0x%llx\n",running_thread());
 	malloc_usrpage(running_thread()->pgdir, (unsigned long)vma);
-	memset(vma, 0, sizeof(*vma));
+	// memset(vma, 0, sizeof(*vma));
 	vma->vm_mm = mm;
 	vma->vm_start = addr;
 	vma->vm_end = addr + len;
 	vma->vm_flags = flags;
 	vma->vm_pgoff = pgoff;
 
-	if(!file) {
-		vma_link(mm, vma, prev, rb_link, rb_parent);
+	if(file) {
+		// call_mmap();	FAT32 的处理函数...
+	} else if (flags & VM_SHARED) {
+	
+	} else {
+
 	}
+	/*建立VMA和红黑树，文件页等映射*/
+ 	vma_link(mm, vma, prev, rb_link, rb_parent);
 
 out:
+	/*更新 mm_struct 的统计信息*/
 	mm->total_vm += len >> PAGE_SHIFT;
 	return addr;
 }

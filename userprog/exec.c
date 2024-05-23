@@ -116,8 +116,8 @@ int64_t load(const char *path)
 	// running_thread()->mm->rss = 0;
 
 	/*获取当前内存布局*/
-	// arch_pick_mmap_layout(running_thread()->mm);
-	// running_thread()->mm->free_area_cache = running_thread()->mm->mmap_base;
+	arch_pick_mmap_layout(running_thread()->mm);
+	running_thread()->mm->free_area_cache = running_thread()->mm->mmap_base;
 	/*设置 stack 的 vm_area_struct*/
 	// setup_arg_pages(bprm, randomize_stack_top(STACK_TOP),
 	// 			 executable_stack);
@@ -133,14 +133,14 @@ int64_t load(const char *path)
 		sys_lseek(fd,phoff,SEEK_SET);
 		sys_read(fd,&phdr,sizeof(phdr));
 		if (phdr.p_type == PT_LOAD) {
-			// if (phdr.p_flags & PF_R) elf_prot |= PROT_READ;
-			// if (phdr.p_flags & PF_W) elf_prot |= PROT_WRITE;
-			// if (phdr.p_flags & PF_X) elf_prot |= PROT_EXEC;
-			// elf_flags = MAP_PRIVATE|MAP_DENYWRITE|MAP_EXECUTABLE;
+			if (phdr.p_flags & PF_R) elf_prot |= PROT_READ;
+			if (phdr.p_flags & PF_W) elf_prot |= PROT_WRITE;
+			if (phdr.p_flags & PF_X) elf_prot |= PROT_EXEC;
+			elf_flags = MAP_PRIVATE|MAP_DENYWRITE|MAP_EXECUTABLE;
 			v_addr = phdr.p_vaddr;
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
-			// elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
+			elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
 		}
 		phoff += ehdr.e_phentsize;
 	}

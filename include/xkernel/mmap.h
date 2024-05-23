@@ -21,6 +21,19 @@
 #ifndef MAP_FAILED
 #define MAP_FAILED ((void *)-1)
 #define TASK_UNMAPPED_BASE	(0x40000000UL)
+
+#define LEGACY_MAP_MASK (MAP_SHARED \
+		| MAP_PRIVATE \
+		| MAP_FIXED \
+		| MAP_ANONYMOUS \
+		| MAP_DENYWRITE \
+		| MAP_EXECUTABLE \
+		| MAP_GROWSDOWN \
+		| MAP_LOCKED \
+		| MAP_NORESERVE \
+		| MAP_POPULATE \
+		| MAP_NONBLOCK )
+
 #endif
 
 extern unsigned long do_mmap_pgoff(struct file *file, unsigned long addr,
@@ -40,6 +53,11 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 // out:
 // 	return ret;
 // }
+
+/*后期扩展使用*/
+struct anon_vma {
+
+};
 
 void *sys_mmap(void* addr, size_t len,
 			int prot, int flags,

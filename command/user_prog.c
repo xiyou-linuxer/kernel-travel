@@ -5,7 +5,7 @@ char* sysname[NR_SYSCALLS] = {
 	//[SYS_getpid]       = "getpid",
 	//[SYS_gettimeofday] = "gettimeofday",
 	//[SYS_nanosleep]    = "sleep",
-	[SYS_wait4]        = "wait",
+	// [SYS_wait4]        = "wait",
 	//[SYS_clone]        = "fork",
 	//[SYS_write]        = "write",
 	//[SYS_getcwd]       = "getcwd",
@@ -21,6 +21,7 @@ char* sysname[NR_SYSCALLS] = {
 //	[SYS_mount]        = "mount",
 //	[SYS_umount2]      = "umount",
 //	[1]                = "openat",
+	[SYS_mmap]		= "mmap",
 };
 
 

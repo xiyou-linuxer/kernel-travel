@@ -93,8 +93,7 @@ void __init __no_sanitize_address start_kernel(void)
 	console_init();
 	syscall_init();
 	fs_init();
-	printk("curr: %llx\n", (unsigned long)running_thread());
-	//thread_start("thread_a",10,thread_a,NULL);
+	// thread_start("thread_a",10,thread_a,NULL);
 	//
 	// test_mmap();
 	// int count=0;

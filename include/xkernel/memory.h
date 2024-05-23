@@ -138,6 +138,17 @@ struct zoneref {
 #define PROT_EXEC	0x4		/* page can be executed */
 #define PROT_NONE	0x0		/* page can not be accessed */
 
+#define MAP_TYPE	0x0f		/* Mask for type of mapping */
+#define MAP_FIXED	0x10		/* Interpret addr exactly */
+#define MAP_ANONYMOUS	0x20		/* don't use a file */
+
+#define VM_NONE		0x00000000
+
+#define VM_READ		0x00000001	/* currently active flags */
+#define VM_WRITE	0x00000002
+#define VM_EXEC		0x00000004
+#define VM_SHARED	0x00000008
+
 // 虚拟内存区域描述符
 struct vm_area_struct {
 	struct mm_struct * vm_mm;
@@ -148,7 +159,7 @@ struct vm_area_struct {
 	// vma 在 mm_struct->mm_rb 红黑树中的节点
 	struct rb_node vm_rb;
 	// pgprot_t vm_page_prot;
-	unsigned long vm_flags; 
+	unsigned long vm_flags; 	/*指定内存映射方式*/
 	struct file * vm_file;		/* File we map to (can be NULL). */
 	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE */
 	// void * vm_opts;
