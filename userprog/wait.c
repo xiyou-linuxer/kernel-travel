@@ -6,6 +6,11 @@
 #include <fs/syscall_fs.h>
 #include <trap/irq.h>
 
+struct waitinfo {
+	pid_t wait_childid;
+	pid_t parent_id;
+};
+
 static int init_adopt_child(struct list_elem* child,void* id)
 {
 	int64_t pid = (int64_t)id;
@@ -15,11 +20,12 @@ static int init_adopt_child(struct list_elem* child,void* id)
 	return false;
 }
 
-static int find_hanging_child(struct list_elem* elm,void* parent_id)
+static int find_hanging_child(struct list_elem* elm,void* waitinfo)
 {
-	int64_t ppid = (int64_t)parent_id;
+	struct waitinfo* info = waitinfo;
 	struct task_struct* c = elem2entry(struct task_struct,all_list_tag,elm);
-	if (c->ppid==ppid && c->status==TASK_HANGING) {
+	bool is_waiting_child = info->wait_childid==-1 || c->pid==info->wait_childid;
+	if (is_waiting_child && c->ppid == info->parent_id && c->status==TASK_HANGING) {
 		return true;
 	}
 	return false;
@@ -95,7 +101,7 @@ void sys_exit(int status)
 {
 	struct task_struct* child = running_thread();
 	//printk("%s sys_exit\n",child->name);
-	child->exit_status = status;
+	child->exit_status = status << 8;
 	release_usrprog_resource(child);
 
 	list_traversal(&thread_all_list,init_adopt_child,(void*)(int64_t)child->pid);
@@ -115,9 +121,13 @@ pid_t sys_wait(pid_t pid,int* status,int options)
 {
 	struct task_struct* parent = running_thread();
 	//printk("%s sys_wait\n",parent->name);
+	
+	struct waitinfo pidinfo;
+	pidinfo.parent_id = parent->pid;
+	pidinfo.wait_childid = pid;
 	while(1)
 	{
-		struct list_elem* exit_elm = list_traversal(&thread_all_list,find_hanging_child,(void*)(int64_t)parent->pid);
+		struct list_elem* exit_elm = list_traversal(&thread_all_list,find_hanging_child,(void*)&pidinfo);
 		if (exit_elm != NULL)
 		{
 			struct task_struct* exit_child = elem2entry(struct task_struct,all_list_tag,exit_elm);

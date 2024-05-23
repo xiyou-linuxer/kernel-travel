@@ -85,7 +85,7 @@ struct task_struct* pid2thread(int64_t pid)
 
 static void kernel_thread(void)
 {
-    printk("kernel_thread...");
+    printk("kernel_thread...\n");
     struct task_struct *task = running_thread();
     intr_enable();
     task->function(task->func_arg);

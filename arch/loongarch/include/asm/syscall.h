@@ -124,6 +124,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_fstat          80
 #define SYS_exit           93
 #define SYS_nanosleep     101
+#define SYS_sched_yield   124
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
 #define SYS_clone         220
@@ -154,6 +155,10 @@ static inline void exit(int status) {
 
 static inline pid_t wait(int* status) {
 	return syscall(SYS_wait4,-1,status,0);
+}
+
+static inline pid_t waitpid(int pid,int* status) {
+	return syscall(SYS_wait4,pid,status,0);
 }
 
 static inline int execve(const char *path, char *const argv[], char *const envp[]) {

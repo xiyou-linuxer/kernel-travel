@@ -42,7 +42,7 @@ struct task_struct {
 	pid_t ppid;
 	pid_t pid;
 	enum task_status status;
-	int8_t exit_status;
+	int16_t exit_status;
 	char name[TASK_NAME_LEN];
 	uint8_t priority;
 	uint8_t ticks;
