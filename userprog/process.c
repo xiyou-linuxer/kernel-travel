@@ -14,12 +14,19 @@ extern void user_ret(void);
 
 void create_user_vaddr_bitmap(struct task_struct* user_prog) {
    user_prog->usrprog_vaddr.vaddr_start = USER_VADDR_START;
-   uint64_t bitmap_pg_cnt = DIV_ROUND_UP((USER_STACK - USER_VADDR_START) / PAGESIZE / 8 , PAGESIZE);
+   uint64_t bitmap_pg_cnt = DIV_ROUND_UP((USER_STACK - USER_VADDR_START) / PAGESIZE / 8 , PAGESIZE) + 1;
    user_prog->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(bitmap_pg_cnt);
-   user_prog->usrprog_vaddr.btmp.btmp_bytes_len = (USER_STACK - USER_VADDR_START) / PAGESIZE / 8;
+   user_prog->usrprog_vaddr.btmp.btmp_bytes_len = (USER_STACK - USER_VADDR_START) / PAGESIZE / 8 +1;
    bitmap_init(&user_prog->usrprog_vaddr.btmp);
 }
 
+
+/*init fork
+ *init sys_wait
+ *init_fork fork
+ *init_fork sys_wait
+ *init_fork_fork sys_execve
+*/
 
 void start_process(void* filename)
 {

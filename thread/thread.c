@@ -180,7 +180,7 @@ static void make_main_thread(void)
 
 void schedule()
 {
-	printk("schedule...\n");
+	//printk("schedule...\n");
 	ASSERT(intr_get_status() == INTR_OFF);
 
 	struct task_struct* cur = running_thread();
@@ -203,7 +203,7 @@ void schedule()
 	page_dir_activate(next);
 	next->status = TASK_RUNNING;
 	//printk("curticks:%d\n",cur->ticks);
-	printk("next:%s\n",next->name);
+	//printk("next:%s\n",next->name);
 
 	irq_exit();
 	switching = 1;

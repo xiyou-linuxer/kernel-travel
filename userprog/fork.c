@@ -22,10 +22,9 @@ static int copy_pcb(struct task_struct* parent,struct task_struct* child)
 	child->status   = TASK_READY;
 	child->all_list_tag.prev = child->all_list_tag.next = NULL;
 	child->general_tag.prev = child->general_tag.next = NULL;
-	//block_desc_init(child->usr_block_desc);
 
 	uint64_t vaddr_btmp_size = DIV_ROUND_UP((USER_STACK - USER_VADDR_START)/PAGESIZE/8,PAGESIZE);
-	child->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(vaddr_btmp_size);
+	child->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(vaddr_btmp_size+1);
 	child->usrprog_vaddr.btmp.btmp_bytes_len = parent->usrprog_vaddr.btmp.btmp_bytes_len;
 	if (child->usrprog_vaddr.btmp.bits == NULL) {
 		printk("copy_pcb: usrprog_vaddr bitmap.bits malloc failed\n");
@@ -43,6 +42,7 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 {
 	uint64_t vaddr_start = child->usrprog_vaddr.vaddr_start;
 	struct bitmap* btmp = &child->usrprog_vaddr.btmp;
+	//printk("copy_body_stack3: parent %s vaddr = %d\n",parent->name,*(unsigned long*)parent->usrprog_vaddr.btmp.bits);
 	uint64_t end_byte = btmp->btmp_bytes_len;
 	for (uint64_t b = 0 ; b < end_byte ; b++)
 	{
@@ -104,6 +104,7 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 pid_t sys_fork(uint64_t flag,int stack)
 {
 	struct task_struct* cur = running_thread();
+	//printk("%s fork\n",cur->name);
 	struct task_struct* child = (struct task_struct*)get_page();
 	if (child == NULL) {
 		printk("sys_fork: child get_kernel_pages failed\n");

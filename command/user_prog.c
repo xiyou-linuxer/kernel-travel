@@ -18,9 +18,9 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_openat]       = "open",
 	[SYS_read]         = "read",
 	[SYS_mkdirat]      = "mkdir_",
-	//[SYS_mount]        = "mount",
-	//[SYS_umount2]      = "umount",
-	//[1]                = "openat",
+	[SYS_mount]        = "mount",
+	[SYS_umount2]      = "umount",
+	[1]                = "openat",
 	//[SYS_unlinkat]     = "unlink",
 };
 
@@ -28,8 +28,6 @@ char* sysname[NR_SYSCALLS] = {
 
 int main(void)
 {
-	struct timespec req;
-
 	char filename[50][64];
 	umemset(filename,0,sizeof(filename));
 	int count = 0 ;

@@ -37,7 +37,7 @@ static int find_child(struct list_elem* elm,void* parent_pid)
 
 static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 {
-	printk("exit: release %x",pdir);
+	//printk("exit: release %x",pdir);
 	uint64_t* pgdp = pgd_ptr(pdir,0);
 	uint64_t vaddr = 0;
 	for (int pgd_idx = 0; pgd_idx < 512; pgd_idx++,pgdp++)
@@ -78,7 +78,7 @@ static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 
 static void release_usrprog_resource(struct task_struct* pcb)
 {
-	release_usrmemory(pcb->pgdir,&pcb->usrprog_vaddr);
+	//release_usrmemory(pcb->pgdir,&pcb->usrprog_vaddr);
 	if (pcb->pgdir != 0) {
 		free_page(pcb->pgdir);
 	}
@@ -94,6 +94,7 @@ static void release_usrprog_resource(struct task_struct* pcb)
 void sys_exit(int status)
 {
 	struct task_struct* child = running_thread();
+	//printk("%s sys_exit\n",child->name);
 	child->exit_status = status;
 	release_usrprog_resource(child);
 
@@ -113,6 +114,7 @@ void sys_exit(int status)
 pid_t sys_wait(pid_t pid,int* status,int options)
 {
 	struct task_struct* parent = running_thread();
+	//printk("%s sys_wait\n",parent->name);
 	while(1)
 	{
 		struct list_elem* exit_elm = list_traversal(&thread_all_list,find_hanging_child,(void*)(int64_t)parent->pid);

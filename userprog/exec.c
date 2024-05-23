@@ -8,6 +8,7 @@
 #include <fs/syscall_fs.h>
 #include <fs/fd.h>
 #include <allocator.h>
+#include <trap/irq.h>
 
 void* program_begin;
 
@@ -40,7 +41,7 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 		uint64_t* pte = pte_ptr(pd,page);
 		if (*pte == 0)
 			malloc_usrpage(pd,page);
-		printk("load_phdr:cur->vaddrbtmp=%d\n",*(unsigned long*)running_thread()->usrprog_vaddr.btmp.bits);
+		//printk("load_phdr:cur->vaddrbtmp=%d\n",*(unsigned long*)running_thread()->usrprog_vaddr.btmp.bits);
 
 		page += PAGESIZE;
 	}
@@ -104,6 +105,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	unsigned long crmd;
 	unsigned long prmd;
 	struct task_struct* cur = running_thread();
+	//printk("%s sys_execve\n",cur->name);
 	strcpy(cur->name,path);
 	struct pt_regs* regs = (struct pt_regs*)((uint64_t)cur->self_kstack - sizeof(struct pt_regs));
 
@@ -112,12 +114,13 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = USER_STACK;
+	regs->regs[3]  = 1 << (9+9+12);
 	regs->regs[22] = regs->regs[3];
-	int entry = sys_exeload(path,NULL,NULL);
+	int64_t entry = sys_exeload(path,NULL,NULL);
 	regs->csr_era = (unsigned long)entry;
 
-	printk("jump to proc...\n");
+	//intr_enable();
+	//printk("jump to proc... at %d\n",entry);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 	return -1;
 }
