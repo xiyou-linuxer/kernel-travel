@@ -72,7 +72,7 @@ void timer_func(unsigned long unused){
 int sysnums = 3;
 //extern char* sysname[];
 
-char init_program[50000];
+char init_program[70000];
 char filename[50][64] = {0};
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -119,8 +119,8 @@ void __init __no_sanitize_address start_kernel(void)
 	sys_write(fd,init_code,init_code_len);
 	bufSync();
 
-	// struct timespec req;
-	// req.tv_sec=1;req.tv_nsec=0;
+	//struct timespec req;
+	//req.tv_sec=1;req.tv_nsec=0;
 	while (1) {
 		// sys_gettimeofday(&ts);
 		// printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);

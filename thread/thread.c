@@ -86,7 +86,7 @@ struct task_struct* pid2thread(int64_t pid)
 
 static void kernel_thread(void)
 {
-    printk("kernel_thread...");
+    printk("kernel_thread...\n");
     struct task_struct *task = running_thread();
     intr_enable();
     task->function(task->func_arg);
@@ -192,7 +192,7 @@ static void make_main_thread(void)
 
 void schedule()
 {
-	printk("schedule...\n");
+	//printk("schedule...\n");
 	ASSERT(intr_get_status() == INTR_OFF);
 
 	struct task_struct* cur = running_thread();
@@ -215,7 +215,7 @@ void schedule()
 	page_dir_activate(next);
 	next->status = TASK_RUNNING;
 	//printk("curticks:%d\n",cur->ticks);
-	//printk("next:%s",next->name);
+	//printk("next:%s\n",next->name);
 
 	irq_exit();
 	switching = 1;

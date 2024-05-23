@@ -23,6 +23,7 @@
 #define PTE_V (1UL << 0)
 #define PTE_D (1UL << 1)
 #define PTE_PLV (3UL << 2)
+#define PTE_G (1UL << 6)
 
 #define DMW_MASK  (0x9000000000000000)
 

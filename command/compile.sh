@@ -4,6 +4,6 @@ OBJS="../arch/loongarch/kernel/syscall.o "
 
 rm *.o
 rm user_prog
-../cross-tools/bin/loongarch64-unknown-linux-gnu-gcc $CFLAGS -I "../arch/loongarch/include/" -I "../include" -o printf.o printf.c
-../cross-tools/bin/loongarch64-unknown-linux-gnu-gcc $CFLAGS -I "../arch/loongarch/include/" -I "../include" -o $BIN".o" $BIN".c"
-../cross-tools/bin/loongarch64-unknown-linux-gnu-ld -e main -T program.ld printf.o $BIN".o" $OBJS -o $BIN
+/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-gcc $CFLAGS -I "../arch/loongarch/include/" -I "../include" -o printf.o printf.c
+/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-gcc $CFLAGS -I "../arch/loongarch/include/" -I "../include" -o $BIN".o" $BIN".c"
+/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-ld -e main -T program.ld printf.o $BIN".o" $OBJS -o $BIN

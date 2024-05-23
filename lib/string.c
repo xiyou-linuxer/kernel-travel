@@ -19,10 +19,10 @@ void memcpy(void* dst_, const void* src_, uint32_t size)
 {
 	uint8_t* dst = dst_;
 	const uint8_t* src = src_;
-	if(/*dst_ == NULL ||*/ src_ == NULL) {
-		efi_puts("BUG!!!");
-		while(1);
-	}
+	//if(/*dst_ == NULL ||*/ src_ == NULL) {
+	//	efi_puts("BUG!!!");
+	//	while(1);
+	//}
 	while (size-- > 0)
 	*dst++ = *src++;
 }

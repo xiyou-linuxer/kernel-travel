@@ -45,14 +45,16 @@ int bit_scan(struct bitmap* btmp,uint32_t bit_cnt)
 
     return ret;
 }
+
 void bitmap_set(struct bitmap* btmp,uint32_t bit_idx,uint8_t value)
 {
-    ASSERT(value==0 || value==1);
-    uint32_t bit_byte = bit_idx / 8;
-    uint32_t bit_odd  = bit_idx % 8;
-    if (value) {
-        btmp->bits[bit_byte] |= (BIT_MASK << bit_odd);
-    } else {
-        btmp->bits[bit_byte] &= ~(BIT_MASK << bit_odd);
-    }
+	ASSERT(value==0 || value==1);
+	ASSERT(bit_idx <= btmp->btmp_bytes_len*8);
+	uint32_t bit_byte = bit_idx / 8;
+	uint32_t bit_odd  = bit_idx % 8;
+	if (value) {
+		btmp->bits[bit_byte] |= (BIT_MASK << bit_odd);
+	} else {
+		btmp->bits[bit_byte] &= ~(BIT_MASK << bit_odd);
+	}
 }

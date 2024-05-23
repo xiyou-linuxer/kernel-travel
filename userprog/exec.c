@@ -10,6 +10,7 @@
 #include <xkernel/mmap.h>
 #include <xkernel/types.h>
 #include <allocator.h>
+#include <trap/irq.h>
 
 void* program_begin;
 
@@ -42,6 +43,7 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 		uint64_t* pte = pte_ptr(pd,page);
 		if (*pte == 0)
 			malloc_usrpage(pd,page);
+		//printk("load_phdr:cur->vaddrbtmp=%d\n",*(unsigned long*)running_thread()->usrprog_vaddr.btmp.bits);
 
 		page += PAGESIZE;
 	}
@@ -95,7 +97,6 @@ int64_t load(const char *path)
 	int fd = sys_open(path, O_RDWR ,660);
 	sys_lseek(fd,0,SEEK_SET);
 	int size = sys_read(fd, &ehdr, sizeof(ehdr));
-	printk("read %d bytes\n",size);
 
 	int64_t ret;
 	if (memcmp(ehdr.e_ident,"\177ELF",4) || \
@@ -140,7 +141,7 @@ int64_t load(const char *path)
 			v_addr = phdr.p_vaddr;
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
-			elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
+			// elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
 		}
 		phoff += ehdr.e_phentsize;
 	}
@@ -167,6 +168,8 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	unsigned long crmd;
 	unsigned long prmd;
 	struct task_struct* cur = running_thread();
+	//printk("%s sys_execve\n",cur->name);
+	strcpy(cur->name,path);
 	struct pt_regs* regs = (struct pt_regs*)((uint64_t)cur->self_kstack - sizeof(struct pt_regs));
 
 	regs->csr_crmd = read_csr_crmd();
@@ -174,12 +177,13 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = USER_STACK;
+	regs->regs[3]  = 1 << (9+9+12);
 	regs->regs[22] = regs->regs[3];
-	int entry = sys_exeload(path,NULL,NULL);
+	int64_t entry = sys_exeload(path,NULL,NULL);
 	regs->csr_era = (unsigned long)entry;
 
-	printk("jump to proc...\n");
+	//intr_enable();
+	//printk("jump to proc... at %d\n",entry);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 	return -1;
 }

@@ -85,15 +85,19 @@ SYM_FUNC_END(syscall_handler)
 
 
 SYM_FUNC_START(tlb_handler)
-    csrwr t0,LOONGARCH_CSR_TLBRSAVE
-    csrrd t0,LOONGARCH_CSR_PGD
-    lddir t0,t0,3
-    lddir t0,t0,1
-    ldpte t0,0
-    ldpte t0,1
-    tlbfill
-    csrrd t0,LOONGARCH_CSR_TLBRSAVE
-    ertn
+	csrwr t0,LOONGARCH_CSR_TLBRSAVE
+	//addu16i.d t0,zero,0xc00
+	//addu16i.d t1,zero,0x3f00
+	//csrxchg t0,t1,LOONGARCH_CSR_TLBIDX
+	//csrrd t1,LOONGARCH_CSR_TLBRBADV
+	csrrd t0,LOONGARCH_CSR_PGD
+	lddir t0,t0,3
+	lddir t0,t0,1
+	ldpte t0,0
+	ldpte t0,1
+	tlbfill
+	csrrd t0,LOONGARCH_CSR_TLBRSAVE
+	ertn
 SYM_FUNC_END(tlb_handler)
 
 .section .data, "aw"
