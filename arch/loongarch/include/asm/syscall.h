@@ -195,5 +195,9 @@ static inline void * mmap(struct file *file, unsigned long addr,
 	return syscall(SYS_mmap, file, addr, len, prot, flag, offset);
 }
 
+static inline int fstat(int fd,struct kstat* stat)
+{
+	return syscall(SYS_fstat, fd, stat);
+}
 
 #endif
