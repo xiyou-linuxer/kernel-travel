@@ -165,7 +165,9 @@ static void setup_tlb_handler(int cpu)
 {
 	page_setting_init();
 	// 刷新当前TLB
-	invtlb(INVTLB_ALL,0,0);
+#ifndef CONFIG_3A5000
+	invtlb(INVTLB_ALL, 0, 0);
+#endif
 	// if(cpu == 0) {
 		// memcpy((void*)tlbrentry,handle_tlb_refill,0x80);
 		// local_flush_icache_range(tlbrentry, tlbrentry + 0x80);
