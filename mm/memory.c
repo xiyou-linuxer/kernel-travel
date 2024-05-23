@@ -116,9 +116,34 @@ void page_table_add(u64 pd,u64 _vaddr,u64 _paddr,u64 attr)
 	invalidate();
 }
 
+// 获取 PMD 指针
+u64 *reverse_pmd_ptr(u64 pd, u64 vaddr) {
+	u64 *pgd = pgd_ptr(pd, vaddr);
+	if (!*pgd) return NULL;
+	return (u64*)(*pgd + PMD_IDX(vaddr) * ENTRY_SIZE);
+}
+
+// 获取 PTE 指针
+u64 *reverse_pte_ptr(u64 pd, u64 vaddr) {
+	u64 *pmd = reverse_pmd_ptr(pd, vaddr);
+	if (!pmd || !*pmd) return NULL;
+	return (u64*)(*pmd + PTE_IDX(vaddr) * ENTRY_SIZE);
+}
+
+// 获取物理地址
+u64 vaddr_to_paddr(u64 pd, u64 vaddr) {
+	u64 *pte = reverse_pte_ptr(pd, vaddr);
+	if (!pte || !*pte) {
+		printk("vaddr_to_paddr: Invalid virtual address mapping\n");
+		return 0; // 或者返回一个错误码
+	}
+	return (*pte & ~0xfff) | PAGE_OFFSET(vaddr);
+}
+
 void malloc_usrpage(u64 pd,u64 vaddr)
 {
 	unsigned long paddr = get_page();
+	// printk("paddr : 0x%lx\n", paddr);
 	page_table_add(pd,vaddr,paddr,PTE_V | PTE_PLV | PTE_D);
 	struct task_struct *cur = running_thread();
 	uint64_t bit_idx = (vaddr - cur->usrprog_vaddr.vaddr_start)/PAGESIZE;

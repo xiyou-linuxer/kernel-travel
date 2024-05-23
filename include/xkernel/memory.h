@@ -19,6 +19,7 @@
 #define PGD_IDX(addr) ((addr & 0x7fc0000000)>>30)
 #define PMD_IDX(addr) ((addr & 0x003fe00000)>>21)
 #define PTE_IDX(addr) ((addr & 0x00001ff000)>>12)
+#define PAGE_OFFSET(addr) (addr & 0xfff)
 
 #define PTE_V (1UL << 0)
 #define PTE_D (1UL << 1)
@@ -264,6 +265,7 @@ void free_pages(u64 vstart,u64 count);
 unsigned long get_kernel_pge(void);
 void free_kernel_pge(void* k_page);
 void page_table_add(uint64_t pd,uint64_t _vaddr,uint64_t _paddr,uint64_t attr);
+u64 vaddr_to_paddr(u64 pd, u64 vaddr);
 void malloc_usrpage_withoutopmap(u64 pd,u64 vaddr);
 void malloc_usrpage(u64 pd,u64 vaddr);
 
