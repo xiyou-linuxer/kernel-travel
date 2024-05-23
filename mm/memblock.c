@@ -84,10 +84,15 @@ int __meminit memblock_reserve(phys_addr_t base, phys_addr_t size)
 
 int __meminit memblock_add(phys_addr_t base, phys_addr_t size)
 {
-	// kbuild 实现可以加对应宏
 	phys_addr_t end = base + size - 1;
+
+	/**
+	 * TODO: memblock_debug全局变量定义处直接赋值
+	 */
 	memblock_debug = 1;
-	memblock_dbg("%s: [0x%pa-0x%pa] 0x%p\n", __func__,&base, &end, (void *)_RET_IP_);
+
+	memblock_dbg("%s: [0x%pa-0x%pa] 0x%p\n", __func__, &base, &end, (void *)_RET_IP_);
+
 	return memblock_add_range(&memblock.memory,base,size,0,0);
 }
 
