@@ -45,7 +45,7 @@ cd /tmp/qemu/2k1000
 ./create_qemu_img.sh
 ```
 
-传入sdcard.img（下载地址：https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz）：
+传入[sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz)：
 
 ```sh
 sudo docker cp 你存放sdcard-loongarch.img的路径 os-contest:/sdcard-loongarch.img
@@ -68,7 +68,6 @@ service tftpd-hpa start
 ```
 
 ### 2 获取UEFI启动引导
-
 
 这里提供制作好的UEFI启动引导，下载地址：
 [QEMU_EFI.fd](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/QEMU_EFI.fd)
@@ -127,7 +126,8 @@ bash quick_start.sh distclean
 
 * [磁盘驱动](./doc/磁盘驱动.md)
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
-
+* [文件系统](./doc/文件系统.md)
+  
 ## 参考资料
 
 * [操作系统真相还原](https://github.com/yifengyou/os-elephant)

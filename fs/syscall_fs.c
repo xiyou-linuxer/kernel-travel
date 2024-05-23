@@ -55,15 +55,16 @@ static void path_resolution(const char *pathname)
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
 	path_resolution(pathname);
-	//printk("%s\n",pathname);
 	Dirent *file;
 	int fd = -1;
 	struct path_search_record searched_record;
 	memset(&searched_record, 0, sizeof(struct path_search_record));
-
 	/* 记录目录深度.帮助判断中间某个目录不存在的情况 */
 	unsigned int pathname_depth = path_depth_cnt((char *)pathname);
-
+	if (flags == 65)
+	{
+		flags = 6;
+	}
 	/* 先检查是否将全部的路径遍历 */
 	file = search_file(pathname,&searched_record);
 	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
@@ -73,7 +74,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
-	
 	/* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
 	if ((file == NULL) && !(flags & O_CREATE))
 	{
@@ -85,6 +85,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		//printk("%s has already exist!\n", pathname);
 		return file_open(file, flags ,mode);
 	}
+	
 	switch (flags & O_CREATE)
 	{
 	case O_CREATE:
@@ -266,7 +267,6 @@ int sys_unlink(char *pathname)
 	int fd = -1;
 	struct path_search_record searched_record;
 	memset(&searched_record, 0, sizeof(struct path_search_record));
-
 	/* 记录目录深度.帮助判断中间某个目录不存在的情况 */
 	unsigned int pathname_depth = path_depth_cnt((char *)pathname);
 

@@ -142,7 +142,7 @@ int rm_unused_file(struct Dirent *file) {
 
 	// 2. 断开父子关系
 	ASSERT(file->parent_dirent != NULL); // 不处理根目录的情况
-	// 先递归删除子Dirent（由于存在意向锁，因此这样）
+	// 先递归删除子Dirent
 	if (file->type == DIRENT_DIR) {
 		struct list_elem *tmp = file->child_list.head.next;
 		while (tmp!=&file->child_list.tail) {
@@ -179,7 +179,7 @@ int rmfile(struct Dirent *file)
 		printk("File is in use\n");
 		return -1;
 	}
-
+	//return 0;
 	return rm_unused_file(file);
 }
 
