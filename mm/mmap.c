@@ -300,9 +300,10 @@ out:
 
 
 void *sys_mmap(void* addr, size_t len, int prot,
-		int flags, int fd, off_t pgoff)
+		int flags, int fd, off_t offset)
 {
-	return (void *)do_mmap(NULL, (unsigned long)addr, len, prot, flags, pgoff);
+	/*fd 获取 struct file*/
+	return (void *)do_mmap(NULL, (unsigned long)addr, len, prot, flags, offset);
 }
 
 int sys_munmap(void *start, size_t len)

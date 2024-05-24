@@ -189,10 +189,10 @@ static inline int fork(void) {
 	return syscall(SYS_clone,0,0);
 }
 
-static inline void * mmap(struct file *file, unsigned long addr,
+static inline void * mmap(void * addr,
 	unsigned long len, unsigned long prot,
-	unsigned long flag, unsigned long offset) {
-	return syscall(SYS_mmap, file, addr, len, prot, flag, offset);
+	unsigned long flag, int fd, unsigned long offset) {
+	return syscall(SYS_mmap, addr, len, prot, flag, fd, offset);
 }
 
 static inline int fstat(int fd,struct kstat* stat)
