@@ -6,6 +6,11 @@
 #include <asm/numa.h>
 #include <xkernel/list.h>
 #include <asm-generic/int-ll64.h>
+#include <xkernel/compiler.h>
+#include <xkernel/rbtree.h>
+#include <asm/page.h>
+
+#define MAX_ADDRESS_SPACE_SIZE 0xffffffffffffffff
 
 #define DIV_ROUND_UP(divd,divs) ((divd+divs-1)/divs)
 
@@ -14,10 +19,12 @@
 #define PGD_IDX(addr) ((addr & 0x7fc0000000)>>30)
 #define PMD_IDX(addr) ((addr & 0x003fe00000)>>21)
 #define PTE_IDX(addr) ((addr & 0x00001ff000)>>12)
+#define PAGE_OFFSET(addr) (addr & 0xfff)
 
 #define PTE_V (1UL << 0)
 #define PTE_D (1UL << 1)
 #define PTE_PLV (3UL << 2)
+#define PTE_G (1UL << 6)
 
 #define DMW_MASK  (0x9000000000000000)
 
@@ -49,9 +56,13 @@ static inline int __ffs(unsigned int x)
 #define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
 #define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
 				 ARCH_PFN_OFFSET)
-
+#ifndef page_to_pfn
 #define page_to_pfn __page_to_pfn
+#endif
+
+#ifndef pfn_to_page 
 #define pfn_to_page __pfn_to_page
+#endif
 
 #ifndef pfn_valid
 static inline int pfn_valid(unsigned long pfn)
@@ -62,6 +73,8 @@ static inline int pfn_valid(unsigned long pfn)
 	return pfn >= pfn_offset && (pfn - pfn_offset) < max_mapnr;
 }
 #endif
+
+#define INVAILD_MMAP_CACHE ((struct vm_area_struct *)NULL)
 
 struct virt_addr {
     u64 vaddr_start;
@@ -122,8 +135,57 @@ struct zoneref {
 	int zone_idx;
 };
 
+#define PROT_READ	0x1		/* page can be read */
+#define PROT_WRITE	0x2		/* page can be written */
+#define PROT_EXEC	0x4		/* page can be executed */
+#define PROT_NONE	0x0		/* page can not be accessed */
+
+#define MAP_TYPE	0x0f		/* Mask for type of mapping */
+#define MAP_FIXED	0x10		/* Interpret addr exactly */
+#define MAP_ANONYMOUS	0x20		/* don't use a file */
+
+#define VM_NONE		0x00000000
+
+#define VM_READ		0x00000001	/* currently active flags */
+#define VM_WRITE	0x00000002
+#define VM_EXEC		0x00000004
+#define VM_SHARED	0x00000008
+
+// 虚拟内存区域描述符
+struct vm_area_struct {
+	struct mm_struct * vm_mm;
+	unsigned long vm_start;
+	unsigned long vm_end;
+	// vma 在 mm_struct->mmap 双向链表中的前驱节点和后继节点
+	struct vm_area_struct *vm_next, *vm_prev;
+	// vma 在 mm_struct->mm_rb 红黑树中的节点
+	struct rb_node vm_rb;
+	// pgprot_t vm_page_prot;
+	unsigned long vm_flags; 	/*指定内存映射方式*/
+	struct file * vm_file;		/* File we map to (can be NULL). */
+	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE */
+	// void * vm_opts;
+};
+
+// 进程虚拟内存空间描述符
 struct mm_struct {
-	u64 pgd;
+	// 串联组织进程空间中所有的 VMA  的双向链表 
+	unsigned long mmap_base;
+	struct vm_area_struct *mmap;  /* list of VMAs */
+	// 管理进程空间中所有 VMA 的红黑树
+	struct rb_root mm_rb;
+	struct vm_area_struct * mmap_cache;
+	unsigned long free_area_cache;	/*记录上次成功分配的起始地址的缓存*/
+	unsigned long total_vm;
+	unsigned long start_code, end_code, start_data, end_data;
+	unsigned long start_brk, brk, start_stack;
+	unsigned long arg_start, arg_end, env_start, env_end;
+	unsigned long map_count;
+	unsigned long (*get_unmapped_area) (struct file *filp,
+				unsigned long addr, unsigned long len,
+				unsigned long pgoff, unsigned long flags);
+	unsigned long rss;
+	struct file * vm_file;		/* 映射的文件，匿名映射即为nullptr*/
 };
 
 extern struct pool reserve_phy_pool;
@@ -203,6 +265,7 @@ void free_pages(u64 vstart,u64 count);
 unsigned long get_kernel_pge(void);
 void free_kernel_pge(void* k_page);
 void page_table_add(uint64_t pd,uint64_t _vaddr,uint64_t _paddr,uint64_t attr);
+u64 vaddr_to_paddr(u64 pd, u64 vaddr);
 void malloc_usrpage_withoutopmap(u64 pd,u64 vaddr);
 void malloc_usrpage(u64 pd,u64 vaddr);
 
@@ -217,4 +280,5 @@ struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid);
 
 void __free_pages_ok(struct page *page, unsigned int order,
 			    bool fpi_flags);
+void mm_struct_init(struct mm_struct *mm);
 #endif

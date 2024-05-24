@@ -135,12 +135,14 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	}*/
 	else
 	{
+		
 		Dirent *wr_file = file_table[_fd].dirent;
 		filepnt_init(wr_file);
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
 			unsigned bytes_written = file_write(wr_file, 0, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
+			printk("write\n");
 			return bytes_written;
 		}
 		else
@@ -404,4 +406,50 @@ int sys_umount(const char* special)
 {
 	path_resolution(special);
 	return umount_fs(special);
+}
+
+/** 
+ * 返回根据文件的页号返回虚拟地址
+ *  @param 文件fd
+ *  @param 文件映射的起始页号
+ *  @param 文件映射结束的页号
+*/
+void fd_mapping(int fd, int start_page, int end_page,unsigned long* v_addr)
+{
+	int _fd = fd_local2global(fd);
+	Dirent *file = file_table[_fd].dirent;
+	filepnt_init(file);
+	char buf[512];
+	//pre_read(file,buf,file->file_size/4096+1);//将文件预读到内存中
+	file_read(file, 0, (unsigned long)buf, 0, file->file_size);
+	int indx = start_page;
+	int count = (end_page - start_page + 1)*8;
+	while (indx<=end_page)
+	{
+		u32 page_num = filepnt_getclusbyno(file, indx);
+		unsigned long secno = clusterSec(fatFs, page_num);
+		int i = 0;
+		while (i<8)
+		{
+			u64 group = secno & BGROUP_MASK;
+			struct list* list = &bufferGroups[group].list;
+			struct list_elem *node = list->head.next;
+			while (node != &list->tail)
+			{
+				Buffer* buf = elem2entry(Buffer, Buffer_node, node);
+				if (buf->blockno == secno)
+				{
+					//printk("buf:%s num:%d\n",buf->data,indx*8+i);
+					v_addr[indx*8+i] = buf->data;
+					break;
+					
+				}
+				node = node->next;
+			}
+			i++;
+			secno++;
+		}
+		indx ++;
+	}
+	return;
 }

@@ -314,12 +314,12 @@ static mode_t get_file_mode(struct Dirent *file) {
 	} else if (file->type == DIRENT_BLKDEV) {
 		mode |= __S_IFBLK;
 	} else {
-		printk("unknown file type: %x\n", file->type);
+		//printk("unknown file type: %x\n", file->type);
 		mode |= __S_IFREG; // 暂时置为REGULAR FILE
 	}
 
 	// 打印文件的类型
-	if (S_ISREG(mode)) {
+	/*if (S_ISREG(mode)) {
 		printk("file type: regular file\n");
 	} else if (S_ISDIR(mode)) {
 		printk( "file type: directory\n");
@@ -329,7 +329,7 @@ static mode_t get_file_mode(struct Dirent *file) {
 		printk( "file type: block device\n");
 	} else {
 		printk("file type: unknown\n");
-	}
+	}*/
 
 	return mode;
 }

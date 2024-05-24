@@ -16,6 +16,7 @@
 #include <process.h>
 #include <trap/irq.h>
 #include <asm/timer.h>
+#include <xkernel/memory.h>
 
 struct task_struct* main_thread;
 struct task_struct* idle_thread;
@@ -85,7 +86,7 @@ struct task_struct* pid2thread(int64_t pid)
 
 static void kernel_thread(void)
 {
-    printk("kernel_thread...");
+    printk("kernel_thread...\n");
     struct task_struct *task = running_thread();
     intr_enable();
     task->function(task->func_arg);
@@ -137,6 +138,17 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	pthread->cwd[0] = '/';
 	pthread->cwd_dirent = NULL;
 	pthread->stack_magic = STACK_MAGIC_NUM;
+	pthread->mm = (struct mm_struct*)get_page();
+	mm_struct_init(pthread->mm);
+
+	if (!pthread->mm) {
+		goto error;
+	}
+	return;
+error:
+	// __free_pages_ok((struct page *)pthread->mm, 0, 0);
+	printk("[Error] : 没有足够内存为 mm_struct 分配。");
+	return;
 }
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg)
@@ -180,7 +192,7 @@ static void make_main_thread(void)
 
 void schedule()
 {
-	printk("schedule...\n");
+	//printk("schedule...\n");
 	ASSERT(intr_get_status() == INTR_OFF);
 
 	struct task_struct* cur = running_thread();
@@ -203,7 +215,7 @@ void schedule()
 	page_dir_activate(next);
 	next->status = TASK_RUNNING;
 	//printk("curticks:%d\n",cur->ticks);
-	//printk("next:%s",next->name);
+	//printk("next:%s\n",next->name);
 
 	irq_exit();
 	switching = 1;

@@ -1,6 +1,7 @@
 #include <asm/syscall.h>
 #include <asm/pt_regs.h>
 #include <xkernel/types.h>
+#include <xkernel/stdio.h>
 
 asmlinkage long sys_ni_syscall(void) {
 	return -ENOSYS;
@@ -41,6 +42,7 @@ void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
 
 	nr = regs->regs[11];
 	regs->csr_era += 4;  //加上syscall 0 的大小
+	//printk("\n!!! do_syscall:%d !!!\n",nr);
 
 	regs->orig_a0 = regs->regs[4];
 	regs->regs[4] = -ENOSYS;

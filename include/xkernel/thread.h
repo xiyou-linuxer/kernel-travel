@@ -4,7 +4,6 @@
 #include <xkernel/sched.h>
 #include <xkernel/list.h>
 #include <asm/timer.h>
-#include <stdint.h>
 
 extern struct list thread_ready_list;
 extern struct list thread_all_list;

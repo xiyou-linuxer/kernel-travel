@@ -15,7 +15,7 @@
 #include <fs/fd.h>
 #include <fs/syscall_fs.h>
 #include <debug.h>
-
+#include <xkernel/mmap.h>
 /*void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
@@ -166,10 +166,39 @@ void test_openat(void) {
 
 void test_mapping(void)
 {
-    int fd = sys_open("./open", O_RDWR ,660);
+    int fd = sys_open("test_mmap.txt", O_RDWR ,660);
     unsigned long v_addr[32];
     fd_mapping(fd, 0, 3,v_addr);
+    printk("test_mapping\n");
+    printk("buf:%s\n", v_addr[0]);
 }
+
+/*void test_mmap(void){
+
+    char *array;
+    const char *str = "  Hello, mmap successfully!";
+    int fd;
+    struct kstat kst;
+    fd = sys_open("test_mmap.txt", O_RDWR | O_CREATE,660);
+    sys_write(fd, str, strlen(str));
+    sys_fstat(fd, &kst);
+    printk("file len: %d\n", kst.st_size);
+    array = sys_mmap(NULL, kst.st_size, PROT_WRITE | PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
+    //printf("return array: %x\n", array);
+
+    if (array == MAP_FAILED) {
+	printk("mmap error.\n");
+    }else{
+	printk("mmap content: %s\n", array);
+	//printf("%s\n", str);
+
+	//munmap(array, kst.st_size);
+    }
+
+    sys_close(fd);
+}*/
+
+
 void test_fs_all(void)
 {
     /*int fd = sys_open("./open", O_RDWR ,660);
@@ -178,8 +207,10 @@ void test_fs_all(void)
     printk("bbb");
     test_mount();
     test_unlink();
-    test_openat();*/
+    test_openat();
     test_fstat();
+    test_mmap();*/
+    test_mapping();
     while (1) {
     };
 } 

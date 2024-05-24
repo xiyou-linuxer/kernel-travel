@@ -12,6 +12,7 @@
 #include <xkernel/console.h>
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
+#include <xkernel/mmap.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
@@ -71,7 +72,7 @@ void timer_func(unsigned long unused){
 int sysnums = 3;
 //extern char* sysname[];
 
-char init_program[50000];
+char init_program[70000];
 char filename[50][64] = {0};
 void __init __no_sanitize_address start_kernel(void)
 {
@@ -81,12 +82,6 @@ void __init __no_sanitize_address start_kernel(void)
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
 	mem_init();
-	/*__alloc_pages for test*/
-	// struct page *page = __alloc_pages(0, 7, 0);
-	// struct page * page2 = __alloc_pages(0, 7, 0);
-	// __free_pages_ok(page, 7, 0);
-	// __free_pages_ok(page2, 7, 0);
-	//初始化中断处理程序
 	trap_init();
 	irq_init();
 	local_irq_enable();
@@ -98,23 +93,25 @@ void __init __no_sanitize_address start_kernel(void)
 	console_init();
 	syscall_init();
 	fs_init();
-	//thread_start("thread_a",10,thread_a,NULL);
-	
-	//int count=0;
-	//for (int i = 0; i < NR_SYSCALLS; i++)
-	//{
-	//	if (sysname[i] == NULL)
-	//		continue;
-	//	struct path_search_record searched_record;
-	//	int pri=5;
-	//	strcpy(filename[count],"/");
-	//	strcat(filename[count],sysname[i]);
-	//	process_execute(filename[count],filename[count],pri);
-	//	count++;
-	//}
+	// thread_start("thread_a",10,thread_a,NULL);
+	//
+	// test_mmap();
+	// int count=0;
+	// char filename[9][128] = {0};
+	// for (int i = 0; i < NR_SYSCALLS; i++)
+	// {
+	// 	if (sysname[i] == NULL)
+	// 		continue;
+	// 	Dirent *file;
+	// 	struct path_search_record searched_record;
+	// 	int pri=5;
+	// 	strcpy(filename[count],"/");
+	// 	strcat(filename[count],sysname[i]);
+	// 	process_execute(filename[count],filename[count],pri);
+	// 	count++;
+	// }
 
-	// early_boot_irqs_disabled = true;
-	
+	early_boot_irqs_disabled = true;
 	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
 	if (fd == -1) {
 		printk("open failed");
@@ -122,14 +119,14 @@ void __init __no_sanitize_address start_kernel(void)
 	sys_write(fd,init_code,init_code_len);
 	bufSync();
 
-	struct timespec req;
-	req.tv_sec=1;req.tv_nsec=0;
+	//struct timespec req;
+	//req.tv_sec=1;req.tv_nsec=0;
 	while (1) {
-		//sys_gettimeofday(&ts);
-		//printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
-		//sys_sleep(&req,&req);
-		//unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
-		//printk("%llx  ",time);
-		//printk("main pid=%d\n ",sys_getpid());
+		// sys_gettimeofday(&ts);
+		// printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
+		// sys_sleep(&req,&req);
+		// unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
+		// printk("%llx  ",time);
+		// printk("main pid=%d\n ",sys_getpid());
 	}
 }
