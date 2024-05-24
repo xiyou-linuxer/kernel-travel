@@ -132,6 +132,8 @@ pid_t sys_wait(pid_t pid,int* status,int options)
 		{
 			struct task_struct* exit_child = elem2entry(struct task_struct,all_list_tag,exit_elm);
 			*status = exit_child->exit_status;
+			parent->time_record.tms_cstime += exit_child->time_record.tms_stime;
+			parent->time_record.tms_cutime += exit_child->time_record.tms_utime;
 			int ret_pid = exit_child->pid;
 			thread_exit(exit_child);
 

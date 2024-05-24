@@ -47,6 +47,7 @@ void start_process(void* filename)
 	int entry = sys_exeload(filename,NULL,NULL);
 	regs->csr_era = (unsigned long)entry;
 
+	utimes_begin(cur);
 	printk("jump to proc...\n");
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 }

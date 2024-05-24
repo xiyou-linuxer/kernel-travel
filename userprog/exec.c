@@ -9,6 +9,7 @@
 #include <fs/fd.h>
 #include <allocator.h>
 #include <trap/irq.h>
+#include <asm/timer.h>
 
 void* program_begin;
 
@@ -121,6 +122,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 
 	//intr_enable();
 	//printk("jump to proc... at %d\n",entry);
+	utimes_begin(cur);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 	return -1;
 }

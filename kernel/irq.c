@@ -6,6 +6,8 @@
 #include <xkernel/types.h>
 #include <trap/irq.h>
 #include <trap/softirq.h>
+#include <asm/timer.h>
+#include <xkernel/thread.h>
 
 #define INTR_NUM 256
 
@@ -17,11 +19,18 @@ intr_handler intr_table[INTR_NUM];
 char* intr_name[INTR_NUM];
 
 void irq_enter(void) {
+	struct task_struct* cur = running_thread();
+	utimes_end(cur);
+	stimes_begin(cur);
+
 	switching = 0;
 	++irq_count;
 }
 
 void irq_exit(void) {
+	struct task_struct* cur = running_thread();
+	stimes_end(cur);
+
 	if (switching) {
 		switching = 0;
 		return ;
@@ -118,6 +127,7 @@ void do_irq(struct pt_regs* regs, uint64_t virq) {
 	irq_exit();
 	if (softirq_active)
 		do_softirq();
+	utimes_begin(running_thread());
 }
 
 bool in_interrupt(void) {

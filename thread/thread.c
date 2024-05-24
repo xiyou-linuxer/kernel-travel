@@ -115,7 +115,6 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	pthread->pid  = allocate_pid();
 	pthread->ppid = -1;
 
-
 	if (pthread == main_thread) {
 		pthread->status = TASK_RUNNING;
 	} else {
@@ -205,6 +204,8 @@ void schedule()
 	//printk("curticks:%d\n",cur->ticks);
 	//printk("next:%s\n",next->name);
 
+	
+	utimes_begin(next);
 	irq_exit();
 	switching = 1;
 	switch_to(cur, next);

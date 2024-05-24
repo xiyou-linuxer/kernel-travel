@@ -45,6 +45,7 @@ void syscall_init(void)
 	syscall_table[SYS_umount2]  = sys_umount;
 	syscall_table[SYS_sched_yield] = thread_yield;
 	syscall_table[SYS_PSTR]     = sys_pstr;
+	syscall_table[SYS_times]    = sys_times;
 	printk("syscall init done\n");
 }
 

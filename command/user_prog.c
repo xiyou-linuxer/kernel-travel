@@ -24,16 +24,24 @@ char* sysname[NR_SYSCALLS] = {
 	[1]                = "openat",
 	[2]                = "waitpid",
 	[SYS_unlinkat]     = "unlink",
+	[SYS_exit]         = "exit",
+	[SYS_times]        = "times",
+	[SYS_execve]       = "execve"
+	//[SYS_mmap]           = "mmap"
 };
 
-#define WEXITSTATUS(s) (((s) & 0xff00) >> 8)
-
-
+struct tms mytimes;
 int main(void)
 {
-	char filename[50][64];
+	char filename[40][14];
 	umemset(filename,0,sizeof(filename));
 	int count = 0 ;
+
+	//int test_ret = times(&mytimes);
+	//myprintf("test_ret=%d\n",mytimes);
+
+	//myprintf("mytimes success\n{tms_utime:%d, tms_stime:%d, tms_cutime:%d, tms_cstime:%d}\n",
+	//mytimes.tms_utime, mytimes.tms_stime, mytimes.tms_cutime, mytimes.tms_cstime);
 
 	for (int i = 0; i < NR_SYSCALLS; i++)
 	{
