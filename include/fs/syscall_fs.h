@@ -3,6 +3,7 @@
 
 #include <xkernel/types.h>
 
+
 int sys_open(const char* pathname, int flags, mode_t mode);
 int sys_write(int fd, const void* buf, unsigned int count);
 int sys_read(int fd, void* buf, unsigned int count);
@@ -20,4 +21,5 @@ int sys_mkdirat(int dirfd, const char* path, mode_t mode);
 int sys_unlinkat(int dirfd, char* path, unsigned int flags);
 int sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data);
 int sys_umount(const char* special);
+int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, struct statx *buf);
 #endif

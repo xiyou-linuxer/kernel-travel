@@ -48,6 +48,7 @@ void syscall_init(void)
 	syscall_table[SYS_PSTR]     = sys_pstr;
 	syscall_table[SYS_mmap]     = sys_mmap;
 	syscall_table[SYS_brk]     = sys_brk;
+	syscall_table[SYS_statx]    = sys_statx;
 	//syscall_table[SYS_FORK]     = sys_fork;
 	printk("syscall init done\n");
 }
