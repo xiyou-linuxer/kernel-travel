@@ -5,6 +5,8 @@
 #include <xkernel/rbtree.h>
 #include <xkernel/stdio.h>
 #include <asm-generic/errno.h>
+#include "asm/page.h"
+#include "sync.h"
 
 unsigned long sysctl_max_map_count = 1024;
 
@@ -322,5 +324,88 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 		ret = do_mmap_pgoff(file, addr, len, prot, flag, offset >> PAGE_SHIFT);
 		
 out:
+	return ret;
+}
+
+unsigned long do_brk(unsigned long addr, unsigned long len)
+{
+	struct mm_struct *mm = running_thread()->mm;
+	struct vm_area_struct * vma, * prev;
+	unsigned long flags;
+	struct rb_node ** rb_link, * rb_parent;
+	pgoff_t pgoff = addr >> PAGE_SHIFT;
+	int error;
+
+	len = PAGE_ALIGN(len);
+	if (!len)
+		return addr;
+
+	error = get_unmapped_area(NULL, addr, len, 0, MAP_FIXED);
+	if (error & ~PAGE_MASK)
+		return error;
+
+ munmap_back:
+	vma = find_vma_prepare(mm, addr, &prev, &rb_link, &rb_parent);
+	if (vma && vma->vm_start < addr + len) {
+		// if (do_munmap(mm, addr, len))
+			// return -ENOMEM;
+		// goto munmap_back;
+	}
+
+	if (mm->map_count > sysctl_max_map_count)
+		return -ENOMEM;
+
+	/*是否能合并，能合并直接退出*/
+	vma = vma_merge(mm, prev, addr, addr + len, flags,
+					NULL, NULL, pgoff);
+	if (vma)
+		goto out;
+
+	/* VMA 初始化*/
+	vma = (struct vm_area_struct *)get_page();
+
+	if (!vma)
+		return -ENOMEM;
+
+	vma->vm_mm = mm;
+	vma->vm_start = addr;
+	vma->vm_end = addr + len;
+	vma->vm_pgoff = pgoff;
+	vma->vm_flags = flags;
+	vma_link(mm, vma, prev, rb_link, rb_parent);
+out:
+	mm->total_vm += len >> PAGE_SHIFT;
+	return addr;
+}
+
+int sys_brk(void *addr)
+{
+	struct mm_struct *mm = running_thread()->mm;
+	unsigned long min_brk, ret;
+	unsigned long brk = (unsigned long) addr;
+	min_brk = mm->start_brk;
+
+	/*非法数据*/
+	if(brk < min_brk)
+		goto out;
+
+	unsigned long newbrk = PAGE_ALIGN(brk);
+	unsigned long oldbrk = PAGE_ALIGN(mm->brk);
+	if (newbrk == oldbrk)
+		goto set_brk;
+	
+	/* brk 收缩*/
+	if (brk <= mm->brk) {
+		/*解除数据段，成功解除映射跳至 set_brk ，否则跳转 out*/
+		// do_munmap(mm, newbrk, oldbrk - newbrk)
+		goto out;
+	} else if (do_brk(oldbrk, newbrk - oldbrk) != oldbrk) {
+		/*扩展失败*/
+		goto out;
+	}
+set_brk:
+	mm->brk = brk;
+out:
+	ret = mm->brk;
 	return ret;
 }

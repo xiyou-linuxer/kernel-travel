@@ -23,6 +23,7 @@ char* sysname[NR_SYSCALLS] = {
 	// [1]                = "openat",
 	// [SYS_unlinkat]     = "unlink",
 	[SYS_mmap]		= "mmap",
+	[SYS_brk]		= "brk",
 };
 
 

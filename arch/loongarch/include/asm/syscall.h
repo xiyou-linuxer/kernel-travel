@@ -146,6 +146,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_nanosleep     101
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
+#define SYS_brk           214
 #define SYS_clone         220
 #define SYS_execve        221
 #define SYS_mmap          222
@@ -200,4 +201,7 @@ static inline int fstat(int fd,struct kstat* stat)
 	return syscall(SYS_fstat, fd, stat);
 }
 
+static inline int brk(char *addr) {
+	return syscall(SYS_brk,addr);
+}
 #endif

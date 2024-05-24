@@ -64,6 +64,7 @@ void *sys_mmap(void* addr, size_t len,
 			int fd, off_t pgoff);
 int sys_munmap(void *start, size_t len);
 void test_mmap(void);
+int sys_brk(void *addr);
 
 unsigned long
 get_unmapped_area(struct file *filp, unsigned long addr,
