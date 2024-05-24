@@ -50,6 +50,10 @@ typedef struct BufferGroup {
 void bufInit(void);
 void bufTest(unsigned long blockno);
 
+extern BufferDataGroup bufferData[BGROUP_NUM];
+extern BufferGroup bufferGroups[BGROUP_NUM];
+
+
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) __attribute__((warn_unused_result));
 void bufWrite(Buffer *buf);
 void bufRelease(Buffer *buf);

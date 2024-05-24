@@ -152,6 +152,6 @@ void fs_init(void)
 	dirent_init();
 	init_root_fs();		//初始化根文件系统
 	printk("init_root_fs down\n");
-	//test_fs_all();
+	test_fs_all();
 	printk("fs_init down\n");
 }

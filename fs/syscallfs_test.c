@@ -75,21 +75,21 @@ void test_chdir(void){
     ASSERT(ret == 0);
     sys_getcwd(buffer, 30);
     printk("  current working dir : %s\n", buffer);
-}
+}*/
 
 void test_fstat(void) 
 {
-	int fd = sys_open("./text.txt", 0,660);
+	int fd = sys_open("/open", 0,660);
 	struct kstat kst;
 	int ret = sys_fstat(fd, &kst);
 	printk("fstat ret: %d\n", ret);
 	ASSERT(ret >= 0);
-
+    printk("size: %d",kst.st_size);
 	printk("fstat: dev: %d, inode: %d, mode: %d, nlink: %d, size: %d, atime: %d, mtime: %d, ctime: %d\n",
 	      kst.st_dev, kst.st_ino, kst.st_mode, kst.st_nlink, kst.st_size, kst.st_atime_sec, kst.st_mtime_sec, kst.st_ctime_sec);
 }
 
-void test_lseek(void)
+/*void test_lseek(void)
 {
 	int fd = sys_open("text.txt", O_RDWR,660);
 	ASSERT(fd > 0);
@@ -163,11 +163,23 @@ void test_openat(void) {
     printk("openat success.\n");
     sys_close(fd);	
 }
+
+void test_mapping(void)
+{
+    int fd = sys_open("./open", O_RDWR ,660);
+    unsigned long v_addr[32];
+    fd_mapping(fd, 0, 3,v_addr);
+}
 void test_fs_all(void)
 {
+    /*int fd = sys_open("./open", O_RDWR ,660);
+    unsigned long v_addr[32];
+    fd_mapping(fd, 0, 3,v_addr);
+    printk("bbb");
     test_mount();
     test_unlink();
-    test_openat();
+    test_openat();*/
+    test_fstat();
     while (1) {
     };
 } 

@@ -77,4 +77,5 @@ int file_create(struct Dirent* baseDir, char* path, int flag, mode_t mode);//创
 int file_close(struct fd *_fd);
 int rmfile(struct Dirent* file);
 int filename2path(Dirent* file, char* newpath);
+void fd_mapping(int fd, int start_page, int end_page, unsigned long* v_addr);
 #endif
