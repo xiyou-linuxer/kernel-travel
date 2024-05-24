@@ -63,6 +63,37 @@ typedef struct fd {
 	unsigned int refcnt; // 引用计数
 } fd;
 
+struct statx_timestamp {
+    __s64 tv_sec;   // 秒
+    __u32 tv_nsec;  // 纳秒
+    __s32 __reserved;
+};
+
+struct statx {
+    __u32 stx_mask;        // 表示哪些字段有效的掩码
+    __u32 stx_blksize;     // 优化I/O的块大小
+    __u64 stx_attributes;  // 文件的属性
+    __u32 stx_nlink;       // 硬链接数
+    __u32 stx_uid;         // 所有者用户ID
+    __u32 stx_gid;         // 所有者组ID
+    __u16 stx_mode;        // 文件类型和模式
+    __u16 __spare0[1];
+    __u64 stx_ino;         // inode编号
+    __u64 stx_size;        // 文件大小
+    __u64 stx_blocks;      // 分配的块数
+    __u64 stx_attributes_mask; // 表示哪些属性有效的掩码
+    struct statx_timestamp stx_atime; // 上次访问时间
+    struct statx_timestamp stx_btime; // 创建时间
+    struct statx_timestamp stx_ctime; // 上次状态更改时间
+    struct statx_timestamp stx_mtime; // 上次修改时间
+    __u32 stx_rdev_major;  // 设备的主设备号
+    __u32 stx_rdev_minor;  // 设备的次设备号
+    __u32 stx_dev_major;   // 文件所在设备的主设备号
+    __u32 stx_dev_minor;   // 文件所在设备的次设备号
+    __u64 __spare2[14];    // 备用字段
+};
+
+
 #define dev_file 1
 #define dev_pipe 2
 #define dev_console 3

@@ -142,12 +142,11 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		{
 			unsigned bytes_written = file_write(wr_file, 0, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
-			printk("write\n");
 			return bytes_written;
 		}
 		else
 		{
-			console_put_str("sys_write: not allowed to write file without flag O_RDWR or O_WRONLY\n");
+			/*console_put_str("sys_write: not allowed to write file without flag O_RDWR or O_WRONLY\n");*/
 			return -1;
 		}
 	}
@@ -452,4 +451,26 @@ void fd_mapping(int fd, int start_page, int end_page,unsigned long* v_addr)
 		indx ++;
 	}
 	return;
+}
+int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, struct statx *buf)
+{
+	int fd;
+	if (pathname[0] == '/' || dirfd == AT_FDCWD)//如果是open系统调用或者文件路径为绝对路径则直接打开
+	{
+		fd = sys_open(pathname, O_CREATE | O_RDWR, 066);
+	}else{
+		char buf[MAX_PATH_LEN];
+		int global_fd = fd_local2global(dirfd);
+		Dirent *file = file_table[global_fd].dirent;
+		filename2path(file,buf);
+		strcat(buf,"/");
+		strcat(buf,pathname);
+		fd = sys_open(buf,flags,660);
+	}
+	int ret = 0;
+	struct kstat stat;
+	uint32_t global_fd = fd_local2global(fd);
+	fileStat(file_table[global_fd].dirent,&stat);
+	buf->stx_size = stat.st_size;
+	return ret;
 }

@@ -365,5 +365,33 @@ void fileStat(struct Dirent *file, struct kstat *pKStat) {
 	pKStat->st_ctime_sec = file->time.st_ctime_sec;
 	pKStat->st_ctime_nsec = file->time.st_ctime_nsec;
 
-	//mtx_unlock_sleep(&mtx_file);
 } 
+
+/*void fileStatx(struct Dirent *file, struct statx *pKStat) {
+	//mtx_lock_sleep(&mtx_file);
+
+	memset(pKStat, 0, sizeof(struct kstat));
+	// P262 Linux-Unix系统编程手册
+	pKStat->st_dev = file->file_system->deviceNumber;
+
+	// 并未实现inode，使用Dirent编号替代inode编号
+	pKStat->st_ino = ((u64)file - 0x90000000ul);
+
+	pKStat->st_mode = get_file_mode(file);
+	pKStat->st_nlink = 1; // 文件的链接数，无链接时为1
+	pKStat->st_uid = 0;
+	pKStat->st_gid = 0;
+	pKStat->st_rdev = 0;
+	pKStat->st_size = file->file_size;
+	pKStat->st_blksize = CLUS_SIZE(file->file_system);
+	pKStat->st_blocks = ROUNDUP(file->file_size, pKStat->st_blksize);
+
+	// 时间相关
+	pKStat->st_atime_sec = file->time.st_atime_sec;
+	pKStat->st_atime_nsec = file->time.st_atime_nsec;
+	pKStat->st_mtime_sec = file->time.st_mtime_sec;
+	pKStat->st_mtime_nsec = file->time.st_mtime_nsec;
+	pKStat->st_ctime_sec = file->time.st_ctime_sec;
+	pKStat->st_ctime_nsec = file->time.st_ctime_nsec;
+
+}*/
