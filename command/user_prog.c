@@ -24,6 +24,7 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_sched_yield]  = "yield",
 	[1]                = "openat",
 	[2]                = "waitpid",
+	[3]                = "clone",
 	[SYS_unlinkat]     = "unlink",
 	[SYS_exit]         = "exit",
 	[SYS_times]        = "times",
