@@ -22,6 +22,9 @@ static int copy_pcb(struct task_struct* parent,struct task_struct* child)
 	child->status   = TASK_READY;
 	child->all_list_tag.prev = child->all_list_tag.next = NULL;
 	child->general_tag.prev = child->general_tag.next = NULL;
+	memset(&child->thread,0,sizeof(struct thread_struct));
+	memset(&child->time_record,0,sizeof(struct tms));
+	memset(&child->start_times,0,sizeof(struct start_tms));
 
 	uint64_t vaddr_btmp_size = DIV_ROUND_UP((USER_STACK - USER_VADDR_START)/PAGESIZE/8,PAGESIZE);
 	child->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(vaddr_btmp_size+1);

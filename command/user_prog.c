@@ -4,6 +4,7 @@
 
 char* sysname[NR_SYSCALLS] = {
 	[SYS_getpid]       = "getpid",
+	[SYS_getppid]      = "getppid",
 	[SYS_gettimeofday] = "gettimeofday",
 	[SYS_nanosleep]    = "sleep",
 	[SYS_wait4]        = "wait",
@@ -20,48 +21,50 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_mkdirat]      = "mkdir_",
 	[SYS_mount]        = "mount",
 	[SYS_umount2]      = "umount",
+	[SYS_sched_yield]  = "yield",
 	[1]                = "openat",
-	// [SYS_unlinkat]     = "unlink",
+	[2]                = "waitpid",
+	[SYS_unlinkat]     = "unlink",
+	[SYS_exit]         = "exit",
+	[SYS_times]        = "times",
+	[SYS_execve]       = "execve",
+	[SYS_uname]        = "uname",
 	[SYS_mmap]         = "mmap",
 	[SYS_brk]          = "brk",
 };
 
-
-
+struct tms mytimes;
 int main(void)
 {
-	char filename[50][64];
+	char filename[30][14];
 	umemset(filename,0,sizeof(filename));
 	int count = 0 ;
-	int pid = fork();
-	if (pid == 0){
-		for (int i = 0; i < NR_SYSCALLS; i++)
-		{
-			if (sysname[i] == NULL)
-				continue;
-			ustrcpy(filename[count],"/");
-			ustrcat(filename[count],sysname[i]);
 
-			//myprintf("next:%s \n",filename[count]);
-			int pid = fork();
-			if (pid == 0){
-				execve(filename[count],NULL,NULL);
-			}
+	for (int i = 0; i < NR_SYSCALLS; i++)
+	{
+		if (sysname[i] == NULL)
+			continue;
+		ustrcpy(filename[count],"/");
+		ustrcat(filename[count],sysname[i]);
 
-			int status;
-			int childpid = wait(&status);
-			//if (childpid == -1) {
-			//	myprintf("no child now\n");
-			//} else {
-			//	myprintf("child %d status=%d\n",childpid,status);
-			//}
-			count++;
+		//myprintf("next:%s \n",filename[count]);
+		int pid = fork();
+		if (pid == 0){
+			execve(filename[count],NULL,NULL);
 		}
-		exit(0);
-	}
-	while(1) {
+
 		int status;
 		int childpid = wait(&status);
+		//if (childpid == -1) {
+		//	myprintf("no child now\n");
+		//} else {
+		//	myprintf("child %d status=%d\n",childpid,status);
+		//}
+		count++;
+	}
+	while(1) {
+		//int status;
+		//int childpid = wait(&status);
 		//if (childpid == -1) {
 		//	//myprintf("no child now\n");
 		//} else {

@@ -9,6 +9,8 @@ extern struct list thread_ready_list;
 extern struct list thread_all_list;
 extern struct list_elem* thread_tag;
 
+pid_t sys_getpid(void);
+pid_t sys_getppid(void);
 struct task_struct* pid2thread(int64_t pid);
 void init_thread(struct task_struct *pthread, char *name, int prio);
 struct task_struct *running_thread(void);

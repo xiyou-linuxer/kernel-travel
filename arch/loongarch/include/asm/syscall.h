@@ -144,14 +144,20 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_fstat          80
 #define SYS_exit           93
 #define SYS_nanosleep     101
+#define SYS_sched_yield   124
+#define SYS_times         153
+#define SYS_uname         160
 #define SYS_gettimeofday  169
 #define SYS_getpid        172
+#define SYS_getppid       173
 #define SYS_brk           214
 #define SYS_clone         220
 #define SYS_execve        221
 #define SYS_mmap          222
 #define SYS_wait4         260
 #define SYS_statx         291
+
+
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {
@@ -178,6 +184,10 @@ static inline pid_t wait(int* status) {
 	return syscall(SYS_wait4,-1,status,0);
 }
 
+static inline pid_t waitpid(int pid,int* status) {
+	return syscall(SYS_wait4,pid,status,0);
+}
+
 static inline int execve(const char *path, char *const argv[], char *const envp[]) {
 	return syscall(SYS_execve,path,argv,envp);
 }
@@ -188,6 +198,10 @@ static inline void pstr(char *str) {
 
 static inline int fork(void) {
 	return syscall(SYS_clone,0,0);
+}
+
+static inline long times(void* mytimes) {
+	return syscall(SYS_times,mytimes);
 }
 
 static inline void * mmap(void * addr,

@@ -18,6 +18,7 @@ obj-y += softirq.o
 obj-y += debug.o
 obj-y += allocators.o
 obj-y += syscall_init.o
+obj-y += uname.o
 obj-y += ../userprog/fork.o
 obj-y += ../userprog/wait.o
 
