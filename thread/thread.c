@@ -363,7 +363,7 @@ void thread_init(void)
 	list_init(&thread_all_list);
 	pid_pool_init();
 
-	process_execute("initcode","init",30);
+	process_execute("initcode","init",15);
 	idle_thread = thread_start("idle",10,idle,NULL);
 	make_main_thread();
 
