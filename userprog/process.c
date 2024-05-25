@@ -44,7 +44,7 @@ void start_process(void* filename)
 	regs->regs[3] = (uint64_t)userstk_alloc(cur->pgdir);
 	regs->regs[22] = regs->regs[3];
 
-	int entry = sys_exeload(filename,NULL,NULL);
+	int entry = sys_exeload(filename);
 	regs->csr_era = (unsigned long)entry;
 
 	utimes_begin(cur);

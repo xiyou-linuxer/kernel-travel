@@ -33,15 +33,9 @@ char* sysname[NR_SYSCALLS] = {
 struct tms mytimes;
 int main(void)
 {
-	char filename[40][14];
+	char filename[30][14];
 	umemset(filename,0,sizeof(filename));
 	int count = 0 ;
-
-	//int test_ret = times(&mytimes);
-	//myprintf("test_ret=%d\n",mytimes);
-
-	//myprintf("mytimes success\n{tms_utime:%d, tms_stime:%d, tms_cutime:%d, tms_cstime:%d}\n",
-	//mytimes.tms_utime, mytimes.tms_stime, mytimes.tms_cutime, mytimes.tms_cstime);
 
 	for (int i = 0; i < NR_SYSCALLS; i++)
 	{

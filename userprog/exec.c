@@ -42,7 +42,10 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 		uint64_t* pte = pte_ptr(pd,page);
 		if (*pte == 0)
 			malloc_usrpage(pd,page);
-		//printk("load_phdr:cur->vaddrbtmp=%d\n",*(unsigned long*)running_thread()->usrprog_vaddr.btmp.bits);
+		else {
+			*pte = 0;
+			malloc_usrpage(pd,page);
+		}
 
 		page += PAGESIZE;
 	}
@@ -90,7 +93,7 @@ done:
 }
 
 
-int sys_exeload(const char *path, char *const argv[], char *const envp[])
+int sys_exeload(const char *path)
 {
 	int64_t entry_point = load(path);
 	if (entry_point == -1) {
@@ -103,12 +106,15 @@ int sys_exeload(const char *path, char *const argv[], char *const envp[])
 
 int sys_execve(const char *path, char *const argv[], char *const envp[])
 {
+	uint64_t argc = 0;
+	while (argv[argc]) argc++;
+
 	unsigned long crmd;
 	unsigned long prmd;
 	struct task_struct* cur = running_thread();
 	//printk("%s sys_execve\n",cur->name);
 	strcpy(cur->name,path);
-	struct pt_regs* regs = (struct pt_regs*)((uint64_t)cur->self_kstack - sizeof(struct pt_regs));
+	struct pt_regs* regs = (struct pt_regs*)((uint64_t)cur + PAGESIZE -sizeof(struct pt_regs));
 
 	regs->csr_crmd = read_csr_crmd();
 	prmd = read_csr_prmd() & ~(PLV_MASK);
@@ -117,7 +123,11 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 
 	regs->regs[3]  = 1 << (9+9+12);
 	regs->regs[22] = regs->regs[3];
-	int64_t entry = sys_exeload(path,NULL,NULL);
+
+	regs->regs[4] = argc;
+	regs->regs[5] = (unsigned long)argv;
+	regs->regs[6] = (unsigned long)envp;
+	int64_t entry = sys_exeload(path);
 	regs->csr_era = (unsigned long)entry;
 
 	//intr_enable();

@@ -50,7 +50,7 @@ typedef struct
 } Elf_Phdr;
 
 int64_t load(const char *path);
-int sys_exeload(const char *path, char *const argv[], char *const envp[]);
+int sys_exeload(const char *path);
 int sys_execve(const char *path, char *const argv[], char *const envp[]);
 
 #endif
