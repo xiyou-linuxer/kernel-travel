@@ -1,5 +1,6 @@
 #ifndef __LIB_KERNEL_LIST_H
 #define __LIB_KERNEL_LIST_H
+
 #include <xkernel/types.h>
 #include <xkernel/compiler.h>
 
@@ -115,6 +116,5 @@ uint32_t list_len(struct list* plist);
 struct list_elem* list_traversal(struct list* plist,function func,void * arg);
 struct list_elem* list_reverse(struct list* plist,function func,void * arg);
 bool elem_find(struct list* plist,struct list_elem* obj_elem);
-
 
 #endif

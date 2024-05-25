@@ -7,6 +7,7 @@ if [ -z $ARCH ]; then
 fi
 
 if [ $ARCH == "loongarch" ]; then
+	# TOOLCHAINS=../toolchains/cross-tools/bin/loongarch64-unknown-linux-gnu-
 	# TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
 	TOOLCHAINS=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
 elif [ $ARCH == "arm64" ]; then
