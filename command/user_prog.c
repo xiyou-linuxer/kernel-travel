@@ -4,6 +4,7 @@
 
 char* sysname[NR_SYSCALLS] = {
 	[SYS_getpid]       = "getpid",
+	[SYS_getppid]      = "getppid",
 	[SYS_gettimeofday] = "gettimeofday",
 	[SYS_nanosleep]    = "sleep",
 	[SYS_wait4]        = "wait",

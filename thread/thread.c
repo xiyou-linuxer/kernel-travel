@@ -65,6 +65,19 @@ void release_pid(pid_t pid) {
 	lock_release(&pid_pool.pid_lock);
 }
 
+pid_t sys_getpid(void)
+{
+	struct task_struct* cur = running_thread();
+	return cur->pid;
+}
+
+pid_t sys_getppid(void)
+{
+	struct task_struct* cur = running_thread();
+	return cur->ppid;
+}
+
+
 static int checkpid(struct list_elem* pelm,void* id)
 {
 	pid_t pid = (int64_t)id;

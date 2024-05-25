@@ -90,16 +90,12 @@ long sys_times(struct tms *tms)
 	struct task_struct *cur = running_thread();
 	long ret_time = -1;
 	utimes_end(cur);
-	stimes_end(cur);
+	//stimes_end(cur);
 
 	*tms = cur->time_record;
-	tms->tms_stime = cur->time_record.tms_stime;
-	tms->tms_cstime = cur->time_record.tms_cstime;
-	tms->tms_cutime = cur->time_record.tms_cutime;
-	//ret_time = rdtime();
 
 	utimes_begin(cur);
-	stimes_begin(cur);
+	stimes_end(cur);
 	return ticks;
 }
 
