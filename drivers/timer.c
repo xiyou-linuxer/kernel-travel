@@ -187,7 +187,7 @@ static void run_timers(void* unused)
 	raise_softirq(TIMER_SOFTIRQ);
 }
 
-void add_timer(struct timer_list *timer) 
+void add_timer(struct timer_list *timer)
 {
 	if (timer->elm.prev != NULL) {
 		printk("timer has been added\n");

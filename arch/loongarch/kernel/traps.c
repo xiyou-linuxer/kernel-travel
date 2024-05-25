@@ -202,7 +202,7 @@ void trap_init(void)
 {
 	unsigned long i;
 	void *vector_start;
-	unsigned long tcfg = 0x0800000UL | (1U << 0) | (1U << 1);
+	unsigned long tcfg = 0x0400000UL | (1U << 0) | (1U << 1);
 	unsigned long ecfg;
 
 	/**

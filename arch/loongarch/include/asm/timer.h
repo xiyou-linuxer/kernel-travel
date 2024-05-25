@@ -22,7 +22,7 @@
 #define USEC_TO_NSEC(us)  (us * NSEC_PER_USEC)
 
 /* ticks and seconds */
-#define CLK_PER_TICK       0x0800000UL
+#define CLK_PER_TICK       0x0400000UL
 #define TICK_PER_SEC       (CLK_FREQUENCY / CLK_PER_TICK)
 #define SEC_TO_TICK(sec)   (sec * TICK_PER_SEC)
 #define NSEC_TO_TICK(nsec) (nsec / NSEC_PER_CLK / CLK_PER_TICK)

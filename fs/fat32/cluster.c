@@ -182,7 +182,7 @@ long fileBlockNo(FileSystem *fs, unsigned long firstclus, unsigned long fblockno
 	return clusterSec(fs, curClus) + fblockno % block_per_clus;
 }
 int countClusters(struct Dirent *file) {
-	printk("count Cluster begin!\n");
+	//printk("count Cluster begin!\n");
 
 	int clus = file->first_clus;
 	int i = 0;
@@ -197,7 +197,7 @@ int countClusters(struct Dirent *file) {
 			clus = fatRead(file->file_system, clus);
 			i += 1;
 		}
-		printk("count Cluster end!\n");
+		//printk("count Cluster end!\n");
 		return i;
 	}
 }
