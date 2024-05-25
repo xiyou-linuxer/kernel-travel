@@ -31,6 +31,7 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_uname]        = "uname",
 	[SYS_mmap]         = "mmap",
 	[SYS_brk]          = "brk",
+	[SYS_munmap]       = "munmap",
 };
 
 struct tms mytimes;

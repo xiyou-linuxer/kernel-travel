@@ -45,6 +45,7 @@ void syscall_init(void)
 	syscall_table[SYS_PSTR]     = sys_pstr;
 	syscall_table[SYS_mmap]     = sys_mmap;
 	syscall_table[SYS_brk]     = sys_brk;
+	syscall_table[SYS_munmap]     = sys_munmap;
 	syscall_table[SYS_times]    = sys_times;
 	syscall_table[SYS_uname]    = sys_uname;
 	syscall_table[SYS_statx]    = sys_statx;
