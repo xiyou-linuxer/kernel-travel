@@ -60,4 +60,7 @@ int openat(int fd, u64 filename, int flags, mode_t mode);
 #define X_OK 1 /* Test for execute permission.  */
 #define F_OK 0 /* Test for existence.  */
 
+struct file {
+	int fd;
+};
 #endif

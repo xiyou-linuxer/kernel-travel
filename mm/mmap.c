@@ -5,8 +5,10 @@
 #include <xkernel/rbtree.h>
 #include <xkernel/stdio.h>
 #include <asm-generic/errno.h>
-#include "asm/page.h"
-#include "sync.h"
+#include <asm/page.h>
+#include <sync.h>
+#include <fs/file.h>
+#include "fs/fd.h"
 
 unsigned long sysctl_max_map_count = 1024;
 
@@ -209,6 +211,8 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	struct mm_struct *mm = running_thread()->mm;	/* 获取该进程的memory descriptor*/
 	struct vm_area_struct *vma, *prev;
 	struct rb_node ** rb_link, * rb_parent;
+	unsigned long *v_addr = (unsigned long *)VADDR_FOR_FD_MAPP;
+	u64 offset = 0;
 
 	len = PAGE_ALIGN(len);
 	if (!len)
@@ -275,17 +279,27 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	* 私有匿名映射: vma_set_anonyumous*/
 
 	/*VMA 分配物理内存并初始化*/
-	printk("0x%llx\n",running_thread());
-	malloc_usrpage(running_thread()->pgdir, (unsigned long)vma);
-	// memset(vma, 0, sizeof(*vma));
+	// printk("0x%llx\n",running_thread());
+	// malloc_usrpage(running_thread()->pgdir, (unsigned long)vma);
+	vma = (struct vm_area_struct *)get_page();
+	memset(vma, 0, sizeof(*vma));
 	vma->vm_mm = mm;
 	vma->vm_start = addr;
 	vma->vm_end = addr + len;
 	vma->vm_flags = flags;
 	vma->vm_pgoff = pgoff;
 
+
 	if(file) {
 		// call_mmap();	FAT32 的处理函数...
+		fd_mapping(file->fd, pgoff, pgoff + (len >> 12), v_addr);
+		int i = len >> 12;
+		offset = *v_addr & (~PAGE_MASK);
+		while (i--) {
+			page_table_add(running_thread()->pgdir, addr,
+					v_addr[i], PTE_V | PTE_PLV | PTE_D);
+		}
+		addr |= offset;
 	} else if (flags & VM_SHARED) {
 	
 	} else {
@@ -305,7 +319,13 @@ void *sys_mmap(void* addr, size_t len, int prot,
 		int flags, int fd, off_t offset)
 {
 	/*fd 获取 struct file*/
-	return (void *)do_mmap(NULL, (unsigned long)addr, len, prot, flags, offset);
+	struct file * file = NULL;
+	if (fd > 2) {
+		file = (struct file *)get_page();
+		file->fd = fd;
+	}
+
+	return (void *)do_mmap(file, (unsigned long)addr, len, prot, flags, offset);
 }
 
 int sys_munmap(void *start, size_t len)
