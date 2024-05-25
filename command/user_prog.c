@@ -26,7 +26,8 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_unlinkat]     = "unlink",
 	[SYS_exit]         = "exit",
 	[SYS_times]        = "times",
-	[SYS_execve]       = "execve"
+	[SYS_execve]       = "execve",
+	[SYS_uname]        = "uname"
 	//[SYS_mmap]           = "mmap"
 };
 

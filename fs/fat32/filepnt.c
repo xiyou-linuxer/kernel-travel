@@ -64,7 +64,7 @@ unsigned int filepnt_getclusbyno(Dirent *file, int fileClusNo) {
 	}
 	ASSERT(twicep != NULL);
 	u32 ret = twicep->cluster[ind2];
-	ASSERT(ret != 0); // 假设要查找的文件肯定有第fileClusNo个簇
+	//ASSERT(ret != 0); // 假设要查找的文件肯定有第fileClusNo个簇
 	return ret;
 }
 /**

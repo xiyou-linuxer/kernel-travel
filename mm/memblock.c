@@ -84,10 +84,15 @@ int __meminit memblock_reserve(phys_addr_t base, phys_addr_t size)
 
 int __meminit memblock_add(phys_addr_t base, phys_addr_t size)
 {
-	// kbuild 实现可以加对应宏
 	phys_addr_t end = base + size - 1;
+
+	/**
+	 * TODO: memblock_debug全局变量定义处直接赋值
+	 */
 	memblock_debug = 1;
-	memblock_dbg("%s: [0x%pa-0x%pa] 0x%p\n", __func__,&base, &end, (void *)_RET_IP_);
+
+	memblock_dbg("%s: [0x%pa-0x%pa] 0x%p\n", __func__, &base, &end, (void *)_RET_IP_);
+
 	return memblock_add_range(&memblock.memory,base,size,0,0);
 }
 
@@ -207,7 +212,7 @@ unsigned long __init __free_memory_core(phys_addr_t start,
 
 	if (start_pfn >= end_pfn)
 		return 0;
-	printk("start = 0x%x,end = 0x%x\n", start_pfn, end_pfn);
+	// printk("start = 0x%x,end = 0x%x\n", start_pfn, end_pfn);
 	while (start_pfn < end_pfn) {
 		if (start_pfn)
 			order = (int)(min(MAX_PAGE_ORDER, __ffs(start_pfn)));
@@ -216,8 +221,8 @@ unsigned long __init __free_memory_core(phys_addr_t start,
 
 		while (start_pfn + (1UL << order) > end_pfn)
 			order--;
-		printk("come to __free_pages_core function\n");
-		printk("start_pfn:0x%llx,mem_map:0x%llx\n", start_pfn, mem_map);
+		// printk("come to __free_pages_core function\n");
+		// printk("start_pfn:0x%llx,mem_map:0x%llx\n", start_pfn, mem_map);
 		__free_pages_core((struct page *)pfn_to_page(start_pfn), order);
 
 		start_pfn += (1UL << order);
@@ -240,8 +245,8 @@ void __meminit memblock_free_all(void)
 {
 
 	reset_node_managed_pages();
-	printk("reset_node_managed_pages done\n");
+	// printk("reset_node_managed_pages done\n");
 	unsigned long pages = free_low_memory_core_early();
-	printk("pages: %ld\n", pages);
+	// printk("pages: %ld\n", pages);
 
 }

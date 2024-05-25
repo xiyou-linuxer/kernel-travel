@@ -161,6 +161,9 @@ enum fs_result {
 #define PGROUNDDOWN(a) (((a)) & ~(PAGE_SIZE - 1))
 #define ROUNDUP(a, x) (((a) + (x)-1) & ~((x)-1))
 
+/*表示文件系统中的最大文件大小*/
+#define MAX_LFS_FILESIZE 	0x7fffffffffffffffUL
+
 extern FileSystem* fatFs;
 
 typedef int (*findfs_callback_t)(FileSystem *fs, void *data);

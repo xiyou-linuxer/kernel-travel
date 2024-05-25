@@ -13,6 +13,7 @@
 #include <xkernel/init.h>
 #include <xkernel/math.h>
 #include <xkernel/compiler.h>
+#include "xkernel/mmap.h"
 #include <sync.h>
 
 struct pool reserve_phy_pool __initdata;
@@ -115,9 +116,34 @@ void page_table_add(u64 pd,u64 _vaddr,u64 _paddr,u64 attr)
 	invalidate();
 }
 
+// 获取 PMD 指针
+u64 *reverse_pmd_ptr(u64 pd, u64 vaddr) {
+	u64 *pgd = pgd_ptr(pd, vaddr);
+	if (!*pgd) return NULL;
+	return (u64*)(*pgd + PMD_IDX(vaddr) * ENTRY_SIZE);
+}
+
+// 获取 PTE 指针
+u64 *reverse_pte_ptr(u64 pd, u64 vaddr) {
+	u64 *pmd = reverse_pmd_ptr(pd, vaddr);
+	if (!pmd || !*pmd) return NULL;
+	return (u64*)(*pmd + PTE_IDX(vaddr) * ENTRY_SIZE);
+}
+
+// 获取物理地址
+u64 vaddr_to_paddr(u64 pd, u64 vaddr) {
+	u64 *pte = reverse_pte_ptr(pd, vaddr);
+	if (!pte || !*pte) {
+		printk("vaddr_to_paddr: Invalid virtual address mapping\n");
+		return 0; // 或者返回一个错误码
+	}
+	return (*pte & ~0xfff) | PAGE_OFFSET(vaddr);
+}
+
 void malloc_usrpage(u64 pd,u64 vaddr)
 {
 	unsigned long paddr = get_page();
+	// printk("paddr : 0x%lx\n", paddr);
 	page_table_add(pd,vaddr,paddr,PTE_V | PTE_PLV | PTE_D);
 	struct task_struct *cur = running_thread();
 	uint64_t bit_idx = (vaddr - cur->usrprog_vaddr.vaddr_start)/PAGESIZE;
@@ -510,19 +536,19 @@ void free_one_page(struct zone *zone,
 	unsigned long combined_pfn;
 	bool to_tail;
 	ASSERT(zone_is_initialized(zone) == true);
-	printk("%p\n",zone);
-	printk("%p\n",zone);
-	printk("%lu\n",order);
-	printk("%lu\n",pfn);
+	// printk("%p\n",zone);
+	// printk("%p\n",zone);
+	// printk("%lu\n",order);
+	// printk("%lu\n",pfn);
 	while (order < MAX_PAGE_ORDER) {
-		printk("find_buddy_page_pfn function done\n");
+		// printk("find_buddy_page_pfn function done\n");
 		buddy = find_buddy_page_pfn(page, pfn, order, &buddy_pfn);
 		if (!buddy)
 			// 不需要合并
 			goto done_merging;
 		
 		del_page_from_free_list(buddy, zone, order);
-		printk("del page for list done \n");
+		// printk("del page for list done \n");
 		combined_pfn = buddy_pfn & pfn;
 		page = page + (combined_pfn - pfn);
 		pfn = combined_pfn;
@@ -562,7 +588,7 @@ void __init __free_pages_core(struct page *page,unsigned int order)
 {
 	/*清除 struct page 中的数据*/
 	// ...
-	printk("pageaddr:0x%llx\n",page);
+	// printk("pageaddr:0x%llx\n",page);
 	__free_pages_ok(page,order,FPI_TO_TAIL);   
 }
 
@@ -736,4 +762,26 @@ void __init mem_init(void)
 	high_memory = (void *) __va(max_low_pfn << PAGE_SHIFT);
 	memblock_free_all();
 	lock_init(&pool_lock);
+}
+
+void mm_struct_init(struct mm_struct *mm)
+{
+	mm->mmap = NULL;
+	mm->mm_rb = RB_ROOT;
+	mm->mmap_cache = INVAILD_MMAP_CACHE;
+	mm->free_area_cache = 0;
+	mm->map_count = 0;
+	mm->rss = 0;
+	mm->vm_file = NULL;
+	mm->start_code = mm->end_code = 0;
+	mm->start_data = mm->end_data = 0;
+	mm->arg_start = mm->arg_end = 0;
+	mm->env_start = mm->env_start = 0;
+	mm->start_brk = mm->brk = mm->start_stack = 0;
+	mm->total_vm = 0;
+	
+	/* 后面可以给不同架构做适配*/
+	mm->get_unmapped_area = get_unmapped_area;
+	
+	return;
 }

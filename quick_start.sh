@@ -7,8 +7,9 @@ if [ -z $ARCH ]; then
 fi
 
 if [ $ARCH == "loongarch" ]; then
-	TOOLCHAINS=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
+	# TOOLCHAINS=../toolchains/cross-tools/bin/loongarch64-unknown-linux-gnu-
 	# TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
+	TOOLCHAINS=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
 elif [ $ARCH == "arm64" ]; then
 	TOOLCHAINS=../toolchains/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 fi

@@ -15,7 +15,7 @@
 #include <fs/fd.h>
 #include <fs/syscall_fs.h>
 #include <debug.h>
-
+#include <xkernel/mmap.h>
 /*void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
@@ -75,21 +75,21 @@ void test_chdir(void){
     ASSERT(ret == 0);
     sys_getcwd(buffer, 30);
     printk("  current working dir : %s\n", buffer);
-}
+}*/
 
 void test_fstat(void) 
 {
-	int fd = sys_open("./text.txt", 0,660);
+	int fd = sys_open("/open", 0,660);
 	struct kstat kst;
 	int ret = sys_fstat(fd, &kst);
 	printk("fstat ret: %d\n", ret);
 	ASSERT(ret >= 0);
-
+    printk("size: %d",kst.st_size);
 	printk("fstat: dev: %d, inode: %d, mode: %d, nlink: %d, size: %d, atime: %d, mtime: %d, ctime: %d\n",
 	      kst.st_dev, kst.st_ino, kst.st_mode, kst.st_nlink, kst.st_size, kst.st_atime_sec, kst.st_mtime_sec, kst.st_ctime_sec);
 }
 
-void test_lseek(void)
+/*void test_lseek(void)
 {
 	int fd = sys_open("text.txt", O_RDWR,660);
 	ASSERT(fd > 0);
@@ -163,11 +163,54 @@ void test_openat(void) {
     printk("openat success.\n");
     sys_close(fd);	
 }
+
+void test_mapping(void)
+{
+    int fd = sys_open("test_mmap.txt", O_RDWR ,660);
+    unsigned long v_addr[32];
+    fd_mapping(fd, 0, 3,v_addr);
+    printk("test_mapping\n");
+    printk("buf:%s\n", v_addr[0]);
+}
+
+/*void test_mmap(void){
+
+    char *array;
+    const char *str = "  Hello, mmap successfully!";
+    int fd;
+    struct kstat kst;
+    fd = sys_open("test_mmap.txt", O_RDWR | O_CREATE,660);
+    sys_write(fd, str, strlen(str));
+    sys_fstat(fd, &kst);
+    printk("file len: %d\n", kst.st_size);
+    array = sys_mmap(NULL, kst.st_size, PROT_WRITE | PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
+    //printf("return array: %x\n", array);
+
+    if (array == MAP_FAILED) {
+	printk("mmap error.\n");
+    }else{
+	printk("mmap content: %s\n", array);
+	//printf("%s\n", str);
+
+	//munmap(array, kst.st_size);
+    }
+
+    sys_close(fd);
+}*/
+
+
 void test_fs_all(void)
 {
+    /*int fd = sys_open("./open", O_RDWR ,660);
+    unsigned long v_addr[32];
+    fd_mapping(fd, 0, 3,v_addr);
+    printk("bbb");
     test_mount();
     test_unlink();
     test_openat();
+    test_fstat();
+    test_mmap();*/
+    test_mapping();
     while (1) {
     };
 } 

@@ -7,7 +7,9 @@
 #include <xkernel/console.h>
 #include <fs/syscall_fs.h>
 #include <xkernel/wait.h>
+#include <xkernel/mmap.h>
 #include <exec.h>
+#include <xkernel/uname.h>
 
 pid_t sys_getpid(void)
 {
@@ -39,13 +41,15 @@ void syscall_init(void)
 	syscall_table[SYS_fstat]	= sys_fstat;
 	syscall_table[SYS_openat]	= sys_openat;
 	syscall_table[SYS_mkdirat]	= sys_mkdirat;
-    syscall_table[SYS_clone]    = sys_fork;
+	syscall_table[SYS_clone]    = sys_fork;
 	syscall_table[SYS_unlinkat] = sys_unlinkat;
 	syscall_table[SYS_mount]    = sys_mount;
 	syscall_table[SYS_umount2]  = sys_umount;
 	syscall_table[SYS_sched_yield] = thread_yield;
 	syscall_table[SYS_PSTR]     = sys_pstr;
 	syscall_table[SYS_times]    = sys_times;
+	syscall_table[SYS_uname]    = sys_uname;
+	syscall_table[SYS_statx]    = sys_statx;
 	printk("syscall init done\n");
 }
 
