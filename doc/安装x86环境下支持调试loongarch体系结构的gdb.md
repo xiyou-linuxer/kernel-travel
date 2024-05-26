@@ -18,7 +18,7 @@ make -j16
 make install
 ```
 
-注意：这里一定会报错，我记得是：缺失了 expect 工具
+注意：这里一定会报错：缺失了 expect 工具
 
 ```shell
 apt-get install expect
