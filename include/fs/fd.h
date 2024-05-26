@@ -93,6 +93,13 @@ struct statx {
     __u64 __spare2[14];    // 备用字段
 };
 
+struct linux_dirent64 {
+    unsigned long d_ino;              // 索引结点号
+    long d_off;	// 到下一个dirent的偏移
+    unsigned short d_reclen;	// 当前dirent的长度
+    unsigned char d_type;	// 文件类型
+    char d_name[MAX_NAME_LEN];	//文件名
+};
 
 #define dev_file 1
 #define dev_pipe 2
@@ -109,4 +116,8 @@ int file_close(struct fd *_fd);
 int rmfile(struct Dirent* file);
 int filename2path(Dirent* file, char* newpath);
 void fd_mapping(int fd, int start_page, int end_page, unsigned long* v_addr);
+bool is_pipe(uint32_t local_fd);
+uint32_t pipe_read(int32_t fd, void* buf, uint32_t count);
+uint32_t pipe_write(int32_t fd, const void* buf, uint32_t count);
+void sys_fd_redirect(uint32_t old_local_fd, uint32_t new_local_fd);
 #endif

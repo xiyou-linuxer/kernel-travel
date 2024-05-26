@@ -22,4 +22,6 @@ int sys_unlinkat(int dirfd, char* path, unsigned int flags);
 int sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data);
 int sys_umount(const char* special);
 int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, struct statx *buf);
+int32_t sys_pipe(int32_t pipefd[2]);
+int sys_getdents(int fd, struct linux_dirent64* buf, size_t len);
 #endif

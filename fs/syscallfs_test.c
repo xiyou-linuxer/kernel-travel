@@ -5,6 +5,7 @@
 #include <xkernel/list.h>
 #include <xkernel/console.h>
 #include <xkernel/string.h>
+#include <xkernel/mmap.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
@@ -15,7 +16,8 @@
 #include <fs/fd.h>
 #include <fs/syscall_fs.h>
 #include <debug.h>
-#include <xkernel/mmap.h>
+#include <fork.h>
+#include <xkernel/wait.h>
 /*void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
@@ -198,6 +200,46 @@ void test_mapping(void)
     sys_close(fd);
 }*/
 
+void test_getdents(void){
+    
+    char buf[512];
+    int fd, nread;
+    struct linux_dirent64 *dirp64;
+    dirp64 = (struct linux_dirent64 *)buf;
+    fd = sys_open(".", O_RDONLY,660);
+    printk("open fd:%d\n", fd);
+
+	nread = sys_getdents(fd, dirp64, 512);
+	printk("getdents fd:%d\n", nread);
+	ASSERT(nread != -1);
+	printk("getdents success.\n%s\n", dirp64->d_name);
+    printk("\n");
+    sys_close(fd);
+}
+
+void test_pipe(void){
+	int fd[2];
+    int cpid;
+    char buf[128] = {0};
+    int ret = sys_pipe(fd);
+    ASSERT(ret != -1);
+    const char *data = "  Write to pipe successfully.\n";
+    cpid = sys_fork(0,0);
+    printk("cpid: %d\n", cpid);
+    if(cpid > 0){
+	sys_close(fd[1]);
+	while(sys_read(fd[0], buf, 1) > 0)
+            sys_write(STDOUT, buf, 1);
+	sys_write(STDOUT, "\n", 1);
+	sys_close(fd[0]);
+	sys_wait(cpid,0,0);
+    }else{
+	sys_close(fd[0]);
+	sys_write(fd[1], data, strlen(data));
+	sys_close(fd[1]);
+	sys_exit(0);
+    }
+}
 
 void test_fs_all(void)
 {
@@ -210,7 +252,9 @@ void test_fs_all(void)
     test_openat();
     test_fstat();
     test_mmap();*/
-    test_mapping();
+    //test_mapping();
+    //test_getdents();
+    test_pipe();
     while (1) {
     };
 } 

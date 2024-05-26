@@ -5,6 +5,8 @@
 #include <xkernel/list.h>
 #include <xkernel/console.h>
 #include <xkernel/string.h>
+#include <xkernel/ioqueue.h>
+#include <xkernel/memory.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
@@ -54,6 +56,10 @@ static void path_resolution(const char *pathname)
 
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
+	if (strcmp(pathname,".")==0)
+	{
+		return file_open(fatFs->root,flags,mode);
+	}
 	path_resolution(pathname);
 	Dirent *file;
 	int fd = -1;
@@ -116,23 +122,23 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	if (_fd == STDOUT || fd == STDOUT)
 	{
 		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
-		/*if (is_pipe(fd))
+		if (is_pipe(fd))
 		{
 			return pipe_write(fd, buf, count);
 		}
-		else*/
-		//{
+		else
+		{
 			//printk("buf:%s\n",buf);
 			char tmp_buf[1024] = {0};
 			memcpy(tmp_buf, buf, count);
 			console_put_str(tmp_buf);
 			return count;
-		//}
+		}
 	}
-	/*else if (is_pipe(fd))
+	else if (is_pipe(fd))
 	{ // 若是管道就调用管道的方法
 		return pipe_write(fd, buf, count);
-	}*/
+	}
 	else
 	{
 		
@@ -165,26 +171,14 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else if (fd == STDIN)
 	{
 		/* 标准输入有可能被重定向为管道缓冲区, 因此要判断 */
-		/*if (is_pipe(fd))
+		if (is_pipe(fd))
 		{
 			ret = pipe_read(fd, buf, count);
 		}
-        else*/
-        //{
-            /*char *buffer = buf;
-            uint32_t bytes_read = 0;
-            while (bytes_read < count)
-            {
-                *buffer = ioq_getchar(&kbd_buf);
-                bytes_read++;
-                buffer++;
-            }
-            ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
-        //}
     }
     else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 
-        ret = pipe_read(fd, buf, count);*/
+        ret = pipe_read(fd, buf, count);
 	}
 	else
 	{
@@ -473,4 +467,38 @@ int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, str
 	fileStat(file_table[global_fd].dirent,&stat);
 	buf->stx_size = stat.st_size;
 	return ret;
+}
+
+/* 创建管道,成功返回0,失败返回-1 */
+int32_t sys_pipe(int32_t pipefd[2])
+{
+    int32_t global_fd = get_free_slot_in_global();
+
+    /* 申请一页内核内存做环形缓冲区 */
+    file_table[global_fd].dirent = get_kernel_pge();
+
+    /* 初始化环形缓冲区 */
+    ioqueue_init((struct ioqueue *)file_table[global_fd].dirent);
+    if (file_table[global_fd].dirent == NULL)
+    {
+        return -1;
+    }
+
+    /* 将fd_flag复用为管道标志 */
+    file_table[global_fd].type = dev_pipe;
+
+    /* 将fd_pos复用为管道打开数 */
+    file_table[global_fd].offset = 2;
+    pipefd[0] = pcb_fd_install(global_fd);
+    pipefd[1] = pcb_fd_install(global_fd);
+    return 0;
+}
+
+int sys_getdents(int fd, struct linux_dirent64 * buf, size_t len)
+{
+	int global_fd = fd_local2global(fd);
+	Dirent *file = file_table[global_fd].dirent;
+	strcpy(buf->d_name,file->name);
+	buf->d_off = file_table[global_fd].offset;
+	return 0;
 }
