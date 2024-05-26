@@ -114,7 +114,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 		}
 	}
 
-	printk("no more dents in dir: %s\n", dir->name);
+	//printk("no more dents in dir: %s\n", dir->name);
 	*next_offset = dir->file_size;
 
 	lock_release(&mtx_file);

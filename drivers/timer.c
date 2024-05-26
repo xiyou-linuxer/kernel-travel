@@ -57,6 +57,48 @@ int sys_gettimeofday(struct timespec *ts)
 	return 0;
 }
 
+void utimes_begin(struct task_struct *pcb)
+{
+	struct start_tms *start_times = &pcb->start_times;
+	start_times->start_utime = rdtime();
+}
+
+void utimes_end(struct task_struct *pcb)
+{
+	long cur_clk    = rdtime();
+	long start_clk  = pcb->start_times.start_utime;
+	struct tms *rec = &pcb->time_record;
+	rec->tms_utime += cur_clk - start_clk;
+}
+
+void stimes_begin(struct task_struct *pcb)
+{
+	struct start_tms *start_times = &pcb->start_times;
+	start_times->start_stime = rdtime();
+}
+
+void stimes_end(struct task_struct *pcb)
+{
+	long cur_clk    = rdtime();
+	long start_clk  = pcb->start_times.start_stime;
+	struct tms *rec = &pcb->time_record;
+	rec->tms_stime += cur_clk - start_clk;
+}
+
+long sys_times(struct tms *tms)
+{
+	struct task_struct *cur = running_thread();
+	long ret_time = -1;
+	utimes_end(cur);
+	//stimes_end(cur);
+
+	*tms = cur->time_record;
+
+	utimes_begin(cur);
+	stimes_end(cur);
+	return ticks;
+}
+
 static inline int detach_timer(struct timer_list *timer)
 {
 	if (timer->elm.prev == NULL) return 0;
@@ -145,7 +187,7 @@ static void run_timers(void* unused)
 	raise_softirq(TIMER_SOFTIRQ);
 }
 
-void add_timer(struct timer_list *timer) 
+void add_timer(struct timer_list *timer)
 {
 	if (timer->elm.prev != NULL) {
 		printk("timer has been added\n");

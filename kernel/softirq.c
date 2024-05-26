@@ -18,8 +18,8 @@ void do_softirq(void)
 	 * first->  Nested hardirq(impossible)
 	 * second-> in softirq */
 	if (in_interrupt()) {
-		printk("bh_count=%d\n",bh_count);
-		printk("irq count=%d\n",irq_count);
+		//printk("bh_count=%d\n",bh_count);
+		//printk("irq count=%d\n",irq_count);
 		return ;
 	}
 

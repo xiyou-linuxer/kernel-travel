@@ -20,7 +20,9 @@
 
 #ifndef MAP_FAILED
 #define MAP_FAILED ((void *)-1)
-#define TASK_UNMAPPED_BASE	(0x40000000UL)
+#define TASK_UNMAPPED_BASE	(0x800000000UL)
+
+#define VADDR_FOR_FD_MAPP	(0x8000000 | DMW_MASK)
 
 #define LEGACY_MAP_MASK (MAP_SHARED \
 		| MAP_PRIVATE \
@@ -64,6 +66,7 @@ void *sys_mmap(void* addr, size_t len,
 			int fd, off_t pgoff);
 int sys_munmap(void *start, size_t len);
 void test_mmap(void);
+int sys_brk(void *addr);
 
 unsigned long
 get_unmapped_area(struct file *filp, unsigned long addr,

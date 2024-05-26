@@ -33,25 +33,25 @@ bool switching;
 uint8_t pid_bitmap_bits[128] = {0};
 
 struct pid_pool {
-   struct bitmap pid_bitmap;
-   uint32_t pid_start;
-   struct lock pid_lock;
+	struct bitmap pid_bitmap;
+	uint32_t pid_start;
+	struct lock pid_lock;
 }pid_pool;
 
 static void pid_pool_init(void) { 
-   pid_pool.pid_start = 1;
-   pid_pool.pid_bitmap.bits = pid_bitmap_bits;
-   pid_pool.pid_bitmap.btmp_bytes_len = 128;
-   bitmap_init(&pid_pool.pid_bitmap);
-   lock_init(&pid_pool.pid_lock);
+	pid_pool.pid_start = 1;
+	pid_pool.pid_bitmap.bits = pid_bitmap_bits;
+	pid_pool.pid_bitmap.btmp_bytes_len = 128;
+	bitmap_init(&pid_pool.pid_bitmap);
+	lock_init(&pid_pool.pid_lock);
 }
 
 static pid_t allocate_pid(void) {
-   lock_acquire(&pid_pool.pid_lock);
-   int32_t bit_idx = bit_scan(&pid_pool.pid_bitmap, 1);
-   bitmap_set(&pid_pool.pid_bitmap, bit_idx, 1);
-   lock_release(&pid_pool.pid_lock);
-   return (bit_idx + pid_pool.pid_start);
+	lock_acquire(&pid_pool.pid_lock);
+	int32_t bit_idx = bit_scan(&pid_pool.pid_bitmap, 1);
+	bitmap_set(&pid_pool.pid_bitmap, bit_idx, 1);
+	lock_release(&pid_pool.pid_lock);
+	return (bit_idx + pid_pool.pid_start);
 }
 
 pid_t fork_pid(void) {
@@ -59,11 +59,24 @@ pid_t fork_pid(void) {
 }
 
 void release_pid(pid_t pid) {
-   lock_acquire(&pid_pool.pid_lock);
-   int32_t bit_idx = pid - pid_pool.pid_start;
-   bitmap_set(&pid_pool.pid_bitmap, bit_idx, 0);
-   lock_release(&pid_pool.pid_lock);
+	lock_acquire(&pid_pool.pid_lock);
+	int32_t bit_idx = pid - pid_pool.pid_start;
+	bitmap_set(&pid_pool.pid_bitmap, bit_idx, 0);
+	lock_release(&pid_pool.pid_lock);
 }
+
+pid_t sys_getpid(void)
+{
+	struct task_struct* cur = running_thread();
+	return cur->pid;
+}
+
+pid_t sys_getppid(void)
+{
+	struct task_struct* cur = running_thread();
+	return cur->ppid;
+}
+
 
 static int checkpid(struct list_elem* pelm,void* id)
 {
@@ -86,11 +99,11 @@ struct task_struct* pid2thread(int64_t pid)
 
 static void kernel_thread(void)
 {
-    printk("kernel_thread...\n");
-    struct task_struct *task = running_thread();
-    intr_enable();
-    task->function(task->func_arg);
-    return;
+	printk("kernel_thread...\n");
+	struct task_struct *task = running_thread();
+	intr_enable();
+	task->function(task->func_arg);
+	return;
 }
 
 static void idle(void* arg)
@@ -104,9 +117,9 @@ static void idle(void* arg)
 
 struct task_struct* running_thread()
 {
-    register uint64_t sp asm("sp");
-    //printk("now sp at:%x\n",sp);
-    return (struct task_struct *)((sp-1) & ~(KERNEL_STACK_SIZE - 1));
+	register uint64_t sp asm("sp");
+	//printk("now sp at:%x\n",sp);
+	return (struct task_struct *)((sp-1) & ~(KERNEL_STACK_SIZE - 1));
 }
 
 void init_thread(struct task_struct *pthread, char *name, int prio)
@@ -115,7 +128,6 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	strcpy(pthread->name, name);
 	pthread->pid  = allocate_pid();
 	pthread->ppid = -1;
-
 
 	if (pthread == main_thread) {
 		pthread->status = TASK_RUNNING;
@@ -160,7 +172,6 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
 	struct thread_struct *kthread_stack = &pthread->thread;
 	memset(kthread_stack, 0, sizeof(struct thread_struct));
 	kthread_stack->reg01 = (uint64_t)kernel_thread;
-	printk("thread reg01=%x\n",kthread_stack->reg01);
 	kthread_stack->csr_crmd = read_csr_crmd();
 	kthread_stack->csr_prmd = read_csr_prmd();
 	kthread_stack->reg03 = (uint64_t)pthread->self_kstack;
@@ -217,6 +228,8 @@ void schedule()
 	//printk("curticks:%d\n",cur->ticks);
 	//printk("next:%s\n",next->name);
 
+
+	utimes_begin(next);
 	irq_exit();
 	switching = 1;
 	switch_to(cur, next);
@@ -350,7 +363,7 @@ void thread_init(void)
 	list_init(&thread_all_list);
 	pid_pool_init();
 
-	process_execute("initcode","init",30);
+	process_execute("initcode","init",15);
 	idle_thread = thread_start("idle",10,idle,NULL);
 	make_main_thread();
 

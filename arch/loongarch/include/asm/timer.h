@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <xkernel/list.h>
 #include <asm/pt_regs.h>
+#include <xkernel/sched.h>
 
 /* seconds */
 #define MSEC_PER_SEC	1000UL
@@ -21,7 +22,7 @@
 #define USEC_TO_NSEC(us)  (us * NSEC_PER_USEC)
 
 /* ticks and seconds */
-#define CLK_PER_TICK       0x0800000UL
+#define CLK_PER_TICK       0x0400000UL
 #define TICK_PER_SEC       (CLK_FREQUENCY / CLK_PER_TICK)
 #define SEC_TO_TICK(sec)   (sec * TICK_PER_SEC)
 #define NSEC_TO_TICK(nsec) (nsec / NSEC_PER_CLK / CLK_PER_TICK)
@@ -57,7 +58,6 @@ struct timespec {
 	time_t tv_sec;        /* 秒 */
 	long   tv_nsec;       /* 纳秒, 范围在0~999999999 */
 };
-
 struct timer_vec {
 	unsigned int index;
 	struct list vec[LVL_SIZE];
@@ -72,6 +72,11 @@ struct timer_list {
 
 void timer_init(void);
 int sys_gettimeofday(struct timespec *ts);
+long sys_times(struct tms *tms);
+void utimes_begin(struct task_struct *pcb);
+void utimes_end(struct task_struct *pcb);
+void stimes_begin(struct task_struct *pcb);
+void stimes_end(struct task_struct *pcb);
 void add_timer(struct timer_list *timer);
 int mod_timer(struct timer_list *timer,unsigned long expire);
 int del_timer(struct timer_list *timer);

@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 struct file {
+	int fd;
 	struct file *next;
 	struct file *parent;
 	const char *name;

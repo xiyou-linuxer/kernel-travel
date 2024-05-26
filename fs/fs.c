@@ -118,12 +118,12 @@ int partition_format(FileSystem *fs) {
 		return -E_DEV_ERROR;
 	}
 
-	printk("cluster ok!\n");
+	//printk("cluster ok!\n");
 
 	// 释放缓冲区
 	bufRelease(buf);
 
-	printk("buf release!\n");
+	//printk("buf release!\n");
 	return 0;
 }
 

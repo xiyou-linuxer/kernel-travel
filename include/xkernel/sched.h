@@ -9,21 +9,28 @@
 #include <fs/fs.h>
 #include <stdint.h>
 
+
 #define TASK_NAME_LEN 16
 #define MAX_FILES_OPEN_PER_PROC 101
 
 #define STACK_MAGIC_NUM 0x27839128
 
-// struct task_struct {
-// #ifdef CONFIG_THREAD_INFO_IN_TASK
-// #endif
-// 	unsigned int __state;
-// 	void *stack;
-// };
-
 typedef int16_t pid_t;
 
 typedef void thread_func(void *);
+
+struct tms {
+	long tms_utime;
+	long tms_stime;
+	long tms_cutime;
+	long tms_cstime;
+};
+
+struct start_tms {
+	long start_utime;
+	long start_stime;
+};
+
 
 enum task_status {
 	TASK_RUNNING,
@@ -39,10 +46,12 @@ struct task_struct {
 	thread_func *function;
 	void *func_arg;
 	struct thread_struct thread;
+	struct tms time_record;
+	struct start_tms start_times;
 	pid_t ppid;
 	pid_t pid;
 	enum task_status status;
-	int8_t exit_status;
+	int16_t exit_status;
 	char name[TASK_NAME_LEN];
 	uint8_t priority;
 	uint8_t ticks;
