@@ -49,6 +49,8 @@ void syscall_init(void)
 	syscall_table[SYS_times]    = sys_times;
 	syscall_table[SYS_uname]    = sys_uname;
 	syscall_table[SYS_statx]    = sys_statx;
+	syscall_table[SYS_getdents64] = sys_getdents;
+	syscall_table[SYS_pipe2]     = sys_pipe;
 	printk("syscall init done\n");
 }
 

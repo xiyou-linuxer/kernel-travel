@@ -217,7 +217,7 @@ void test_getdents(void){
     sys_close(fd);
 }
 
-void test_pipe(void){
+/*void test_pipe(void){
 	int fd[2];
     int cpid;
     char buf[128] = {0};
@@ -239,7 +239,7 @@ void test_pipe(void){
 	sys_close(fd[1]);
 	sys_exit(0);
     }
-}
+}*/
 
 void test_fs_all(void)
 {
@@ -254,7 +254,7 @@ void test_fs_all(void)
     test_mmap();*/
     //test_mapping();
     //test_getdents();
-    test_pipe();
+    //test_pipe();
     while (1) {
     };
 } 
