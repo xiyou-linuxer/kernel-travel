@@ -4,6 +4,7 @@
 #include <xkernel/thread.h>
 #include <xkernel/stdio.h>
 #include <fs/syscall_fs.h>
+#include <fs/fd.h>
 #include <trap/irq.h>
 
 struct waitinfo {
@@ -100,7 +101,6 @@ static void release_usrprog_resource(struct task_struct* pcb)
 void sys_exit(int status)
 {
 	struct task_struct* child = running_thread();
-	//printk("%s sys_exit\n",child->name);
 	child->exit_status = status << 8;
 	release_usrprog_resource(child);
 
@@ -119,9 +119,7 @@ void sys_exit(int status)
 
 pid_t sys_wait(pid_t pid,int* status,int options)
 {
-	struct task_struct* parent = running_thread();
-	//printk("%s sys_wait\n",parent->name);
-	
+	struct task_struct* parent = running_thread();	
 	struct waitinfo pidinfo;
 	pidinfo.parent_id = parent->pid;
 	pidinfo.wait_childid = pid;

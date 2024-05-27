@@ -33,12 +33,14 @@ char* sysname[NR_SYSCALLS] = {
 	[SYS_mmap]         = "mmap",
 	[SYS_brk]          = "brk",
 	[SYS_munmap]       = "munmap",
+	[SYS_pipe2]        = "pipe",
+	[SYS_getdents64]   = "getdents"
 };
 
 struct tms mytimes;
 int main(void)
 {
-	char filename[30][14];
+	char filename[33][14];
 	umemset(filename,0,sizeof(filename));
 	int count = 0 ;
 

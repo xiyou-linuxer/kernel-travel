@@ -94,14 +94,14 @@ void fatWrite(FileSystem *fs, unsigned long cluster, unsigned int content) {
 
 unsigned int fatRead(FileSystem *fs, unsigned long cluster) {
 	if (cluster < 2 || cluster > fs->superBlock.data_clus_cnt + 1) {
-		printk("fatRead is 0! (cluster = %d)\n", cluster);
+		//printk("fatRead is 0! (cluster = %d)\n", cluster);
 		return 0;
 	}
 	unsigned long fatSec = clusterFatSec(fs, cluster, 0);
 	Buffer *buf = fs->get(fs, fatSec, true);
 
 	if (buf == NULL) {
-		printk("buf is NULL! cluster = %d\n", cluster);
+		//printk("buf is NULL! cluster = %d\n", cluster);
 	}
 
 	unsigned int *fat = (unsigned int *)buf->data->data;

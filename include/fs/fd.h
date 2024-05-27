@@ -4,7 +4,7 @@
 #include <xkernel/types.h>
 #include <fs/fs.h>
 #include <sync.h>
-
+#include <xkernel/ioqueue.h>
 #define MAX_FILE_OPEN 64 //全局最大文件打开数量
 
 /* 打开文件的选项 */
@@ -55,7 +55,7 @@ typedef struct fd {
 	// 保证每个fd的读写不并发
 	struct lock lock;
 	struct Dirent *dirent;
-	//struct Pipe *pipe;
+	struct ioqueue pipe;
 	int type;
 	unsigned int offset;
 	unsigned int flags;
@@ -93,13 +93,19 @@ struct statx {
     __u64 __spare2[14];    // 备用字段
 };
 
+struct linux_dirent64 {
+    unsigned long d_ino;              // 索引结点号
+    long d_off;	// 到下一个dirent的偏移
+    unsigned short d_reclen;	// 当前dirent的长度
+    unsigned char d_type;	// 文件类型
+    char d_name[MAX_NAME_LEN];	//文件名
+};
 
 #define dev_file 1
 #define dev_pipe 2
 #define dev_console 3
-
-extern struct fd file_table[MAX_FILE_OPEN];//全局文件打开数组
-
+extern int pipe_table[10][2];
+extern struct fd file_table[MAX_FILE_OPEN];  // 全局文件打开数组
 int32_t get_free_slot_in_global(void);//获取全局描述符
 int32_t pcb_fd_install(int32_t globa_fd_idx);//将全局描述符下载到自己的线程中
 uint32_t fd_local2global(uint32_t local_fd);
@@ -109,4 +115,8 @@ int file_close(struct fd *_fd);
 int rmfile(struct Dirent* file);
 int filename2path(Dirent* file, char* newpath);
 void fd_mapping(int fd, int start_page, int end_page, unsigned long* v_addr);
+bool is_pipe(uint32_t local_fd);
+uint32_t pipe_read(int32_t fd, void* buf, uint32_t count);
+uint32_t pipe_write(int32_t fd, const void* buf, uint32_t count);
+void sys_fd_redirect(uint32_t old_local_fd, uint32_t new_local_fd);
 #endif

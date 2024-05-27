@@ -9,4 +9,5 @@ obj-y	+= console.o
 obj-y   += ../thread/thread.o
 obj-y   += ../lib/kernel/list.o
 obj-y   += ../lib/kernel/bitmap.o
+obj-y	+= ioqueue.o
 
