@@ -507,5 +507,5 @@ int sys_getdents(int fd, struct linux_dirent64 * buf, size_t len)
 	Dirent *file = file_table[global_fd].dirent;
 	strcpy(buf->d_name,file->name);
 	buf->d_off = file_table[global_fd].offset;
-	return 0;
+	return len;
 }

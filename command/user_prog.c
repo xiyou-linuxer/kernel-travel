@@ -40,7 +40,7 @@ char* sysname[NR_SYSCALLS] = {
 struct tms mytimes;
 int main(void)
 {
-	char filename[30][14];
+	char filename[33][14];
 	umemset(filename,0,sizeof(filename));
 	int count = 0 ;
 

@@ -139,6 +139,8 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_chdir          49
 #define SYS_openat         56
 #define SYS_close          57
+#define SYS_pipe2          59
+#define SYS_getdents64     61
 #define SYS_read           63
 #define SYS_write          64
 #define SYS_fstat          80
@@ -157,8 +159,6 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_mmap          222
 #define SYS_wait4         260
 #define SYS_statx         291
-#define SYS_getdents64    61
-#define SYS_pipe2         59
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {
