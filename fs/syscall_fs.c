@@ -17,6 +17,7 @@
 #include <fs/fd.h>
 #include <debug.h>
 #include <asm/syscall.h>
+#include <xkernel/wait.h>
 /*本文件用于实现文件的syscall*/
 /*将路径转化为绝对路径，只支持 . 与 .. 开头的路径*/
 static void path_resolution(const char *pathname)
@@ -100,7 +101,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	default:
 		/* 其余情况均为打开已存在文件:
 		 * O_RDONLY,O_WRONLY,O_RDWR */
-		//printk("sys_open %s",file->name);
 		fd = file_open(file, flags ,mode);
 		int _fd = fd_local2global(fd);
 		file_table[_fd].offset = 0;
@@ -128,7 +128,6 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		}
 		else
 		{
-			//printk("buf:%s\n",buf);
 			char tmp_buf[1024] = {0};
 			memcpy(tmp_buf, buf, count);
 			console_put_str(tmp_buf);
@@ -141,7 +140,6 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	}
 	else
 	{
-		
 		Dirent *wr_file = file_table[_fd].dirent;
 		filepnt_init(wr_file);
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
@@ -161,7 +159,6 @@ int sys_write(int fd, const void *buf, unsigned int count)
 /* 从文件描述符fd指向的文件中读取count个字节到buf,若成功则返回读出的字节数,到文件尾则返回-1 */
 int sys_read(int fd, void *buf, unsigned int count)
 {
-	//ASSERT(buf != NULL);
 	int32_t ret = -1;
 	uint32_t global_fd = 0;
 	if (fd < 0 || fd == STDOUT || fd == STDERR)
@@ -179,6 +176,10 @@ int sys_read(int fd, void *buf, unsigned int count)
     else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 
         ret = pipe_read(fd, buf, count);
+		if (ret == 0)
+		{
+			count = 0;
+		}
 	}
 	else
 	{
@@ -193,24 +194,30 @@ int sys_read(int fd, void *buf, unsigned int count)
 /* 成功关闭文件返回0,失败返回-1 */
 int sys_close(int fd)
 {
+	printk("sys_close ");
+	struct task_struct* p = running_thread();
+	printk("fd:%d pid:%d",fd,p->pid);
 	int32_t ret = -1; // 返回值默认为-1,即失败
 	if (fd > 2)
 	{
 		uint32_t global_fd = fd_local2global(fd);
-		/*if (is_pipe(fd))
+		if (is_pipe(fd))
 		{
 			// 如果此管道上的描述符都被关闭,释放管道的环形缓冲区 
-			if (--file_table[global_fd].fd_pos == 0)
+			
+			file_table[global_fd].offset--;
+			printk(" offset :%d\n",file_table[global_fd].offset);
+			if (file_table[global_fd].offset == 0)
 			{
-                mfree_page(PF_KERNEL, file_table[global_fd].fd_inode, 1);
-                file_table[global_fd].fd_inode = NULL;
-            }
-            ret = 0;
+				file_table[global_fd].pipe.flag = 0;
+			}
+			ret = 0;
         }
         else
-        {*/
+        {
+			printk("\n");
 			ret=file_close(&file_table[global_fd]);
-        //}
+        }
         running_thread()->fd_table[fd] = -1; // 使该文件描述符位可用
     }
     return ret;
@@ -473,24 +480,16 @@ int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, str
 int32_t sys_pipe(int32_t pipefd[2])
 {
     int32_t global_fd = get_free_slot_in_global();
-
-    /* 申请一页内核内存做环形缓冲区 */
-    file_table[global_fd].dirent = get_kernel_pge();
-
     /* 初始化环形缓冲区 */
-    ioqueue_init((struct ioqueue *)file_table[global_fd].dirent);
-    if (file_table[global_fd].dirent == NULL)
-    {
-        return -1;
-    }
-
+    ioqueue_init(&file_table[global_fd].pipe);
     /* 将fd_flag复用为管道标志 */
     file_table[global_fd].type = dev_pipe;
-
+    //printk("type: %d", file_table[global_fd].type);
     /* 将fd_pos复用为管道打开数 */
     file_table[global_fd].offset = 2;
     pipefd[0] = pcb_fd_install(global_fd);
     pipefd[1] = pcb_fd_install(global_fd);
+    printk("pip0:%d pip1:%d\n", pipefd[0], pipefd[1]);
     return 0;
 }
 

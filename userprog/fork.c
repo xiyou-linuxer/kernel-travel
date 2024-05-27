@@ -8,7 +8,7 @@
 #include <asm/pt_regs.h>
 #include <xkernel/switch.h>
 #include <asm/loongarch.h>
-
+#include <fs/fd.h>
 extern void user_ret(void);
 
 static int copy_pcb(struct task_struct* parent,struct task_struct* child)
@@ -83,6 +83,29 @@ static void make_switch_prepare(struct task_struct* child,void *stack,int (*fn)(
 }
 
 
+static void update_inode_open_cnts(struct task_struct *thread)
+{
+    int32_t local_fd = 3, global_fd = 0;
+    while (local_fd < MAX_FILES_OPEN_PER_PROC)
+    {
+        global_fd = thread->fd_table[local_fd];
+        ASSERT(global_fd < MAX_FILE_OPEN);
+        if (global_fd != -1)
+        {
+            if (is_pipe(local_fd))
+            {
+                file_table[global_fd].offset++;
+            }
+            else
+            {
+                file_table[global_fd].dirent->refcnt++;
+            }
+        }
+        local_fd++;
+    }
+}
+
+
 static int copy_process(struct task_struct* parent,struct task_struct* child)
 {
 	void* page = (void*)get_page();
@@ -100,7 +123,7 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 		return -1;
 	}
 
-	//update_inode_openstat(child);
+	update_inode_open_cnts(child);
 
 	//mfree_page(PF_KERNEL,page,1);
 	return 0;

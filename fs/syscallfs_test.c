@@ -217,29 +217,31 @@ void test_getdents(void){
     sys_close(fd);
 }
 
-/*void test_pipe(void){
+void test_pipe(void){
 	int fd[2];
     int cpid;
     char buf[128] = {0};
     int ret = sys_pipe(fd);
     ASSERT(ret != -1);
     const char *data = "  Write to pipe successfully.\n";
-    cpid = sys_fork(0,0);
+    cpid = sys_fork(0,0,0,0);
     printk("cpid: %d\n", cpid);
     if(cpid > 0){
 	sys_close(fd[1]);
 	while(sys_read(fd[0], buf, 1) > 0)
             sys_write(STDOUT, buf, 1);
 	sys_write(STDOUT, "\n", 1);
+    printk("aaa");
 	sys_close(fd[0]);
-	sys_wait(cpid,0,0);
+    int i;
+	sys_wait(cpid,&i,0);
     }else{
 	sys_close(fd[0]);
 	sys_write(fd[1], data, strlen(data));
 	sys_close(fd[1]);
 	sys_exit(0);
     }
-}*/
+}
 
 void test_fs_all(void)
 {
@@ -254,7 +256,7 @@ void test_fs_all(void)
     test_mmap();*/
     //test_mapping();
     //test_getdents();
-    //test_pipe();
+    test_pipe();
     while (1) {
     };
 } 

@@ -1,13 +1,15 @@
 #include <xkernel/types.h>
 #include <xkernel/ioqueue.h>
 #include <xkernel/thread.h>
+#include <xkernel/stdio.h>
 #include <trap/irq.h>
 #include <debug.h>
 
 void ioqueue_init(struct ioqueue *ioq)
 {
     lock_init(&ioq->lock);                // 初始化io队列的锁
-    ioq->producer = ioq->consumer = NULL; // 生产者和消费者置空
+    ioq->flag = 1;
+    ioq->producer = ioq->consumer = NULL;  // 生产者和消费者置空
     ioq->head = ioq->tail = 0;            // 队列的首尾指针指向缓冲区数组第0个位置
 }
 
@@ -61,15 +63,13 @@ char ioq_getchar(struct ioqueue *ioq)
         ioq_wait(&ioq->consumer);
         lock_release(&ioq->lock);
     }
-
     char byte = ioq->buf[ioq->tail]; // 从缓冲区中取出
     ioq->tail = next_pos(ioq->tail); // 把读游标移到下一位置
-
     if (ioq->producer != NULL)
     {
-        wakeup(&ioq->producer); // 唤醒生产者
+        wakeup(&ioq->producer);  // 唤醒生产者
     }
-
+    
     return byte;
 }
 
@@ -88,8 +88,7 @@ void ioq_putchar(struct ioqueue *ioq, char byte)
         lock_release(&ioq->lock);
     }
     ioq->buf[ioq->head] = byte;      // 把字节放入缓冲区中
-    ioq->head = next_pos(ioq->head); // 把写游标移到下一位置
-
+    ioq->head = next_pos(ioq->head);  // 把写游标移到下一位置
     if (ioq->consumer != NULL)
     {
         wakeup(&ioq->consumer); // 唤醒消费者

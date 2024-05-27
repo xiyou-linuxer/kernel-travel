@@ -100,7 +100,6 @@ static void release_usrprog_resource(struct task_struct* pcb)
 void sys_exit(int status)
 {
 	struct task_struct* child = running_thread();
-	//printk("%s sys_exit\n",child->name);
 	child->exit_status = status << 8;
 	release_usrprog_resource(child);
 
@@ -114,13 +113,15 @@ void sys_exit(int status)
 			sys_close(fd);
 		}
 	}
+	printk("%d sys_exit\n",child->pid);
 	thread_block(TASK_HANGING);
+	
 }
 
 pid_t sys_wait(pid_t pid,int* status,int options)
 {
 	struct task_struct* parent = running_thread();
-	//printk("%s sys_wait\n",parent->name);
+	printk("%d sys_wait\n",parent->pid);
 	
 	struct waitinfo pidinfo;
 	pidinfo.parent_id = parent->pid;

@@ -4,7 +4,7 @@
 #include <xkernel/types.h>
 #include <fs/fs.h>
 #include <sync.h>
-
+#include <xkernel/ioqueue.h>
 #define MAX_FILE_OPEN 64 //全局最大文件打开数量
 
 /* 打开文件的选项 */
@@ -55,7 +55,7 @@ typedef struct fd {
 	// 保证每个fd的读写不并发
 	struct lock lock;
 	struct Dirent *dirent;
-	//struct Pipe *pipe;
+	struct ioqueue pipe;
 	int type;
 	unsigned int offset;
 	unsigned int flags;
