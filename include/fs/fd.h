@@ -104,9 +104,8 @@ struct linux_dirent64 {
 #define dev_file 1
 #define dev_pipe 2
 #define dev_console 3
-
-extern struct fd file_table[MAX_FILE_OPEN];//全局文件打开数组
-
+extern int pipe_table[10][2];
+extern struct fd file_table[MAX_FILE_OPEN];  // 全局文件打开数组
 int32_t get_free_slot_in_global(void);//获取全局描述符
 int32_t pcb_fd_install(int32_t globa_fd_idx);//将全局描述符下载到自己的线程中
 uint32_t fd_local2global(uint32_t local_fd);

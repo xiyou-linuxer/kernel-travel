@@ -59,6 +59,10 @@ char ioq_getchar(struct ioqueue *ioq)
      * 也就是唤醒当前线程自己*/
     while (ioq_empty(ioq))
     { // 判断缓冲区是不是空的，如果是空的，就把自己阻塞起来
+        if (ioq->flag == 0)
+        {
+            return '@';
+        }
         lock_acquire(&ioq->lock);
         ioq_wait(&ioq->consumer);
         lock_release(&ioq->lock);
@@ -69,7 +73,6 @@ char ioq_getchar(struct ioqueue *ioq)
     {
         wakeup(&ioq->producer);  // 唤醒生产者
     }
-    
     return byte;
 }
 

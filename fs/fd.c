@@ -17,7 +17,7 @@
 #include <debug.h>
 
 struct fd file_table[MAX_FILE_OPEN];//全局文件打开数组
-
+int pipe_table[10][2];
 /* 从文件表file_table中获取一个空闲位,成功返回下标,失败返回-1 */
 int32_t get_free_slot_in_global(void)
 {
@@ -251,7 +251,11 @@ uint32_t pipe_read(int32_t fd, void *buf, uint32_t count)
     //uint32_t size = ioq_len > count ? count : ioq_len;
     while (bytes_read < count)
     {
-        *buffer = ioq_getchar(ioq);
+    	*buffer = ioq_getchar(ioq);
+		if (*buffer == '@')
+		{
+			return -1;
+		}
         bytes_read++;
         buffer++;
     }
@@ -272,25 +276,13 @@ uint32_t pipe_write(int32_t fd, const void *buf, uint32_t count)
     const char *buffer = buf;
     while (bytes_write < size)
     {
+		if (ioq->flag==0)
+		{
+			return 0;
+		}
         ioq_putchar(ioq, *buffer);
         bytes_write++;
         buffer++;
     }
     return bytes_write;
-}
-
-/* 将文件描述符old_local_fd重定向为new_local_fd */
-void sys_fd_redirect(uint32_t old_local_fd, uint32_t new_local_fd)
-{
-    struct task_struct *cur = running_thread();
-    /* 针对恢复标准描述符 */
-    if (new_local_fd < 3)
-    {
-        cur->fd_table[old_local_fd] = new_local_fd;
-    }
-    else
-    {
-        uint32_t new_global_fd = cur->fd_table[new_local_fd];
-        cur->fd_table[old_local_fd] = new_global_fd;
-    }
 }

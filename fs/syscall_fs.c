@@ -176,9 +176,9 @@ int sys_read(int fd, void *buf, unsigned int count)
     else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 
         ret = pipe_read(fd, buf, count);
-		if (ret == 0)
+		if (ret == -1)
 		{
-			count = 0;
+			return 0;
 		}
 	}
 	else
@@ -194,28 +194,34 @@ int sys_read(int fd, void *buf, unsigned int count)
 /* 成功关闭文件返回0,失败返回-1 */
 int sys_close(int fd)
 {
-	printk("sys_close ");
-	struct task_struct* p = running_thread();
-	printk("fd:%d pid:%d",fd,p->pid);
+	int pid = running_thread()->pid;
+	//printk("fd:%d pid:%d",fd,p->pid);
 	int32_t ret = -1; // 返回值默认为-1,即失败
 	if (fd > 2)
 	{
 		uint32_t global_fd = fd_local2global(fd);
 		if (is_pipe(fd))
 		{
-			// 如果此管道上的描述符都被关闭,释放管道的环形缓冲区 
-			
-			file_table[global_fd].offset--;
-			printk(" offset :%d\n",file_table[global_fd].offset);
-			if (file_table[global_fd].offset == 0)
+			if (pipe_table[pid][0] == fd)
+			{
+				pipe_table[pid][0] = 0;
+			}else
+			{
+				pipe_table[pid][1] = 0;
+			}
+			if (pipe_table[pid][0]==0&&pipe_table[pid][1] == 0)
 			{
 				file_table[global_fd].pipe.flag = 0;
+			}
+			// 如果此管道上的描述符都被关闭,释放管道的环形缓冲区 
+			if (--file_table[global_fd].offset == 0)
+			{
+				memset(&file_table[global_fd].pipe,0,sizeof(struct ioqueue));
 			}
 			ret = 0;
         }
         else
         {
-			printk("\n");
 			ret=file_close(&file_table[global_fd]);
         }
         running_thread()->fd_table[fd] = -1; // 使该文件描述符位可用
@@ -484,12 +490,14 @@ int32_t sys_pipe(int32_t pipefd[2])
     ioqueue_init(&file_table[global_fd].pipe);
     /* 将fd_flag复用为管道标志 */
     file_table[global_fd].type = dev_pipe;
-    //printk("type: %d", file_table[global_fd].type);
     /* 将fd_pos复用为管道打开数 */
     file_table[global_fd].offset = 2;
     pipefd[0] = pcb_fd_install(global_fd);
     pipefd[1] = pcb_fd_install(global_fd);
-    printk("pip0:%d pip1:%d\n", pipefd[0], pipefd[1]);
+    int pip = running_thread()->pid;
+    pipe_table[pip][0] = pipefd[0];
+    pipe_table[pip][1] = pipefd[1];
+    //printk("0:%d,1:%d\n", pipe_table[pip][0], pipe_table[pip][1]);
     return 0;
 }
 

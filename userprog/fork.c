@@ -145,7 +145,9 @@ pid_t sys_fork(int (*fn)(void *arg),void *stack,unsigned long flags,void *arg)
 		return -1;
 	}
 	make_switch_prepare(child,stack,fn);
-
+	pipe_table[child->pid][0] = pipe_table[child->ppid][0];
+	pipe_table[child->pid][1] = pipe_table[child->ppid][1];
+	//printk("pip0:%d pip1:%d ppip0:%d ppip1:%d\n",pipe_table[child->pid][0],pipe_table[child->pid][1],pipe_table[child->ppid][0],pipe_table[child->ppid][1]);
 	ASSERT(!elem_find(&thread_all_list,&child->all_list_tag));
 	list_append(&thread_all_list,&child->all_list_tag);
 	ASSERT(!elem_find(&thread_ready_list,&child->general_tag));
