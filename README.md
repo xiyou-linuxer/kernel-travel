@@ -125,7 +125,7 @@ bash quick_start.sh distclean
 文档位于 kernel-travel/doc 目录下。
 
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
-* [任务的创建与切换](./doc/任务的创建与切换.md)
+* [任务的创建与切换](./doc/任务创建与切换.md)
 * [异常处理与时间](./doc/异常处理与时间.md)
 * [pci总线驱动](./doc/pci总线驱动.md)
 * [磁盘驱动](./doc/磁盘驱动.md)
