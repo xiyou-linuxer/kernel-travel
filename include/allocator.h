@@ -4,7 +4,7 @@
 #include <asm/bootinfo.h>
 #include <xkernel/compiler_attributes.h>
 
-#define USER_STACK ((1 << (9+9+12)) + 0x2000)
+#define USER_STACK ((1 << (9+9+12)))
 
 union task_page {
     struct task_struct task;

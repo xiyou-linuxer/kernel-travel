@@ -184,7 +184,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = 1 << (9+9+12);
+	regs->regs[3]  = USER_STACK;
 	regs->regs[22] = regs->regs[3];
 
 	regs->regs[4] = argc;

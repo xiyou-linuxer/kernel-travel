@@ -36,12 +36,7 @@ void* userstk_alloc(uint64_t pdir)
 {
 	void *stk_ptr = NULL;
 	malloc_usrpage(pdir,USER_STACK-KERNEL_STACK_SIZE);
-	// printk("paddr : 0x%llx\n",vaddr_to_paddr(pdir,USER_STACK-KERNEL_STACK_SIZE));
-	malloc_usrpage(pdir,USER_STACK-2*KERNEL_STACK_SIZE);
-	// printk("paddr : 0x%llx\n",vaddr_to_paddr(pdir,USER_STACK-2*KERNEL_STACK_SIZE));
-	malloc_usrpage(pdir,USER_STACK-3*KERNEL_STACK_SIZE);
-	// printk("paddr : 0x%llx\n",vaddr_to_paddr(pdir,USER_STACK-3*KERNEL_STACK_SIZE));
-	stk_ptr = (void*)(1<<(9+9+12));
+	stk_ptr = (void*)USER_STACK;
 
 	return stk_ptr;
 }

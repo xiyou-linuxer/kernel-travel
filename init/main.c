@@ -35,6 +35,7 @@
 #include <fs/buf.h>
 #include <fs/syscall_fs.h>
 #include <xkernel/initcode.h>
+#include <asm/timer.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
 
@@ -112,15 +113,19 @@ void __init __no_sanitize_address start_kernel(void)
 	// }
 
 	early_boot_irqs_disabled = true;
-	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	if (fd == -1) {
-		printk("open failed");
-	}
-	sys_write(fd,init_code,init_code_len);
-	bufSync();
-
+	//int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	//if (fd == -1) {
+	//	printk("open failed");
+	//}
+	//sys_write(fd,init_code,init_code_len);
+	//bufSync();
+	
+	//printk("sys_sleep start\n");
 	//struct timespec req;
-	//req.tv_sec=1;req.tv_nsec=0;
+	//req.tv_sec=7;req.tv_nsec=0;
+	//sys_sleep(&req,&req);
+	//printk("sys_sleep end\n");
+
 	while (1) {
 		// sys_gettimeofday(&ts);
 		// printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
