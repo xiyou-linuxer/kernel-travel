@@ -124,12 +124,16 @@ bash quick_start.sh distclean
 
 文档位于 kernel-travel/doc 目录下。
 
-* [磁盘驱动](./doc/磁盘驱动.md)
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
+* [任务的创建与切换](./doc/任务的创建与切换.md)
+* [中断与时间](./doc/中断与时间.md)
+* [pci总线驱动](./doc/pci总线驱动.md)
+* [磁盘驱动](./doc/磁盘驱动.md)
 * [文件系统](./doc/文件系统.md)
-  
+
 ## 参考资料
 
 * [操作系统真相还原](https://github.com/yifengyou/os-elephant)
 * [兰州大学 - MaQueOs](https://gitee.com/dslab-lzu/maqueos)
 * [种田队 - 2023年优秀作品](https://gitlab.eduxiji.net/202310006101080/zhongtianos)
+* [Linux内核源码](https://elixir.bootlin.com/linux/latest/source)
