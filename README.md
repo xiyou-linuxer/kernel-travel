@@ -126,7 +126,7 @@ bash quick_start.sh distclean
 
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
 * [任务的创建与切换](./doc/任务的创建与切换.md)
-* [中断与时间](./doc/中断与时间.md)
+* [异常处理与时间](./doc/异常处理与时间.md)
 * [pci总线驱动](./doc/pci总线驱动.md)
 * [磁盘驱动](./doc/磁盘驱动.md)
 * [文件系统](./doc/文件系统.md)
