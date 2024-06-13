@@ -8,6 +8,7 @@
 #include <fs/dirent.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
+#include <fs/buf.h>
 #include <sync.h>
 
 FileSystem *fatFs;
@@ -38,6 +39,61 @@ static void build_dirent_tree(Dirent *parent) {
 			build_dirent_tree(child);
 		}
 	}
+}
+
+
+/**
+ * @brief 初始化分区信息，填写文件系统结构体里面的超级块
+ */
+int partition_format(FileSystem *fs) {
+	printk("Fat32 FileSystem Init Start\n");
+	// 读取 BPB
+	ASSERT(fs != NULL);
+	ASSERT(fs->get != NULL);
+
+	Buffer *buf = fs->get(fs, 0, true);
+	if (buf == NULL) {
+		printk("buf == NULL\n");
+		return -E_DEV_ERROR;
+	}
+	
+	printk("cluster DEV is ok!\n");
+
+	// 从 BPB 中读取信息
+	FAT32BootParamBlock *bpb = (FAT32BootParamBlock *)(buf->data->data);
+
+	if (bpb == NULL || strncmp((char *)bpb->BS_FilSysType, "FAT32", 5)) {
+		printk("Not FAT32 File System\n");
+		return -E_UNKNOWN_FS;
+	}
+	fs->superBlock.bpb.bytes_per_sec = bpb->BPB_BytsPerSec;
+	fs->superBlock.bpb.sec_per_clus = bpb->BPB_SecPerClus;
+	fs->superBlock.bpb.rsvd_sec_cnt = bpb->BPB_RsvdSecCnt;
+	fs->superBlock.bpb.fat_cnt = bpb->BPB_NumFATs;
+	fs->superBlock.bpb.hidd_sec = bpb->BPB_HiddSec;
+	fs->superBlock.bpb.tot_sec = bpb->BPB_TotSec32;
+	fs->superBlock.bpb.fat_sz = bpb->BPB_FATSz32;
+	fs->superBlock.bpb.root_clus = bpb->BPB_RootClus;
+
+	printk("cluster Get superblock!\n");
+
+	// 填写超级块
+	fs->superBlock.first_data_sec = bpb->BPB_RsvdSecCnt + bpb->BPB_NumFATs * bpb->BPB_FATSz32;
+	fs->superBlock.data_sec_cnt = bpb->BPB_TotSec32 - fs->superBlock.first_data_sec;
+	fs->superBlock.data_clus_cnt = fs->superBlock.data_sec_cnt / bpb->BPB_SecPerClus;
+	fs->superBlock.bytes_per_clus = bpb->BPB_SecPerClus * bpb->BPB_BytsPerSec;
+	if (BUF_SIZE != fs->superBlock.bpb.bytes_per_sec) {
+		printk("BUF_SIZE != fs->superBlock.bpb.bytes_per_sec\n");
+		return -E_DEV_ERROR;
+	}
+
+	//printk("cluster ok!\n");
+
+	// 释放缓冲区
+	bufRelease(buf);
+
+	//printk("buf release!\n");
+	return 0;
 }
 
 /**
@@ -87,10 +143,15 @@ void init_root_fs(void)
 {
 	//extern FileSystem *fatFs;
 	lock_init(&mtx_file);
-	allocFs(&fatFs);
+	allocFs(fatFs);
 
 	fatFs->image = NULL;
 	fatFs->deviceNumber = 0;
 
 	fat32_init(fatFs);
+
+	/*将原来的rootfs目录转移到fat32下*/
+
+	/*将fat32系统挂载到根挂载点*/
+	mnt_root.mnt_root = fatFs->root;
 }

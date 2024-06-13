@@ -4,11 +4,12 @@
 #include <xkernel/list.h>
 #include <xkernel/types.h>
 #include <asm-generic/int-ll64.h>
-#include <fs/fat32.h>
 #include <asm/page.h>
+#include <fs/fat32.h>
+#include <fs/ext4_types.h>
 #include <fs/file_time.h>
 
-#define MAX_FS_COUNT 4 //最多可挂载的文件系统数量
+#define MAX_FS_COUNT 16 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
 #define PAGE_NCLUSNO (PAGE_SIZE / sizeof(unsigned int))// 一页能容纳的u32簇号个数
 #define NDIRENT_SECPOINTER 5
@@ -21,24 +22,16 @@ typedef struct SuperBlock SuperBlock;
 // 对应目录、文件、设备
 typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
 
-
-struct bpb{
-	u16 bytes_per_sec;
-	u8 sec_per_clus;
-	u16 rsvd_sec_cnt;
-	u8 fat_cnt;   /* count of FAT regions */
-	u32 hidd_sec; /* count of hidden sectors */
-	u32 tot_sec;  /* total count of sectors including all regions */
-	u32 fat_sz;   /* count of sectors for a FAT region */
-	u32 root_clus;
-};
-
 typedef struct SuperBlock {
 	u32 first_data_sec;
 	u32 data_sec_cnt;
 	u32 data_clus_cnt;
 	u32 bytes_per_clus;
-	struct bpb bpb;
+	union 
+	{
+		struct bpb bpb;
+		struct ext4_sblock ext4_sblock;
+	};
 }SuperBlock;
 
 typedef struct FileSystem {
@@ -49,7 +42,8 @@ typedef struct FileSystem {
 	struct Dirent *image;					// mount对应的文件描述符
 	struct Dirent *mountPoint;				// 挂载点
 	int deviceNumber;						// 对应真实设备的编号
-	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 读取FS的一个Buffer
+	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 获取fs超级快的方式
+	struct FileSystem* next;
 	// 强制规定：传入的fs即为本身的fs
 	// 稍后用read返回的这个Buffer指针进行写入和释放动作
 	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层
@@ -112,8 +106,6 @@ typedef struct Dirent {
 	// 子Dirent列表
 	struct list child_list;
 	struct list_elem dirent_tag;//链表节点，用于父目录记录
-	// 用于空闲链表和父子连接中的链接，因为一个Dirent不是在空闲链表中就是在树上
-	//LIST_ENTRY(Dirent) dirent_link;
 
 	// 父亲Dirent
 	struct Dirent *parent_dirent; // 即使是mount的目录，也指向其上一级目录。如果该字段为NULL，表示为总的根目录
@@ -123,9 +115,6 @@ typedef struct Dirent {
 	// 各种计数
 	unsigned short linkcnt; // 链接计数
 	unsigned short refcnt;  // 引用计数
-
-	//struct holder_info holders[DIRENT_HOLDER_CNT];
-	//int holder_cnt;
 }Dirent;
 
 extern struct lock mtx_file;
@@ -166,13 +155,14 @@ enum fs_result {
 
 extern FileSystem* fatFs;
 
+void vfs_init(void);//初始化VFS
+void fs_init(void);//在init进程中进行
 typedef int (*findfs_callback_t)(FileSystem *fs, void *data);
 void allocFs(struct FileSystem **pFs);
 void deAllocFs(struct FileSystem *fs);
 int partition_format(FileSystem* fs);//初始化文件系统分区
 FileSystem *find_fs_by(findfs_callback_t findfs, void *data);
 void fat32_init(struct FileSystem* fs) ;
-void fs_init(void);
 int is_directory(FAT32Directory* f);
 void fat32Test(void);
 #endif

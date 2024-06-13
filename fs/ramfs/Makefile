@@ -1,0 +1,1 @@
+obj-y += ramfs_init.o

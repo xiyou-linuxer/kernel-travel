@@ -1,12 +1,10 @@
 #ifndef __LIB_KERNEL_LIST_H
 #define __LIB_KERNEL_LIST_H
-
-#ifdef __KERNEL__
-
-#if 0
-
 #include <xkernel/types.h>
 #include <xkernel/compiler.h>
+
+#ifdef __KERNEL__
+#if 0
 
 /**
  * **************************************************

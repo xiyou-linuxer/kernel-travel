@@ -2,6 +2,7 @@
 #define _VFS_H
 
 #include <fs/fs.h>
+#include <fs/mount.h>
 #include <xkernel/types.h>
 
 #define MAX_PATH_LEN 512 // 路径最大长度
@@ -18,6 +19,8 @@ struct Dirent; // 前向声明
 
 struct kstat; // 前向声明
 
+extern struct vfsmount mnt_root;	/*根挂载点*/
+extern FileSystem* current_fs;		/*当前对应的文件系统*/
 
 int get_entry_count_by_name(char* name);
 int countClusters(struct Dirent* file);
