@@ -8,6 +8,7 @@
 #include <fs/dirent.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
+#include <fs/mount.h>
 #include <fs/buf.h>
 #include <sync.h>
 
@@ -143,7 +144,7 @@ void init_root_fs(void)
 {
 	//extern FileSystem *fatFs;
 	lock_init(&mtx_file);
-	allocFs(fatFs);
+	allocFs(&fatFs);
 
 	fatFs->image = NULL;
 	fatFs->deviceNumber = 0;
@@ -151,7 +152,7 @@ void init_root_fs(void)
 	fat32_init(fatFs);
 
 	/*将原来的rootfs目录转移到fat32下*/
-
+	
 	/*将fat32系统挂载到根挂载点*/
 	mnt_root.mnt_root = fatFs->root;
 }

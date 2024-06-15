@@ -2,11 +2,12 @@
 #include <fs/fat32.h>
 #include <fs/fs.h>
 #include <fs/vfs.h>
+#include <fs/fd.h>
+#include <fs/path.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <sync.h>
 #include <xkernel/errno.h>
-#include <fs/fd.h>
 #include <xkernel/thread.h>
 extern struct lock mtx_file;
 

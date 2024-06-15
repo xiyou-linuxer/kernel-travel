@@ -1,11 +1,12 @@
 #include <fs/fs.h>
 #include <fs/buf.h>
-#include <xkernel/stdio.h>
-#include <debug.h>
-#include <xkernel/string.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
 #include <fs/vfs.h>
+#include <fs/ramfs.h>
+#include <xkernel/stdio.h>
+#include <xkernel/string.h>
+#include <debug.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 

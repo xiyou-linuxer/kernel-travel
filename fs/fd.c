@@ -6,6 +6,7 @@
 #include <fs/fd.h>
 #include <fs/fs.h>
 #include <fs/filepnt.h>
+#include <fs/path.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <xkernel/types.h>

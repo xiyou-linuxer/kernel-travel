@@ -1,12 +1,14 @@
 #include <fs/vfs.h>
 #include <fs/fs.h>
+#include <fs/dirent.h>
+#include <fs/mount.h>
+#include <xkernel/stdio.h>
 #include <debug.h>
 
 /*构建vfs的根文件系统*/
-
 static struct FileSystem *ramfs_fs_type;
 static struct FileSystem *rootfs_fs_type;
-
+struct vfsmount mnt_root;
 void init_mount_tree(void)
 {
 	/*根挂载点没有父目录，记为空*/
@@ -20,6 +22,10 @@ void init_mount_tree(void)
 int init_rootfs(void) {
 	printk("rootfs is initing...\n");
 	allocFs(&rootfs_fs_type);
+	if (rootfs_fs_type == NULL)
+	{
+		return -1;
+	}
 	strcpy(rootfs_fs_type->name,"rootfs");
 	
 	//为vfs的目录树提供 / 目录
@@ -28,4 +34,5 @@ int init_rootfs(void) {
 	rootfs_fs_type->root->file_system = rootfs_fs_type;
 	ASSERT(rootfs_fs_type == NULL);
 	printk("rootfs is down\n");
+	return 1;
 }

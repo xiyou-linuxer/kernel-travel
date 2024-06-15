@@ -7,6 +7,7 @@
 #include <xkernel/string.h>
 #include <xkernel/ioqueue.h>
 #include <xkernel/memory.h>
+#include <fs/path.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
@@ -19,42 +20,6 @@
 #include <asm/syscall.h>
 #include <xkernel/wait.h>
 /*本文件用于实现文件的syscall*/
-/*将路径转化为绝对路径，只支持 . 与 .. 开头的路径*/
-static void path_resolution(const char *pathname)
-{
-	char buf[MAX_NAME_LEN];
-	struct task_struct *pthread = running_thread();
-	if (pathname[0] == '/')//如果已经是绝对路径则直接返回
-	{
-		return ;
-	}else if (pathname[0] == '.')
-	{
-		strcpy(buf,pthread->cwd);//将当前工作路径复制到buf中
-		if (strcmp(buf,"/")==0)
-		{
-			strcat(buf,strchr(pathname,'/')+1);
-		}else
-		{
-			strcat(buf,strchr(pathname,'/'));//再将除.之后的
-		}
-	}else if (pathname[0] == '..')
-	{
-		strcpy(buf,pthread->cwd);
-		memset(strrchr(buf,"/"),0,MAX_NAME_LEN);//将最后一个/与他后面的内容清除
-		strcat(buf,strchr(pathname,'/'));//再将传入路径除去 .. 后其他内容与buf拼接
-	}else
-	{
-		//如果非以上三种符号开头则默认是目录/文件名，直接与当前工作目录拼接
-		strcpy(buf,pthread->cwd);
-		if (strcmp(buf,"/")!=0)
-		{
-			strcat(buf,"/");//当前工作目录不是根目录则先在路径上加上/再与传入的路径拼接
-		}
-		strcat(buf,pathname);
-	}
-	strcpy(pathname,buf);
-}
-
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
 	if (strcmp(pathname,".")==0)
@@ -84,7 +49,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	/* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
 	if ((file == NULL) && !(flags & O_CREATE))
 	{
-		//printk("in path %s, file %s is`t exist\n",searched_record.searched_path,(strrchr(searched_record.searched_path, '/') + 1));
 		return -1;
 	}
 	else if ((file != NULL) && flags & O_CREATE)

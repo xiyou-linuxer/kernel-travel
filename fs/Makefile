@@ -6,3 +6,4 @@ obj-y	+=syscallfs_test.o
 obj-y	+=fat32/
 obj-y	+=ramfs/
 obj-y	+=syscall_fs.o 
+obj-y	+=path.o
