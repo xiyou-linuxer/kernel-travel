@@ -136,5 +136,5 @@ bash quick_start.sh distclean
 * [操作系统真相还原](https://github.com/yifengyou/os-elephant)
 * [兰州大学 - MaQueOs](https://gitee.com/dslab-lzu/maqueos)
 * [种田队 - 2023年优秀作品](https://gitlab.eduxiji.net/202310006101080/zhongtianos)
-* [dis-sum](https://gitee.com/xiebaoyou/dim-sum)
+* [dim-sum](https://gitee.com/xiebaoyou/dim-sum)
 * [Linux内核源码](https://elixir.bootlin.com/linux/latest/source)
