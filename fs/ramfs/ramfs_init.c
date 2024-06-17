@@ -11,8 +11,8 @@ static struct FileSystem *rootfs_fs_type;
 struct vfsmount mnt_root;
 void init_mount_tree(void)
 {
-	/*根挂载点没有父目录，记为空*/
-	mnt_root.mnt_parent = NULL;
+	/*根挂载点没有父目录，指向自己*/
+	mnt_root.mnt_parent = &mnt_root;
 	mnt_root.mnt_mountpoint = NULL;
 	mnt_root.mnt_count = 1;
 	/*此时将根挂载点所挂载的目录标记为内存中的虚拟文件系统rootfs,待磁盘中的文件系统被加载后再将根挂载点所挂载的文件系统修改为磁盘文件系统*/

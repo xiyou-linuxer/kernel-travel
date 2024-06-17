@@ -4,6 +4,7 @@
 #include <fs/vfs.h>
 #include <fs/fd.h>
 #include <fs/path.h>
+#include <fs/mount.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <sync.h>
@@ -11,8 +12,24 @@
 #include <xkernel/thread.h>
 extern struct lock mtx_file;
 
+struct vfsmount mount[MNT_NUM];//挂载点结构体
+
+static struct vfsmount* alloc_vfsmount(void)
+{
+	for (int i = 0; i < MNT_NUM; i++)
+	{
+		if (mount[i].mnt_count == 0)
+		{
+			mount[i].mnt_count++;
+			return mount;
+		}
+		
+	}
+	return NULL;
+}
+
 // mount之后，目录中原有的文件将被暂时取代为挂载的文件系统内的内容，umount时会重新出现
-int mount_fs(char *special, char *dirPath) {
+int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long flags) {
 	// 1. 寻找mount的目录
 	Dirent *dir;
 	int fd = -1;
@@ -42,18 +59,21 @@ int mount_fs(char *special, char *dirPath) {
 	Dirent *image;
 	if (strncmp(special, "/dev/vda2", 10) == 0) {
 		image = NULL;
+		//如果vfsmount指向的root为空则说明挂载的是个设备而不是文件系统
+		return;
 	}
 
 	// 3. 初始化mount的文件系统
 	FileSystem *fs;
 	allocFs(&fs);
-	fs->image = image;
+	fs->op->fs_init_ptr(&fs);
 	fs->deviceNumber = 0;
-	fs->mountPoint = dir;
-	// 4. 将fs挂载到dir上
-	dir->head = fs;
-	dir->file_system = fs;
+	//初始化挂载点结构体vfsmount
+	dir->head = alloc_vfsmount();
+	dir->head->mnt_root = fs->root;
+	dir->head->mnt_mountpoint = dir;
 
+	dir->head->mnt_parent = dir->parent_dirent->head;
 	return 0;
 }
 
@@ -78,13 +98,12 @@ int umount_fs(char *dirPath) {
 	// 2. 擦除目录的标记
 	// 要umount的目录一般使用getFile加载出来的是其文件系统的根目录，不能直接写回
 	Dirent *mntPoint = dir->file_system->mountPoint;
-	mntPoint->head = NULL;
-
+	
 	if (mntPoint == NULL || dir->parent_dirent != NULL) {
 		//printk("unmounted dir!\n");
 		return 0; // 传入的不是挂载点
 	}
-	
+	mntPoint->head = NULL;
 	// 3. 寻找fs
 	FileSystem *fs = find_fs_by(find_fs_of_dir, mntPoint);
 	if (fs == NULL) {

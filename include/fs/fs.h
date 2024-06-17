@@ -22,6 +22,19 @@ typedef struct SuperBlock SuperBlock;
 // 对应目录、文件、设备
 typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
 
+/*文件系统的操作函数*/
+struct fs_operation{
+	/*文件系统的初始化*/
+	void (*fs_init_ptr)(FileSystem*);//指向文件系统初始化的指针
+	/*文件操作*/
+	//创建文件
+	//打开文件
+	//读文件
+	//写文件
+	/*目录操作*/
+	//创建目录
+};
+
 typedef struct SuperBlock {
 	u32 first_data_sec;
 	u32 data_sec_cnt;
@@ -39,11 +52,11 @@ typedef struct FileSystem {
 	char name[8];
 	struct SuperBlock superBlock;					// 超级块
 	struct Dirent *root;						 	// root项
-	struct Dirent *image;					// mount对应的文件描述符
 	struct Dirent *mountPoint;				// 挂载点
 	int deviceNumber;						// 对应真实设备的编号
 	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 获取fs超级快的方式
 	struct FileSystem* next;
+	struct fs_operation* op;//文件系统的操作函数
 	// 强制规定：传入的fs即为本身的fs
 	// 稍后用read返回的这个Buffer指针进行写入和释放动作
 	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层
@@ -70,48 +83,33 @@ typedef struct DirentPointer {
 } DirentPointer;
 
 typedef struct Dirent {
-	FAT32Directory raw_dirent; // 原生的dirent项
+	union 
+	{
+		FAT32Directory raw_dirent; // 原生的dirent项
+	};
 	char name[MAX_NAME_LEN];
-
 	// 文件系统相关属性
-	FileSystem *file_system; // 所在的文件系统
-	unsigned int first_clus;		 // 第一个簇的簇号（如果为0，表示文件尚未分配簇）
-	unsigned int file_size;		 // 文件大小
-
+	FileSystem *file_system; 	// dir所在的文件系统
+	unsigned int first_clus;	// 第一个簇的簇号（如果为0，表示文件尚未分配簇）
+	unsigned int file_size;		// 文件大小
 	/* for OS */
-	// 操作系统相关的数据结构
-	// 仅用于是挂载点的目录，指向该挂载点所对应的文件系统。用于区分mount目录和非mount目录
-	FileSystem *head;
-
+	struct vfsmount *head;		//挂载在当前目录下的
 	DirentPointer pointer;
-
-	// [暂不用] 标记此Dirent节点是否已扩展子节点，用于弹性伸缩Dirent缓存，不过一般设置此字段为1
-	// 我们会在初始化时扫描所有文件，并构建Dirent
-	// u16 is_extend;
-
 	// 在上一个目录项中的内容偏移，用于写回
 	unsigned int parent_dir_off;
-
 	// 标记是文件、目录还是设备文件（仅在文件系统中出现，不出现在磁盘中）
 	unsigned short type;
-
 	unsigned short is_rm;
-
 	// 文件的时间戳
 	struct file_time time;
-
 	// 设备结构体，可以通过该结构体完成对文件的读写
 	struct FileDev *dev;
-
 	// 子Dirent列表
 	struct list child_list;
-	struct list_elem dirent_tag;//链表节点，用于父目录记录
-
+	struct list_elem dirent_tag; //链表节点，用于父目录记录
 	// 父亲Dirent
 	struct Dirent *parent_dirent; // 即使是mount的目录，也指向其上一级目录。如果该字段为NULL，表示为总的根目录
-
 	u32 mode;
-
 	// 各种计数
 	unsigned short linkcnt; // 链接计数
 	unsigned short refcnt;  // 引用计数

@@ -350,8 +350,9 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 		return r;
 	}
 	//4. 填写Dirent的各项信息
-	f->parent_dirent = searched_record.parent_dir;				   // 设置父亲节点，以安排写回
+	f->parent_dirent = searched_record.parent_dir;				 	// 设置父亲节点，以安排写回
 	f->file_system = searched_record.parent_dir->file_system;
+	f->head = f->parent_dirent->head;							 	//子目录的对应
 	if (isDir == 1)
 	{
 		f->type = DIRENT_DIR;

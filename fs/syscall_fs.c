@@ -369,7 +369,7 @@ int sys_unlinkat(int dirfd, char *path, unsigned int flags)
 int sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data)
 {
 	path_resolution(dir);
-	return mount_fs(special,dir);
+	return mount_fs(special,dir,fstype,flags);
 }
 
 int sys_umount(const char* special) 

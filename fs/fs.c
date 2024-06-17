@@ -12,17 +12,8 @@ static struct FileSystem fs[MAX_FS_COUNT];
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
 {
 	ASSERT(fs != NULL);
-
-	if (fs->image == NULL) {
-		// 是挂载了根设备，直接读取块缓存层的数据即可
-		return bufRead(fs->deviceNumber, blockNum, is_read);
-	} else {
-		// 处理挂载了文件的情况
-		Dirent *img = fs->image;
-		struct FileSystem *parentFs = fs->image->file_system;//找到文件系统挂载的父节点
-		int blockNo = fileBlockNo(parentFs, img->first_clus, blockNum);
-		return bufRead(parentFs->deviceNumber, blockNo, is_read);
-	}
+	// 是挂载了根设备，直接读取块缓存层的数据即可
+	return bufRead(fs->deviceNumber, blockNum, is_read);
 }
 
 /**

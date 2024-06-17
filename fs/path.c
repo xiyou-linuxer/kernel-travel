@@ -165,7 +165,7 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 
 			if (dir_e->type == DIRENT_DIR )
 			{ // 如果被打开的是目录
-				searched_record->parent_dir = parent_dir;
+				searched_record->parent_dir = parent_dir;	
 				parent_dir = dir_e;
 				continue;
 			}

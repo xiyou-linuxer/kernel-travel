@@ -14,6 +14,12 @@
 
 FileSystem *fatFs;
 struct lock mtx_file;
+
+/*注册fat32文件系统的操作函数*/
+static const struct fs_operation fat32_op = {
+	.fs_init_ptr = fat32_init,
+};
+
 static void build_dirent_tree(Dirent *parent) {
 	Dirent *child;
 	int off = 0; // 当前读到的偏移位置
@@ -146,7 +152,6 @@ void init_root_fs(void)
 	lock_init(&mtx_file);
 	allocFs(&fatFs);
 
-	fatFs->image = NULL;
 	fatFs->deviceNumber = 0;
 
 	fat32_init(fatFs);
@@ -155,4 +160,5 @@ void init_root_fs(void)
 	
 	/*将fat32系统挂载到根挂载点*/
 	mnt_root.mnt_root = fatFs->root;
+	fatFs->root->head = &mnt_root;
 }

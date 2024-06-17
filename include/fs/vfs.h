@@ -30,6 +30,6 @@ int makeDirAt(Dirent* baseDir, char* path, int mode);
 void file_shrink(Dirent* file, u64 newsize);
 void test_fs_all(void);
 void fileStat( struct Dirent* file, struct kstat* pKStat);
-int mount_fs(char* special, char* dirPath);
+int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long flags);
 int umount_fs(char* dirPath);
 #endif
