@@ -16,7 +16,7 @@ void init_mount_tree(void)
 	mnt_root.mnt_mountpoint = NULL;
 	mnt_root.mnt_count = 1;
 	/*此时将根挂载点所挂载的目录标记为内存中的虚拟文件系统rootfs,待磁盘中的文件系统被加载后再将根挂载点所挂载的文件系统修改为磁盘文件系统*/
-	mnt_root.mnt_root = rootfs_fs_type->root;
+	mnt_root.mnt_rootdir = rootfs_fs_type->root;
 }
 
 int init_rootfs(void) {

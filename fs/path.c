@@ -162,9 +162,12 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 			{
 				sub_path = path_parse(sub_path, name);
 			}
-
-			if (dir_e->type == DIRENT_DIR )
-			{ // 如果被打开的是目录
+			if (dir_e->type == DIRENT_DIR )// 如果被打开的是目录
+			{ 
+				if (dir_e->head!=NULL&&dir_e->head->mnt_root!=NULL)/* 判断目录下是否有挂载的文件系统 */
+				{
+					dir_e = dir_e->head->mnt_root; //完成挂载点到被挂载文件系统的转换
+				}
 				searched_record->parent_dir = parent_dir;	
 				parent_dir = dir_e;
 				continue;

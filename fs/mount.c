@@ -10,6 +10,7 @@
 #include <sync.h>
 #include <xkernel/errno.h>
 #include <xkernel/thread.h>
+#include <xkernel/list.h>
 extern struct lock mtx_file;
 
 struct vfsmount mount[MNT_NUM];//挂载点结构体
@@ -18,14 +19,33 @@ static struct vfsmount* alloc_vfsmount(void)
 {
 	for (int i = 0; i < MNT_NUM; i++)
 	{
-		if (mount[i].mnt_count == 0)
+		if (mount[i].mnt_expiry_mark == 0)
 		{
 			mount[i].mnt_count++;
+			mount[i].mnt_expiry_mark = 1;
 			return mount;
 		}
 		
 	}
 	return NULL;
+}
+
+static int free_vfsmount(struct vfsmount* mnt)
+{
+	if (mnt == NULL)
+	{
+		return -1;
+	}
+	mnt->mnt_count--;
+	if (mnt->mnt_count != 0)//如果--后当前挂载点的引用计数
+	{
+		return -1;
+	}
+	mnt->mnt_devname = NULL;
+	mnt->mnt_rootdir = NULL;
+	mnt->mnt_expiry_mark = 0;
+	list_remove(mnt->mnt_mounts);//将挂载点从父目录上取下
+	return 0;
 }
 
 // mount之后，目录中原有的文件将被暂时取代为挂载的文件系统内的内容，umount时会重新出现
@@ -48,19 +68,26 @@ int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long fla
 		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
+
 	// 检查dir是否是目录
 	if (!is_directory(&dir->raw_dirent)) {
 		printk("dir %s is not a directory!\n", dirPath);
 		return -ENOTDIR;
 	}
 
-	// 2. 寻找mount的文件
+	//分配挂载点结构体
+	dir->head = alloc_vfsmount();
+	dir->head->mnt_mountpoint = dir;
+	dir->head->mnt_parent = dir->parent_dirent->head;//挂载点的父挂载点应为所挂载目录项的父目录项对应的挂载点
+	list_append(dir->head->mnt_parent->mnt_child,dir->head->mnt_mounts);
+
+	// 寻找mount的文件
 	// 特判是否是设备（deprecated）
-	Dirent *image;
 	if (strncmp(special, "/dev/vda2", 10) == 0) {
-		image = NULL;
 		//如果vfsmount指向的root为空则说明挂载的是个设备而不是文件系统
-		return;
+		dir->head->mnt_rootdir = NULL;
+		dir->head->mnt_devname = special;
+		return 0;
 	}
 
 	// 3. 初始化mount的文件系统
@@ -69,11 +96,7 @@ int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long fla
 	fs->op->fs_init_ptr(&fs);
 	fs->deviceNumber = 0;
 	//初始化挂载点结构体vfsmount
-	dir->head = alloc_vfsmount();
-	dir->head->mnt_root = fs->root;
-	dir->head->mnt_mountpoint = dir;
-
-	dir->head->mnt_parent = dir->parent_dirent->head;
+	dir->head->mnt_rootdir = fs->root;
 	return 0;
 }
 
@@ -94,23 +117,13 @@ int umount_fs(char *dirPath) {
 	{ 
 		return -1;
 	}
-
-	// 2. 擦除目录的标记
-	// 要umount的目录一般使用getFile加载出来的是其文件系统的根目录，不能直接写回
-	Dirent *mntPoint = dir->file_system->mountPoint;
-	
-	if (mntPoint == NULL || dir->parent_dirent != NULL) {
-		//printk("unmounted dir!\n");
-		return 0; // 传入的不是挂载点
+	//如果挂载的是文件系统，如果是设备则直接释放
+	if (dir->head->mnt_rootdir != NULL)
+	{
+		FileSystem *fs = elem2entry(FileSystem ,root, dir->head->mnt_rootdir);//通过所挂载文件系统的root项找到fs结构体
+		deAllocFs(fs);//释放fs结构体
 	}
-	mntPoint->head = NULL;
-	// 3. 寻找fs
-	FileSystem *fs = find_fs_by(find_fs_of_dir, mntPoint);
-	if (fs == NULL) {
-		//printk("can\'t find fs of dir %s!\n", dirPath);
-		return 0;
-	}
-	deAllocFs(fs);
 
-	return 0;
+	int ret = free_vfsmount(dir->head);
+	return ret;
 }
