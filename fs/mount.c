@@ -44,7 +44,7 @@ static int free_vfsmount(struct vfsmount* mnt)
 	mnt->mnt_devname = NULL;
 	mnt->mnt_rootdir = NULL;
 	mnt->mnt_expiry_mark = 0;
-	list_remove(mnt->mnt_mounts);//将挂载点从父目录上取下
+	list_remove(&mnt->mnt_mounts);//将挂载点从父目录上取下
 	return 0;
 }
 
@@ -79,7 +79,7 @@ int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long fla
 	dir->head = alloc_vfsmount();
 	dir->head->mnt_mountpoint = dir;
 	dir->head->mnt_parent = dir->parent_dirent->head;//挂载点的父挂载点应为所挂载目录项的父目录项对应的挂载点
-	list_append(dir->head->mnt_parent->mnt_child,dir->head->mnt_mounts);
+	list_append(&dir->head->mnt_parent->mnt_child,&dir->head->mnt_mounts);
 
 	// 寻找mount的文件
 	// 特判是否是设备（deprecated）
@@ -93,7 +93,7 @@ int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long fla
 	// 3. 初始化mount的文件系统
 	FileSystem *fs;
 	allocFs(&fs);
-	fs->op->fs_init_ptr(&fs);
+	fs->op->fs_init_ptr(fs);
 	fs->deviceNumber = 0;
 	//初始化挂载点结构体vfsmount
 	dir->head->mnt_rootdir = fs->root;

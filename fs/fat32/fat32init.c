@@ -159,6 +159,6 @@ void init_root_fs(void)
 	/*将原来的rootfs目录转移到fat32下*/
 	
 	/*将fat32系统挂载到根挂载点*/
-	mnt_root.mnt_root = fatFs->root;
+	mnt_root.mnt_rootdir = fatFs->root;
 	fatFs->root->head = &mnt_root;
 }

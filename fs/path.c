@@ -125,7 +125,7 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 	/* 如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息 */
 	if (!strcmp(pathname, "/") || !strcmp(pathname, "/.") || !strcmp(pathname, "/.."))
 	{
-		searched_record->parent_dir = mnt_root.mnt_root;
+		searched_record->parent_dir = mnt_root.mnt_rootdir;
 		searched_record->file_type = DIRENT_DIR;
 		searched_record->searched_path[0] = 0; // 搜索路径置空
 		return NULL;
@@ -164,9 +164,9 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 			}
 			if (dir_e->type == DIRENT_DIR )// 如果被打开的是目录
 			{ 
-				if (dir_e->head!=NULL&&dir_e->head->mnt_root!=NULL)/* 判断目录下是否有挂载的文件系统 */
+				if (dir_e->head!=NULL&&dir_e->head->mnt_rootdir!=NULL)/* 判断目录下是否有挂载的文件系统 */
 				{
-					dir_e = dir_e->head->mnt_root; //完成挂载点到被挂载文件系统的转换
+					dir_e = dir_e->head->mnt_rootdir; //完成挂载点到被挂载文件系统的转换
 				}
 				searched_record->parent_dir = parent_dir;	
 				parent_dir = dir_e;
