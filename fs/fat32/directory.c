@@ -45,7 +45,7 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 
 	// 1. 跳过dir中的无效项目
 	for (j = offset; j < dir->file_size; j += DIR_SIZE) {
-		file_read(dir, 0, (unsigned long)direntBuf, j, DIR_SIZE);//读取目录项
+		file_read(dir, (unsigned long)direntBuf, j, DIR_SIZE);//读取目录项
 		f = ((FAT32Directory *)direntBuf);
 
 		// 跳过空项（FAT32_INVALID_ENTRY表示已删除）
@@ -136,7 +136,7 @@ void sync_dirent_rawdata_back(Dirent *dirent) {
 		return;
 	}
 
-	file_write(parentDir, 0, (unsigned long)&dirent->raw_dirent, dirent->parent_dir_off, DIRENT_SIZE);
+	file_write(parentDir, (unsigned long)&dirent->raw_dirent, dirent->parent_dir_off, DIRENT_SIZE);
 }
 
 /**
@@ -161,7 +161,7 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	// 1. 分配若干连续的目录项
 	while (offset < prev_size) {
 		
-		file_read(dir, 0, (unsigned long)&fat32_dirent, offset, DIR_SIZE);
+		file_read(dir, (unsigned long)&fat32_dirent, offset, DIR_SIZE);
 		if (fat32_dirent.DIR_Name[0] == 0) {
 			// 表示为空闲目录项
 			curN += 1;
@@ -189,7 +189,7 @@ static int dir_alloc_entry(Dirent *dir, Dirent **ent, int cnt) {
 	memset(&fat32_dirent, 0, DIR_SIZE);
 	fat32_dirent.DIR_Name[0] = FAT32_INVALID_ENTRY;
 	for (offset = start_off; offset <= end_off; offset += DIR_SIZE) {
-		file_write(dir, 0, (unsigned long)&fat32_dirent, offset, DIR_SIZE);
+		file_write(dir, (unsigned long)&fat32_dirent, offset, DIR_SIZE);
 	}
 
 	// 4. 记录尾部目录项（即记录文件元信息的目录项）的偏移
@@ -264,7 +264,7 @@ int dir_alloc_file(Dirent *dir, Dirent **file, char *path)
 			longDir.LDIR_Ord = LAST_LONG_ENTRY;
 
 		// 写入到目录中
-		file_write(dir, 0, (unsigned long)&longDir, dirent->parent_dir_off - i * DIR_SIZE, DIR_SIZE);
+		file_write(dir, (unsigned long)&longDir, dirent->parent_dir_off - i * DIR_SIZE, DIR_SIZE);
 
 		if (name == NULL) {
 			break;

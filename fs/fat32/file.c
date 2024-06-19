@@ -58,7 +58,7 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
  * @param off 文件指针的偏移
  * @param n 要读取的长度
 */
-int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
+int Fatfile_read(struct Dirent *file, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
@@ -80,13 +80,13 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 	u32 clus = filepnt_getclusbyno(file, clusIndex);
 	u32 len = 0; // 累计读取的字节数
 	// 读取第一块
-	clusterRead(file->file_system, clus, offset, (void *)dst, MIN(n, clusSize - offset), user);
+	clusterRead(file->file_system, clus, offset, (void *)dst, MIN(n, clusSize - offset), 0);
 	len += MIN(n, clusSize - offset);
 	// 之后的块
 	clusIndex += 1;
 	for (; end >= clusIndex * clusSize; clusIndex++) {
 		clus ++;
-		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),user);
+		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),0);
 		len += MIN(clusSize, n - len);
 	}
 	lock_release(&mtx_file);
@@ -135,7 +135,7 @@ void file_extend(struct Dirent *file, int newSize) {
  * @param off 文件指针的偏移
  * @param n 要写入的长度
 */
-int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
+int Fatfile_write(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 	ASSERT(n != 0);
 
@@ -156,7 +156,7 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	u32 len = 0; // 累计读取的字节数
 
 	// 读取第一块
-	clusterWrite(file->file_system, clus, offset, (void *)src, MIN(n, clusSize - offset), user);
+	clusterWrite(file->file_system, clus, offset, (void *)src, MIN(n, clusSize - offset), 0);
 	len += MIN(n, clusSize - offset);
 
 	// 之后的块
@@ -164,7 +164,7 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	for (; end >= clusIndex * clusSize; clusIndex++) {
 		clus = filepnt_getclusbyno(file, clusIndex);
 		clusterWrite(file->file_system, clus, 0, (void *)(src + len),
-			     MIN(clusSize, n - len), user);
+			     MIN(clusSize, n - len), 0);
 		len += MIN(clusSize, n - len);
 	}
 
@@ -190,7 +190,7 @@ void file_shrink(Dirent *file, u64 newsize)
 	if (oldsize % PAGE_SIZE != 0) {
 		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
 			
-			file_write(file, 0, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
+			file_write(file, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
 		}
 	}
 
@@ -296,3 +296,56 @@ void fileStat(struct Dirent *file, struct kstat *pKStat) {
 
 } 
 
+/**
+ * @brief 需要保证传入的file->refcnt == 0
+ */
+
+int rm_unused_file(struct Dirent *file) {
+	ASSERT(file->refcnt == 0);
+	char linked_file_path[MAX_NAME_LEN];
+	int cnt = get_entry_count_by_name(file->name);
+	char data = FAT32_INVALID_ENTRY;
+
+
+	// 2. 断开父子关系
+	ASSERT(file->parent_dirent != NULL); // 不处理根目录的情况
+	// 先递归删除子Dirent
+	if (file->type == DIRENT_DIR) {
+		struct list_elem *tmp = file->child_list.head.next;
+		while (tmp!=&file->child_list.tail) {
+			struct list_elem *next = tmp->next;
+			Dirent *file_child = elem2entry(Dirent,dirent_tag,tmp);
+			rmfile(file_child);
+			tmp = next;
+		}
+	}
+
+	list_remove(&file->dirent_tag);// 从父亲的子Dirent列表删除
+	// 3. 释放其占用的Cluster
+	file_shrink(file, 0);
+
+	// 4. 清空目录项
+	for (int i = 0; i < cnt; i++) {
+		int ret = file_write(file->parent_dirent, (unsigned long)&data, file->parent_dir_off - i * DIR_SIZE, 1) < 0;
+		if (ret != 0)
+		{
+			/* code */
+		}
+	}
+	dirent_dealloc(file); // 释放目录项
+	return 0;
+}
+
+/**
+ * @brief 删除文件。支持递归删除文件夹
+ */
+int rmfile(struct Dirent *file) 
+{
+	//若引用计数大于则报错返回
+	if (file->refcnt > 1) {
+		printk("File is in use\n");
+		return -1;
+	}
+	//return 0;
+	return rm_unused_file(file);
+}

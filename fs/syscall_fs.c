@@ -24,7 +24,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 {
 	if (strcmp(pathname,".")==0)
 	{
-		return file_open(fatFs->root,flags,mode);
+		//return file_open(fatFs->root,flags,mode);
 	}
 	path_resolution(pathname);
 	Dirent *file;
@@ -105,10 +105,9 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	else
 	{
 		Dirent *wr_file = file_table[_fd].dirent;
-		filepnt_init(wr_file);
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
-			unsigned bytes_written = file_write(wr_file, 0, buf,file_table[_fd].offset,count);
+			unsigned bytes_written = file_write(wr_file, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
 			return bytes_written;
 		}
@@ -148,8 +147,7 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
-		filepnt_init(file_table[global_fd].dirent);
-		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
+		ret = file_read(file_table[global_fd].dirent, buf,file_table[global_fd].offset, count);
 		file_table[global_fd].offset += ret;
 	}
 	return count;
@@ -202,7 +200,7 @@ int sys_mkdir(char* path, int mode)
 	{
 		return 0;
 	}
-	makeDirAt(NULL, path, mode);
+	searched_record.parent_dir->file_system->op->makedir(NULL, path, mode);
 	return 0;
 }
 
@@ -251,12 +249,8 @@ int sys_unlink(char *pathname)
 		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
-	/*if (file->type == DIRENT_DIR)//不能直接删除目录
-	{
-		printk("It's direct\n");
-		return -1;
-	}*/
-	int ret = rmfile(file);
+	
+	int ret = file->file_system->op->file_remove(file);
 	return ret;
 }
 
@@ -391,7 +385,7 @@ void fd_mapping(int fd, int start_page, int end_page,unsigned long* v_addr)
 	filepnt_init(file);
 	char buf[512];
 	//pre_read(file,buf,file->file_size/4096+1);//将文件预读到内存中
-	file_read(file, 0, (unsigned long)buf, 0, file->file_size);
+	file_read(file, (unsigned long)buf, 0, file->file_size);
 	int indx = start_page;
 	int count = (end_page - start_page + 1)*8;
 	while (indx<=end_page)

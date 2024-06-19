@@ -18,6 +18,12 @@ struct lock mtx_file;
 /*注册fat32文件系统的操作函数*/
 static const struct fs_operation fat32_op = {
 	.fs_init_ptr = fat32_init,
+	.file_init = filepnt_init,
+	.file_create = createFile,
+	.file_read = Fatfile_read,
+	.file_write = Fatfile_write,
+	.file_remove = rmfile,
+	.makedir = makeDirAt
 };
 
 static void build_dirent_tree(Dirent *parent) {

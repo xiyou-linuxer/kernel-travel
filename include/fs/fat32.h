@@ -99,4 +99,7 @@ struct bpb{
 #define CLUS_SIZE(fs) ((fs)->superBlock.bytes_per_clus)
 
 void init_root_fs(void);
+int Fatfile_write(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n);
+int Fatfile_read(struct Dirent *file, unsigned long dst, unsigned int off, unsigned int n);
+int rmfile(struct Dirent* file);
 #endif

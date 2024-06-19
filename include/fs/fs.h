@@ -22,17 +22,19 @@ typedef struct SuperBlock SuperBlock;
 // 对应目录、文件、设备
 typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
 
-/*文件系统的操作函数*/
+/*文件系统相关的的操作函数*/
 struct fs_operation{
 	/*文件系统的初始化*/
-	void (*fs_init_ptr)(FileSystem*);//指向文件系统初始化的指针
+	void (*fs_init_ptr)(FileSystem*);																//指向文件系统初始化的指针
 	/*文件操作*/
-	//创建文件
-	//打开文件
-	//读文件
-	//写文件
+	int (*file_init)(struct Dirent *file);//文件被打开时的初始化部分
+	int (*file_create)(struct Dirent *baseDir, char *path, int flag);					//创建文件
+	int (*file_write)(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n);	//写文件 
+	int (*file_read)(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n);		//读文件
+	int (*file_remove)(struct Dirent *file);														//删除文件
 	/*目录操作*/
-	//创建目录
+	int (*makedir)(Dirent *baseDir, char *path, int mode);											//创建目录
+	
 };
 
 typedef struct SuperBlock {

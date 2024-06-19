@@ -20,4 +20,5 @@ char* path_parse(char* pathname, char* name_store);
 int path_depth_cnt(char* pathname);
 Dirent* search_dir_tree(Dirent* parent, char* name);
 Dirent* search_file(const char *pathname, struct path_search_record *searched_record);
+int filename2path(Dirent* file, char* newpath);
 #endif
