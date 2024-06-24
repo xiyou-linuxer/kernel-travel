@@ -4,6 +4,7 @@
 #include <xkernel/block_device.h>
 #include <xkernel/types.h>
 #include <fs/fs.h>
+typedef struct Dirent Dirent;
 typedef struct FAT32BootParamBlock {
 	// 通用的引导扇区属性
 	u8 BS_jmpBoot[3];
@@ -101,5 +102,5 @@ struct bpb{
 void init_root_fs(void);
 int Fatfile_write(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n);
 int Fatfile_read(struct Dirent *file, unsigned long dst, unsigned int off, unsigned int n);
-int rmfile(struct Dirent* file);
+int rmfile(Dirent* file);
 #endif

@@ -27,11 +27,11 @@ struct fs_operation{
 	/*文件系统的初始化*/
 	void (*fs_init_ptr)(FileSystem*);																//指向文件系统初始化的指针
 	/*文件操作*/
-	int (*file_init)(struct Dirent *file);//文件被打开时的初始化部分
-	int (*file_create)(struct Dirent *baseDir, char *path, int flag);					//创建文件
+	void (*file_init)(struct Dirent *file);//文件被打开时的初始化部分
+	int (*file_create)(struct Dirent *baseDir, char *path, Dirent **file);					//创建文件
 	int (*file_write)(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n);	//写文件 
-	int (*file_read)(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n);		//读文件
-	int (*file_remove)(struct Dirent *file);														//删除文件
+	int (*file_read)(struct Dirent *file, unsigned long dst, unsigned int off, unsigned int n);		//读文件
+	int (*file_remove)(Dirent *file);														//删除文件
 	/*目录操作*/
 	int (*makedir)(Dirent *baseDir, char *path, int mode);											//创建目录
 	

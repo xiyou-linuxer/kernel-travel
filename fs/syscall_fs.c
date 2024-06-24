@@ -107,7 +107,7 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		Dirent *wr_file = file_table[_fd].dirent;
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
-			unsigned bytes_written = file_write(wr_file, buf,file_table[_fd].offset,count);
+			unsigned bytes_written = wr_file->file_system->op->file_write/*Fatfile_write(wr_file, buf,file_table[_fd].offset,count)*/;
 			file_table[_fd].offset += bytes_written;
 			return bytes_written;
 		}
@@ -147,7 +147,7 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
-		ret = file_read(file_table[global_fd].dirent, buf,file_table[global_fd].offset, count);
+		ret = file_table[global_fd].dirent->file_system->op->file_read/*file_read(file_table[global_fd].dirent, buf,file_table[global_fd].offset, count)*/;
 		file_table[global_fd].offset += ret;
 	}
 	return count;
@@ -385,7 +385,8 @@ void fd_mapping(int fd, int start_page, int end_page,unsigned long* v_addr)
 	filepnt_init(file);
 	char buf[512];
 	//pre_read(file,buf,file->file_size/4096+1);//将文件预读到内存中
-	file_read(file, (unsigned long)buf, 0, file->file_size);
+	file->file_system->op->file_read(file, (unsigned long)buf,0, file->file_size);
+	//file_read(file, (unsigned long)buf, 0, file->file_size);
 	int indx = start_page;
 	int count = (end_page - start_page + 1)*8;
 	while (indx<=end_page)

@@ -190,7 +190,7 @@ void file_shrink(Dirent *file, u64 newsize)
 	if (oldsize % PAGE_SIZE != 0) {
 		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
 			
-			file_write(file, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
+			Fatfile_write(file, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
 		}
 	}
 
@@ -326,7 +326,7 @@ int rm_unused_file(struct Dirent *file) {
 
 	// 4. 清空目录项
 	for (int i = 0; i < cnt; i++) {
-		int ret = file_write(file->parent_dirent, (unsigned long)&data, file->parent_dir_off - i * DIR_SIZE, 1) < 0;
+		int ret = Fatfile_write(file->parent_dirent, (unsigned long)&data, file->parent_dir_off - i * DIR_SIZE, 1) < 0;
 		if (ret != 0)
 		{
 			/* code */
@@ -339,7 +339,7 @@ int rm_unused_file(struct Dirent *file) {
 /**
  * @brief 删除文件。支持递归删除文件夹
  */
-int rmfile(struct Dirent *file) 
+int rmfile(Dirent *file) 
 {
 	//若引用计数大于则报错返回
 	if (file->refcnt > 1) {
