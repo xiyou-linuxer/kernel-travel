@@ -58,7 +58,7 @@ void pre_read(struct Dirent *file,unsigned long dst,unsigned int n)
  * @param off 文件指针的偏移
  * @param n 要读取的长度
 */
-int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off, unsigned int n) {
+int Fatfile_read(struct Dirent *file, unsigned long dst, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 	if (off >= file->file_size) {
 		// 起始地址超出文件的最大范围，遇到文件结束，返回0
@@ -80,13 +80,13 @@ int file_read(struct Dirent *file, int user, unsigned long dst, unsigned int off
 	u32 clus = filepnt_getclusbyno(file, clusIndex);
 	u32 len = 0; // 累计读取的字节数
 	// 读取第一块
-	clusterRead(file->file_system, clus, offset, (void *)dst, MIN(n, clusSize - offset), user);
+	clusterRead(file->file_system, clus, offset, (void *)dst, MIN(n, clusSize - offset), 0);
 	len += MIN(n, clusSize - offset);
 	// 之后的块
 	clusIndex += 1;
 	for (; end >= clusIndex * clusSize; clusIndex++) {
 		clus ++;
-		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),user);
+		clusterRead(file->file_system, clus, 0, (void *)(dst + len), MIN(clusSize, n - len),0);
 		len += MIN(clusSize, n - len);
 	}
 	lock_release(&mtx_file);
@@ -135,7 +135,7 @@ void file_extend(struct Dirent *file, int newSize) {
  * @param off 文件指针的偏移
  * @param n 要写入的长度
 */
-int file_write(struct Dirent *file, int user, unsigned long src, unsigned int off, unsigned int n) {
+int Fatfile_write(struct Dirent *file, unsigned long src, unsigned int off, unsigned int n) {
 	lock_acquire(&mtx_file);
 	ASSERT(n != 0);
 
@@ -156,7 +156,7 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	u32 len = 0; // 累计读取的字节数
 
 	// 读取第一块
-	clusterWrite(file->file_system, clus, offset, (void *)src, MIN(n, clusSize - offset), user);
+	clusterWrite(file->file_system, clus, offset, (void *)src, MIN(n, clusSize - offset), 0);
 	len += MIN(n, clusSize - offset);
 
 	// 之后的块
@@ -164,7 +164,7 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	for (; end >= clusIndex * clusSize; clusIndex++) {
 		clus = filepnt_getclusbyno(file, clusIndex);
 		clusterWrite(file->file_system, clus, 0, (void *)(src + len),
-			     MIN(clusSize, n - len), user);
+			     MIN(clusSize, n - len), 0);
 		len += MIN(clusSize, n - len);
 	}
 
@@ -172,78 +172,7 @@ int file_write(struct Dirent *file, int user, unsigned long src, unsigned int of
 	return n;
 }
 
-/**
- * @brief 搜索文件pathname
- * @param pathname 搜索路径
- * @param searched_record 用于记录搜索结果的结构体
- * @return 如果在树上找到结构体则返回Dirent,否则返回NULL
- */
-Dirent* search_file(const char *pathname, struct path_search_record *searched_record)
-{
-	/* 如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息 */
-	if (!strcmp(pathname, "/") || !strcmp(pathname, "/.") || !strcmp(pathname, "/.."))
-	{
-		searched_record->parent_dir = fatFs->root;
-		searched_record->file_type = DIRENT_DIR;
-		searched_record->searched_path[0] = 0; // 搜索路径置空
-		return NULL;
-	}
 
-	uint32_t path_len = strlen(pathname);
-	/* 保证pathname至少是这样的路径/x且小于最大长度 */
-	ASSERT(pathname[0] == '/' && path_len > 1 && path_len < MAX_PATH_LEN);
-	char *sub_path = (char *)pathname;
-	Dirent *parent_dir = fatFs->root;
-	Dirent *dir_e;
-	/* 记录路径解析出来的各级名称,如路径"/a/b/c",
-	* 数组name每次的值分别是"a","b","c" */
-	char name[MAX_NAME_LEN] = {0};
-
-	searched_record->parent_dir = parent_dir;
-	searched_record->file_type = DIRENT_UNKNOWN;
-
-	sub_path = path_parse(sub_path, name);
-	while (name[0])
-	{ // 若第一个字符就是结束符,结束循环
-		/* 记录查找过的路径,但不能超过searched_path的长度512字节 */
-		//ASSERT(strlen(searched_record->searched_path) < 512);
-		/* 记录已存在的父目录 */
-		strcat(searched_record->searched_path, "/");
-		strcat(searched_record->searched_path, name);
-		dir_e = search_dir_tree(parent_dir, name);
-		/* 在所给的目录中查找文件 */
-		if (dir_e != NULL)
-		{
-			memset(name, 0, MAX_NAME_LEN);
-			/* 若sub_path不等于NULL,也就是未结束时继续拆分路径 */
-			if (sub_path)
-			{
-				sub_path = path_parse(sub_path, name);
-			}
-
-			if (dir_e->type == DIRENT_DIR )
-			{ // 如果被打开的是目录
-				searched_record->parent_dir = parent_dir;
-				parent_dir = dir_e;
-				continue;
-			}
-			else if (dir_e->type == DIRENT_FILE)
-			{ // 若是普通文件
-				searched_record->file_type = DIRENT_FILE;
-				return dir_e;
-			}
-		}
-		else
-		{
-			return NULL;
-		}
-	}
-	/* 执行到此,必然是遍历了完整路径并且查找的文件或目录只有同名目录存在 */
-	/* 保存被查找目录的直接父目录 */
-	//searched_record->parent_dir = dir_open(cur_part, parent_inode_no);
-	searched_record->file_type = DIRENT_DIR;
-	return dir_e;
-}
 
 void file_shrink(Dirent *file, u64 newsize) 
 {
@@ -261,7 +190,7 @@ void file_shrink(Dirent *file, u64 newsize)
 	if (oldsize % PAGE_SIZE != 0) {
 		for (int i = newsize; i < PGROUNDUP(newsize); i += sizeof(buf)) {
 			
-			file_write(file, 0, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
+			Fatfile_write(file, (u64)buf, i, MIN(sizeof(buf), PGROUNDUP(newsize) - i));
 		}
 	}
 
@@ -367,31 +296,56 @@ void fileStat(struct Dirent *file, struct kstat *pKStat) {
 
 } 
 
-/*void fileStatx(struct Dirent *file, struct statx *pKStat) {
-	//mtx_lock_sleep(&mtx_file);
+/**
+ * @brief 需要保证传入的file->refcnt == 0
+ */
 
-	memset(pKStat, 0, sizeof(struct kstat));
-	// P262 Linux-Unix系统编程手册
-	pKStat->st_dev = file->file_system->deviceNumber;
+int rm_unused_file(struct Dirent *file) {
+	ASSERT(file->refcnt == 0);
+	char linked_file_path[MAX_NAME_LEN];
+	int cnt = get_entry_count_by_name(file->name);
+	char data = FAT32_INVALID_ENTRY;
 
-	// 并未实现inode，使用Dirent编号替代inode编号
-	pKStat->st_ino = ((u64)file - 0x90000000ul);
 
-	pKStat->st_mode = get_file_mode(file);
-	pKStat->st_nlink = 1; // 文件的链接数，无链接时为1
-	pKStat->st_uid = 0;
-	pKStat->st_gid = 0;
-	pKStat->st_rdev = 0;
-	pKStat->st_size = file->file_size;
-	pKStat->st_blksize = CLUS_SIZE(file->file_system);
-	pKStat->st_blocks = ROUNDUP(file->file_size, pKStat->st_blksize);
+	// 2. 断开父子关系
+	ASSERT(file->parent_dirent != NULL); // 不处理根目录的情况
+	// 先递归删除子Dirent
+	if (file->type == DIRENT_DIR) {
+		struct list_elem *tmp = file->child_list.head.next;
+		while (tmp!=&file->child_list.tail) {
+			struct list_elem *next = tmp->next;
+			Dirent *file_child = elem2entry(Dirent,dirent_tag,tmp);
+			rmfile(file_child);
+			tmp = next;
+		}
+	}
 
-	// 时间相关
-	pKStat->st_atime_sec = file->time.st_atime_sec;
-	pKStat->st_atime_nsec = file->time.st_atime_nsec;
-	pKStat->st_mtime_sec = file->time.st_mtime_sec;
-	pKStat->st_mtime_nsec = file->time.st_mtime_nsec;
-	pKStat->st_ctime_sec = file->time.st_ctime_sec;
-	pKStat->st_ctime_nsec = file->time.st_ctime_nsec;
+	list_remove(&file->dirent_tag);// 从父亲的子Dirent列表删除
+	// 3. 释放其占用的Cluster
+	file_shrink(file, 0);
 
-}*/
+	// 4. 清空目录项
+	for (int i = 0; i < cnt; i++) {
+		int ret = Fatfile_write(file->parent_dirent, (unsigned long)&data, file->parent_dir_off - i * DIR_SIZE, 1) < 0;
+		if (ret != 0)
+		{
+			/* code */
+		}
+	}
+	dirent_dealloc(file); // 释放目录项
+	return 0;
+}
+
+/**
+ * @brief 删除文件。支持递归删除文件夹
+ */
+int rmfile(Dirent *file) 
+{
+	//若引用计数大于则报错返回
+	if (file->refcnt > 1) {
+		printk("File is in use\n");
+		return -1;
+	}
+	//return 0;
+	return rm_unused_file(file);
+}

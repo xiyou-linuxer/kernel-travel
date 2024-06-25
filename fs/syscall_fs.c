@@ -7,6 +7,7 @@
 #include <xkernel/string.h>
 #include <xkernel/ioqueue.h>
 #include <xkernel/memory.h>
+#include <fs/path.h>
 #include <fs/buf.h>
 #include <fs/cluster.h>
 #include <fs/dirent.h>
@@ -19,47 +20,11 @@
 #include <asm/syscall.h>
 #include <xkernel/wait.h>
 /*本文件用于实现文件的syscall*/
-/*将路径转化为绝对路径，只支持 . 与 .. 开头的路径*/
-static void path_resolution(const char *pathname)
-{
-	char buf[MAX_NAME_LEN];
-	struct task_struct *pthread = running_thread();
-	if (pathname[0] == '/')//如果已经是绝对路径则直接返回
-	{
-		return ;
-	}else if (pathname[0] == '.')
-	{
-		strcpy(buf,pthread->cwd);//将当前工作路径复制到buf中
-		if (strcmp(buf,"/")==0)
-		{
-			strcat(buf,strchr(pathname,'/')+1);
-		}else
-		{
-			strcat(buf,strchr(pathname,'/'));//再将除.之后的
-		}
-	}else if (pathname[0] == '..')
-	{
-		strcpy(buf,pthread->cwd);
-		memset(strrchr(buf,"/"),0,MAX_NAME_LEN);//将最后一个/与他后面的内容清除
-		strcat(buf,strchr(pathname,'/'));//再将传入路径除去 .. 后其他内容与buf拼接
-	}else
-	{
-		//如果非以上三种符号开头则默认是目录/文件名，直接与当前工作目录拼接
-		strcpy(buf,pthread->cwd);
-		if (strcmp(buf,"/")!=0)
-		{
-			strcat(buf,"/");//当前工作目录不是根目录则先在路径上加上/再与传入的路径拼接
-		}
-		strcat(buf,pathname);
-	}
-	strcpy(pathname,buf);
-}
-
 int sys_open(const char *pathname, int flags, mode_t mode)
 {
 	if (strcmp(pathname,".")==0)
 	{
-		return file_open(fatFs->root,flags,mode);
+		//return file_open(fatFs->root,flags,mode);
 	}
 	path_resolution(pathname);
 	Dirent *file;
@@ -84,13 +49,14 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	/* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
 	if ((file == NULL) && !(flags & O_CREATE))
 	{
-		//printk("in path %s, file %s is`t exist\n",searched_record.searched_path,(strrchr(searched_record.searched_path, '/') + 1));
 		return -1;
 	}
 	else if ((file != NULL) && flags & O_CREATE)
 	{ // 若要创建的文件已存在
 		//printk("%s has already exist!\n", pathname);
-		return file_open(file, flags ,mode);
+		fd = file_open(file, flags ,mode);
+		printk("fd:%d\n");
+		return fd;
 	}
 	
 	switch (flags & O_CREATE)
@@ -141,10 +107,9 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	else
 	{
 		Dirent *wr_file = file_table[_fd].dirent;
-		filepnt_init(wr_file);
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
-			unsigned bytes_written = file_write(wr_file, 0, buf,file_table[_fd].offset,count);
+			unsigned bytes_written = wr_file->file_system->op->file_write(wr_file, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
 			return bytes_written;
 		}
@@ -184,8 +149,7 @@ int sys_read(int fd, void *buf, unsigned int count)
 	else
 	{
 		global_fd = fd_local2global(fd);
-		filepnt_init(file_table[global_fd].dirent);
-		ret = file_read(file_table[global_fd].dirent, 0, buf,file_table[global_fd].offset, count);
+		ret = file_table[global_fd].dirent->file_system->op->file_read(file_table[global_fd].dirent, buf,file_table[global_fd].offset, count);
 		file_table[global_fd].offset += ret;
 	}
 	return count;
@@ -238,7 +202,7 @@ int sys_mkdir(char* path, int mode)
 	{
 		return 0;
 	}
-	makeDirAt(NULL, path, mode);
+	searched_record.parent_dir->file_system->op->makedir(NULL, path, mode);
 	return 0;
 }
 
@@ -287,12 +251,8 @@ int sys_unlink(char *pathname)
 		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",pathname, searched_record.searched_path);
 		return -1;
 	}
-	/*if (file->type == DIRENT_DIR)//不能直接删除目录
-	{
-		printk("It's direct\n");
-		return -1;
-	}*/
-	int ret = rmfile(file);
+	
+	int ret = file->file_system->op->file_remove(file);
 	return ret;
 }
 
@@ -405,7 +365,7 @@ int sys_unlinkat(int dirfd, char *path, unsigned int flags)
 int sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data)
 {
 	path_resolution(dir);
-	return mount_fs(special,dir);
+	return mount_fs(special,dir,fstype,flags);
 }
 
 int sys_umount(const char* special) 
@@ -427,7 +387,7 @@ void fd_mapping(int fd, int start_page, int end_page,unsigned long* v_addr)
 	filepnt_init(file);
 	char buf[512];
 	//pre_read(file,buf,file->file_size/4096+1);//将文件预读到内存中
-	file_read(file, 0, (unsigned long)buf, 0, file->file_size);
+	file->file_system->op->file_read(file, (unsigned long)buf,0, file->file_size);
 	int indx = start_page;
 	int count = (end_page - start_page + 1)*8;
 	while (indx<=end_page)

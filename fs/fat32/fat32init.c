@@ -8,10 +8,24 @@
 #include <fs/dirent.h>
 #include <fs/filepnt.h>
 #include <fs/cluster.h>
+#include <fs/mount.h>
+#include <fs/buf.h>
 #include <sync.h>
 
 FileSystem *fatFs;
 struct lock mtx_file;
+
+/*注册fat32文件系统的操作函数*/
+static const struct fs_operation fat32_op = {
+	.fs_init_ptr = fat32_init,
+	.file_init = filepnt_init,
+	.file_create = createFile,
+	.file_read = Fatfile_read,
+	.file_write = Fatfile_write,
+	.file_remove = rmfile,
+	.makedir = makeDirAt
+};
+
 static void build_dirent_tree(Dirent *parent) {
 	Dirent *child;
 	int off = 0; // 当前读到的偏移位置
@@ -40,6 +54,61 @@ static void build_dirent_tree(Dirent *parent) {
 	}
 }
 
+
+/**
+ * @brief 初始化分区信息，填写文件系统结构体里面的超级块
+ */
+int partition_format(FileSystem *fs) {
+	printk("Fat32 FileSystem Init Start\n");
+	// 读取 BPB
+	ASSERT(fs != NULL);
+	ASSERT(fs->get != NULL);
+
+	Buffer *buf = fs->get(fs, 0, true);
+	if (buf == NULL) {
+		printk("buf == NULL\n");
+		return -E_DEV_ERROR;
+	}
+	
+	printk("cluster DEV is ok!\n");
+
+	// 从 BPB 中读取信息
+	FAT32BootParamBlock *bpb = (FAT32BootParamBlock *)(buf->data->data);
+
+	if (bpb == NULL || strncmp((char *)bpb->BS_FilSysType, "FAT32", 5)) {
+		printk("Not FAT32 File System\n");
+		return -E_UNKNOWN_FS;
+	}
+	fs->superBlock.bpb.bytes_per_sec = bpb->BPB_BytsPerSec;
+	fs->superBlock.bpb.sec_per_clus = bpb->BPB_SecPerClus;
+	fs->superBlock.bpb.rsvd_sec_cnt = bpb->BPB_RsvdSecCnt;
+	fs->superBlock.bpb.fat_cnt = bpb->BPB_NumFATs;
+	fs->superBlock.bpb.hidd_sec = bpb->BPB_HiddSec;
+	fs->superBlock.bpb.tot_sec = bpb->BPB_TotSec32;
+	fs->superBlock.bpb.fat_sz = bpb->BPB_FATSz32;
+	fs->superBlock.bpb.root_clus = bpb->BPB_RootClus;
+
+	printk("cluster Get superblock!\n");
+
+	// 填写超级块
+	fs->superBlock.first_data_sec = bpb->BPB_RsvdSecCnt + bpb->BPB_NumFATs * bpb->BPB_FATSz32;
+	fs->superBlock.data_sec_cnt = bpb->BPB_TotSec32 - fs->superBlock.first_data_sec;
+	fs->superBlock.data_clus_cnt = fs->superBlock.data_sec_cnt / bpb->BPB_SecPerClus;
+	fs->superBlock.bytes_per_clus = bpb->BPB_SecPerClus * bpb->BPB_BytsPerSec;
+	if (BUF_SIZE != fs->superBlock.bpb.bytes_per_sec) {
+		printk("BUF_SIZE != fs->superBlock.bpb.bytes_per_sec\n");
+		return -E_DEV_ERROR;
+	}
+
+	//printk("cluster ok!\n");
+
+	// 释放缓冲区
+	bufRelease(buf);
+
+	//printk("buf release!\n");
+	return 0;
+}
+
 /**
  * @brief 用fat32初始化一个文件系统，根目录记录在fs->root中
  */
@@ -64,7 +133,7 @@ void fat32_init(FileSystem* fs)
 	fs->root->raw_dirent.DIR_FileSize = 0; // 目录的Dirent的size都是0
 	fs->root->type = DIRENT_DIR;
 	fs->root->file_size = countClusters(fs->root) * CLUS_SIZE(fs);
-
+	fs->op = &fat32_op;
 	// 设置树状结构
 	fs->root->parent_dirent = NULL; // 父节点为空，表示已经到达根节点
 	list_init(&fs->root->child_list);
@@ -79,7 +148,6 @@ void fat32_init(FileSystem* fs)
 	// 3. 递归建立Dirent树
 	build_dirent_tree(fs->root);
 	printk("build dirent tree succeed!\n");
-	printk("fat32 init finished!\n");
 }
 
 
@@ -89,8 +157,13 @@ void init_root_fs(void)
 	lock_init(&mtx_file);
 	allocFs(&fatFs);
 
-	fatFs->image = NULL;
 	fatFs->deviceNumber = 0;
 
 	fat32_init(fatFs);
+	//printk("fat32 init finished!\n");
+	/*将原来的rootfs目录转移到fat32下*/
+	
+	/*将fat32系统挂载到根挂载点*/
+	mnt_root.mnt_rootdir = fatFs->root;
+	fatFs->root->head = &mnt_root;
 }
