@@ -133,7 +133,7 @@ void fat32_init(FileSystem* fs)
 	fs->root->raw_dirent.DIR_FileSize = 0; // 目录的Dirent的size都是0
 	fs->root->type = DIRENT_DIR;
 	fs->root->file_size = countClusters(fs->root) * CLUS_SIZE(fs);
-
+	fs->op = &fat32_op;
 	// 设置树状结构
 	fs->root->parent_dirent = NULL; // 父节点为空，表示已经到达根节点
 	list_init(&fs->root->child_list);
@@ -148,7 +148,6 @@ void fat32_init(FileSystem* fs)
 	// 3. 递归建立Dirent树
 	build_dirent_tree(fs->root);
 	printk("build dirent tree succeed!\n");
-	printk("fat32 init finished!\n");
 }
 
 
@@ -161,7 +160,7 @@ void init_root_fs(void)
 	fatFs->deviceNumber = 0;
 
 	fat32_init(fatFs);
-
+	//printk("fat32 init finished!\n");
 	/*将原来的rootfs目录转移到fat32下*/
 	
 	/*将fat32系统挂载到根挂载点*/

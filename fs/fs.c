@@ -90,6 +90,7 @@ void fs_init(void)
 {
 	printk("fs_init start\n");
 	init_root_fs();	//将根目录从虚拟文件系统rootfs转移到磁盘文件系统中fat32/ext4
+	test_fs_all();
 	printk("init_root_fs down\n");
 	printk("fs_init down\n");
 }

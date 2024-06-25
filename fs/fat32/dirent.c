@@ -408,9 +408,9 @@ int makeDirAt(Dirent *baseDir, char *path, int mode)
 /**
  * @brief 创建一个文件
  */
-int r;
 int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
 {
-	return createItemAt(baseDir, path, file, 0);
+    printk("createFile");
+    return createItemAt(baseDir, path, file, 0);
 }
 

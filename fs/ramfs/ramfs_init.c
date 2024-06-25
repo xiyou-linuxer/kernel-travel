@@ -32,7 +32,7 @@ int init_rootfs(void) {
 	rootfs_fs_type->root = dirent_alloc();
 	strcpy(rootfs_fs_type->root->name, "/");
 	rootfs_fs_type->root->file_system = rootfs_fs_type;
-	ASSERT(rootfs_fs_type == NULL);
+	ASSERT(rootfs_fs_type != NULL);
 	printk("rootfs is down\n");
 	return 1;
 }

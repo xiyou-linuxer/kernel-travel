@@ -18,27 +18,28 @@
 #include <debug.h>
 #include <fork.h>
 #include <xkernel/wait.h>
-/*void test_open(void) {
+void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
     ASSERT(fd >= 0);
     
     char buf[256];
     int size = sys_read(fd, buf, 256);
-	printk("sys_open\n");
+	printk("%s\n",buf);
     if (size < 0) {
         size = 0;
     }
     sys_write(STDOUT, buf, size);
     sys_close(fd);
-	printk("sys_close\n");
+    printk("test_open\n");
 }
 
 void test_close(void) {
 	const char *str = "  close error.\n";
 	int str_len = strlen(str);
     printk("str_len:%d\n", str_len);
-    int fd = sys_open("test_close1.txt", O_CREATE | O_RDWR,660);
+    int fd = sys_open("test_close.txt", O_CREATE | O_RDWR,660);
+    printk("fs:%d\n");
     ASSERT(fd > 0);
     ASSERT(sys_write(fd, str, str_len) == str_len);
     sys_write(fd, str, str_len);
@@ -48,7 +49,7 @@ void test_close(void) {
     printk("  close %d success.\n", fd);
 }
 
-void test_getcwd(void){
+/*void test_getcwd(void){
     char *cwd = NULL;
     char buf[128] = {0};
     cwd = sys_getcwd(buf, 128);
@@ -175,31 +176,6 @@ void test_mapping(void)
     printk("buf:%s\n", v_addr[0]);
 }
 
-/*void test_mmap(void){
-
-    char *array;
-    const char *str = "  Hello, mmap successfully!";
-    int fd;
-    struct kstat kst;
-    fd = sys_open("test_mmap.txt", O_RDWR | O_CREATE,660);
-    sys_write(fd, str, strlen(str));
-    sys_fstat(fd, &kst);
-    printk("file len: %d\n", kst.st_size);
-    array = sys_mmap(NULL, kst.st_size, PROT_WRITE | PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
-    //printf("return array: %x\n", array);
-
-    if (array == MAP_FAILED) {
-	printk("mmap error.\n");
-    }else{
-	printk("mmap content: %s\n", array);
-	//printf("%s\n", str);
-
-	//munmap(array, kst.st_size);
-    }
-
-    sys_close(fd);
-}*/
-
 void test_getdents(void){
     
     char buf[512];
@@ -217,46 +193,19 @@ void test_getdents(void){
     sys_close(fd);
 }
 
-void test_pipe(void){
-	int fd[2];
-    int cpid;
-    char buf[128] = {0};
-    int ret = sys_pipe(fd);
-    ASSERT(ret != -1);
-    const char *data = "  Write to pipe successfully.\n";
-    cpid = sys_fork(0,0,0,0);
-    printk("cpid: %d\n", cpid);
-    if(cpid > 0){
-	sys_close(fd[1]);
-	while(sys_read(fd[0], buf, 1) > 0)
-            sys_write(STDOUT, buf, 1);
-	sys_write(STDOUT, "\n", 1);
-    printk("aaa");
-	sys_close(fd[0]);
-    int i;
-	sys_wait(cpid,&i,0);
-    }else{
-	sys_close(fd[0]);
-	sys_write(fd[1], data, strlen(data));
-	sys_close(fd[1]);
-	sys_exit(0);
-    }
-}
-
 void test_fs_all(void)
 {
     /*int fd = sys_open("./open", O_RDWR ,660);
     unsigned long v_addr[32];
     fd_mapping(fd, 0, 3,v_addr);
     printk("bbb");
-    test_mount();
+    test_mount();*/
+    test_open();
+    //test_close();
     test_unlink();
-    test_openat();
-    test_fstat();
-    test_mmap();*/
+
     //test_mapping();
     //test_getdents();
-    test_pipe();
     while (1) {
     };
 } 
