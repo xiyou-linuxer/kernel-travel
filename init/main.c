@@ -113,12 +113,12 @@ void __init __no_sanitize_address start_kernel(void)
 	// }
 
 	early_boot_irqs_disabled = true;
-	//int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	//if (fd == -1) {
-	//	printk("open failed");
-	//}
-	//sys_write(fd,init_code,init_code_len);
-	//bufSync();
+	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	if (fd == -1) {
+		printk("open failed");
+	}
+	sys_write(fd,init_code,init_code_len);
+	bufSync();
 	
 	//printk("sys_sleep start\n");
 	//struct timespec req;

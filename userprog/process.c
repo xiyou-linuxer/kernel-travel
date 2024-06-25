@@ -20,14 +20,6 @@ void create_user_vaddr_bitmap(struct task_struct* user_prog) {
    bitmap_init(&user_prog->usrprog_vaddr.btmp);
 }
 
-
-/*init fork
- *init sys_wait
- *init_fork fork
- *init_fork sys_wait
- *init_fork_fork sys_execve
-*/
-
 void start_process(void* filename)
 {
 	printk("start process....\n");

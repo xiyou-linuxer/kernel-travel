@@ -151,7 +151,7 @@ static void cascade_timers(struct timer_vec *tvec)
 	struct list *vec_list = &tvec->vec[tvec->index];
 	struct list_elem *cur = vec_list->head.next;
 
-	printk("   index=%d\n",tvec->index);
+	//printk("   index=%d\n",tvec->index);
 	struct timer_list *cur_timer;
 	while (cur != &vec_list->tail)
 	{
@@ -172,7 +172,7 @@ static void run_timers(void* unused)
 		struct timer_list *timer;
 		if (!tvecs[0].index) {
 			for (int n = 1 ; n < LVL_DEPTH ; n++) {
-				printk("level %d",n);
+				//printk("level %d",n);
 				cascade_timers(&tvecs[n]);
 				if (tvecs[n].index != 1) break;
 			}

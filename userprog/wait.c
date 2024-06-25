@@ -44,7 +44,7 @@ static int find_child(struct list_elem* elm,void* parent_pid)
 
 static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 {
-	//printk("exit: release %x",pdir);
+	printk("exit: release %x",pdir);
 	uint64_t* pgdp = pgd_ptr(pdir,0);
 	uint64_t vaddr = 0;
 	for (int pgd_idx = 0; pgd_idx < 512; pgd_idx++,pgdp++)
@@ -68,13 +68,13 @@ static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 				if (!*ptep) {
 					continue;
 				}
-				//printk("exit: release  *ptep %x\n",*ptep&0xfffffffffffff000);
+				printk("exit: release  *ptep %x\n",*ptep&0xfffffffffffff000);
 				free_page(*ptep&0xfffffffffffff000);
 			}
-			//printk("exit: release *pmdp %x\n",*pmdp&0xfffffffffffff000);
+			printk("exit: release *pmdp %x\n",*pmdp&0xfffffffffffff000);
 			free_page(*pmdp&0xfffffffffffff000);
 		}
-		//printk("exit: release *pgdp %x\n",*pgdp&0xfffffffffffff000);
+		printk("exit: release *pgdp %x\n",*pgdp&0xfffffffffffff000);
 		free_page(*pgdp&0xfffffffffffff000);
 	}
 
@@ -85,7 +85,7 @@ static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 
 static void release_usrprog_resource(struct task_struct* pcb)
 {
-	//release_usrmemory(pcb->pgdir,&pcb->usrprog_vaddr);
+	release_usrmemory(pcb->pgdir,&pcb->usrprog_vaddr);
 	if (pcb->pgdir != 0) {
 		free_page(pcb->pgdir);
 	}

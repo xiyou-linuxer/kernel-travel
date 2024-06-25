@@ -3,3 +3,4 @@
     - -I../include
     - -I../arch/loongarch/include
     - -xc
+    - -D__KERNEL__
