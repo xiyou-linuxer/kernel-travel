@@ -67,14 +67,14 @@ typedef struct FAT32LongDirectory {
 } __attribute__((packed)) FAT32LongDirectory;
 
 struct bpb{
-	u16 bytes_per_sec;
-	u8 sec_per_clus;
-	u16 rsvd_sec_cnt;
-	u8 fat_cnt;   /* count of FAT regions */
-	u32 hidd_sec; /* count of hidden sectors */
-	u32 tot_sec;  /* total count of sectors including all regions */
-	u32 fat_sz;   /* count of sectors for a FAT region */
-	u32 root_clus;
+	u16 bytes_per_sec;   /* 每扇区字节数 */
+	u8 sec_per_clus;     /* 每簇扇区数 */
+	u16 rsvd_sec_cnt;    /* 保留扇区数 */
+	u8 fat_cnt;          /* FAT 表数量 */
+	u32 hidd_sec;        /* 隐藏扇区数量 */
+	u32 tot_sec;         /* 总扇区数（包括所有区域） */
+	u32 fat_sz;          /* FAT 区域的扇区数 */
+	u32 root_clus;       /* 根簇号 */
 };
 
 #define BYTES_LONGENT 13

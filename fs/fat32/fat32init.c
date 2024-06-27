@@ -100,12 +100,9 @@ int partition_format(FileSystem *fs) {
 		return -E_DEV_ERROR;
 	}
 
-	//printk("cluster ok!\n");
-
 	// 释放缓冲区
 	bufRelease(buf);
 
-	//printk("buf release!\n");
 	return 0;
 }
 
@@ -160,7 +157,6 @@ void init_root_fs(void)
 	fatFs->deviceNumber = 0;
 
 	fat32_init(fatFs);
-	//printk("fat32 init finished!\n");
 	/*将原来的rootfs目录转移到fat32下*/
 	
 	/*将fat32系统挂载到根挂载点*/

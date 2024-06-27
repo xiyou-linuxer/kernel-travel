@@ -82,8 +82,6 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 				tmpName[11] = 0;
 			}
 
-			//printk("find: \"%s\"\n", tmpName);
-
 			// 2. 设置找出的dirent的信息（为NULL的无需设置）
 			Dirent *dirent = dirent_alloc();
 			strcpy(dirent->name, tmpName);
@@ -114,7 +112,6 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 		}
 	}
 
-	//printk("no more dents in dir: %s\n", dir->name);
 	*next_offset = dir->file_size;
 
 	lock_release(&mtx_file);

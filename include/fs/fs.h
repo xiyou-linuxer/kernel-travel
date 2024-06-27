@@ -6,7 +6,6 @@
 #include <asm-generic/int-ll64.h>
 #include <asm/page.h>
 #include <fs/fat32.h>
-#include <fs/ext4_types.h>
 #include <fs/file_time.h>
 
 #define MAX_FS_COUNT 16 //最多可挂载的文件系统数量
@@ -87,7 +86,8 @@ typedef struct DirentPointer {
 typedef struct Dirent {
 	union 
 	{
-		FAT32Directory raw_dirent; // 原生的dirent项
+		FAT32Directory raw_dirent; 	// fat32原生的dirent项
+		struct ext4_dir_en ext4_dir_en;	// ext4文件系统原生的dirent项
 	};
 	char name[MAX_NAME_LEN];
 	// 文件系统相关属性
