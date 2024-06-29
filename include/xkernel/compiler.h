@@ -1,6 +1,7 @@
 #ifndef _LINUX_COMPILER_H
 #define _LINUX_COMPILER_H
 
+#include <xkernel/compiler_types.h>
 #include <xkernel/compiler-intel.h>
 #include <xkernel/types.h>
 #include <xkernel/string.h>

@@ -2,7 +2,7 @@
 #define __LIB_KERNEL_BITMAP_H
 #include <xkernel/types.h>
 
-#define BIT_MASK 1
+#define BIT_MASK_TEMP 1
 
 struct bitmap {
     uint64_t btmp_bytes_len;

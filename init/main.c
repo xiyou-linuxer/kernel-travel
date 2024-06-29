@@ -13,6 +13,7 @@
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
 #include <xkernel/mmap.h>
+#include <xkernel/bitops.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
