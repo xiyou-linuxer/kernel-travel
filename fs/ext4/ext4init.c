@@ -16,7 +16,30 @@ static const struct fs_operation ext4_op = {
 
 static void build_dirent_ext4tree(Dirent *parent)
 {
+	Dirent *child;
+	int off = 0; // 当前读到的偏移位置
+	int ret;
 	
+	while (1) {
+		//获取目录项
+		ret = ext4_dir_entry_next();
+		if (ret == 0) {
+			// 读到末尾
+			break;
+		}
+
+		// 跳过.和..
+		if (strncmp(child->name, ".          ", 11) == 0 ||
+		    strncmp(child->name, "..         ", 11) == 0) {
+			continue;
+		}
+		list_append(&parent->child_list,&child->dirent_tag);
+
+		// 如果为目录，就向下一层递归
+		if (child->type == DIRENT_DIR) {
+			build_dirent_tree(child);
+		}
+	}
 }
 
 /**

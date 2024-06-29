@@ -4,6 +4,9 @@
 #include <xkernel/types.h>
 #include <fs/fs.h>
 #include <fs/buf.h>
+#include <fs/ext4_inode.h>
+
+extern FileSystem *ext4Fs;
 
 /*存放如ext4文件系统的信息*/
 #define UUID_SIZE 16
@@ -23,6 +26,10 @@
 #define EXT4_INODE_BLOCKS (EXT4_INODE_TRIPPLE_INDIRECT_BLOCK + 1) /* inode 块指针总数 */
 #define EXT4_INODE_INDIRECT_BLOCK_COUNT                                        \
 	(EXT4_INODE_BLOCKS - EXT4_INODE_DIRECT_BLOCK_COUNT) /* 间接块指针的数量 */
+
+#define to_le64(_n) _n
+#define to_le32(_n) _n
+#define to_le16(_n) _n
 
 
 /*ext4原生的超级块属性*/
@@ -186,21 +193,177 @@ union ext4_dir_en_internal {
 
 /* 目录项结构 */
 struct ext4_dir_en {
-	uint32_t inode;	/* 目录项对应的 inode 编号 */
-	uint16_t entry_len; /* 到下一个目录项的距离 */
-	uint8_t name_len;   /* 文件名长度的低8位 */
+	uint32_t inode;	/* I-node for the entry */
+	uint16_t entry_len; /* Distance to the next directory entry */
+	uint8_t name_len;   /* Lower 8 bits of name length */
 
-	union ext4_dir_en_internal in; /* 内部联合体，包含文件名长度的高8位或 inode 类型 */
-	uint8_t name[]; /* 目录项名称 */
+	union ext4_dir_en_internal in;
+	uint8_t name[]; /* Entry name */
 };
 
 /* 目录结构 */
 struct ext4_dir {
 	/** @brief 当前dir结构体对应的Dirent项 */
-	Dirent *dirent;
+	Dirent *pdirent;
 	/** @brief 当前目录项。 */
 	Dirent de;
 	/** @brief 下一个目录项的偏移量。 */
 	uint64_t next_off;
 } ext4_dir;
+
+/*对于*/
+struct ext4_block {
+	/**@brief   Logical block ID*/
+	uint64_t lb_id;
+
+	/**@brief   Buffer */
+	Buffer *buf;
+
+	/**@brief   Data buffer.*/
+};
+
+
+#define EXT4_SUPERBLOCK_MAGIC 0xEF53
+#define EXT4_SUPERBLOCK_SIZE 1024
+#define EXT4_SUPERBLOCK_OFFSET 1024
+
+#define EXT4_SUPERBLOCK_OS_LINUX 0
+#define EXT4_SUPERBLOCK_OS_HURD 1
+
+
+/*
+ * 文件系统的各种标志位
+ */
+#define EXT4_SUPERBLOCK_FLAGS_SIGNED_HASH       0x0001  /* 文件系统使用带符号哈希用于元数据 */
+#define EXT4_SUPERBLOCK_FLAGS_UNSIGNED_HASH     0x0002  /* 文件系统使用无符号哈希用于元数据 */
+#define EXT4_SUPERBLOCK_FLAGS_TEST_FILESYS      0x0004  /* 测试文件系统，用于测试目的 */
+
+/*
+ * 文件系统状态
+ */
+#define EXT4_SUPERBLOCK_STATE_VALID_FS          0x0001  /* 文件系统已干净卸载 */
+#define EXT4_SUPERBLOCK_STATE_ERROR_FS          0x0002  /* 文件系统检测到错误 */
+#define EXT4_SUPERBLOCK_STATE_ORPHAN_FS         0x0004  /* 孤儿正在恢复中 */
+
+/*
+ * 检测到错误时的行为
+ */
+#define EXT4_SUPERBLOCK_ERRORS_CONTINUE         1       /* 错误时继续执行 */
+#define EXT4_SUPERBLOCK_ERRORS_RO               2       /* 错误时将文件系统重新挂载为只读 */
+#define EXT4_SUPERBLOCK_ERRORS_PANIC            3       /* 错误时系统紧急停机 */
+#define EXT4_SUPERBLOCK_ERRORS_DEFAULT          EXT4_ERRORS_CONTINUE  /* 默认错误处理 */
+
+/*
+ * 兼容特性
+ */
+#define EXT4_FCOM_DIR_PREALLOC                  0x0001  /* 目录预分配 */
+#define EXT4_FCOM_IMAGIC_INODES                 0x0002  /* IMagic节点支持 */
+#define EXT4_FCOM_HAS_JOURNAL                   0x0004  /* 文件系统具有日志 */
+#define EXT4_FCOM_EXT_ATTR                      0x0008  /* 扩展属性 */
+#define EXT4_FCOM_RESIZE_INODE                  0x0010  /* 调整inode大小 */
+#define EXT4_FCOM_DIR_INDEX                     0x0020  /* 目录索引 */
+
+/*
+ * 只读兼容特性
+ */
+#define EXT4_FRO_COM_SPARSE_SUPER               0x0001  /* 稀疏超级块 */
+#define EXT4_FRO_COM_LARGE_FILE                 0x0002  /* 大文件支持 (> 4GB) */
+#define EXT4_FRO_COM_BTREE_DIR                  0x0004  /* B树目录索引 */
+#define EXT4_FRO_COM_HUGE_FILE                  0x0008  /* 巨大文件支持 (> 2TB) */
+#define EXT4_FRO_COM_GDT_CSUM                   0x0010  /* 组描述符校验和 */
+#define EXT4_FRO_COM_DIR_NLINK                  0x0020  /* 目录链接计数 */
+#define EXT4_FRO_COM_EXTRA_ISIZE                0x0040  /* 额外inode大小 */
+#define EXT4_FRO_COM_QUOTA                      0x0100  /* 配额 */
+#define EXT4_FRO_COM_BIGALLOC                   0x0200  /* 大块分配 */
+#define EXT4_FRO_COM_METADATA_CSUM              0x0400  /* 元数据校验和 */
+
+/*
+ * 不兼容特性
+ */
+#define EXT4_FINCOM_COMPRESSION                 0x0001  /* 压缩 */
+#define EXT4_FINCOM_FILETYPE                    0x0002  /* 文件类型 */
+#define EXT4_FINCOM_RECOVER                     0x0004  /* 需要恢复 */
+#define EXT4_FINCOM_JOURNAL_DEV                 0x0008  /* 日志设备 */
+#define EXT4_FINCOM_META_BG                     0x0010  /* 组描述符中的元数据校验 */
+#define EXT4_FINCOM_EXTENTS                     0x0040  /* Extents支持 */
+#define EXT4_FINCOM_64BIT                       0x0080  /* 64位文件系统 */
+#define EXT4_FINCOM_MMP                         0x0100  /* 多重挂载保护 */
+#define EXT4_FINCOM_FLEX_BG                     0x0200  /* 灵活的块组 */
+#define EXT4_FINCOM_EA_INODE                    0x0400  /* inode中的扩展属性 */
+#define EXT4_FINCOM_DIRDATA                     0x1000  /* 目录条目中的数据 */
+#define EXT4_FINCOM_BG_USE_META_CSUM            0x2000  /* 使用CRC32c进行块组校验 */
+#define EXT4_FINCOM_LARGEDIR                    0x4000  /* 大目录 (> 2GB 或 3级哈希树) */
+#define EXT4_FINCOM_INLINE_DATA                 0x8000  /* inode中的内联数据 */
+
+static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
+{
+	return to_le32(s->flags) & v;
+}
+
+/**
+ * @brief   Support check of feature compatible.
+ * @param   s superblock descriptor
+ * @param   v feature to check
+ * @return  true if feature is supported
+ **/
+static inline bool ext4_sb_feature_com(struct ext4_sblock *s, uint32_t v)
+{
+	return to_le32(s->features_compatible) & v;
+}
+
+/**
+ * @brief   Support check of feature incompatible.
+ * @param   s superblock descriptor
+ * @param   v feature to check
+ * @return  true if feature is supported
+ **/
+static inline bool ext4_sb_feature_incom(struct ext4_sblock *s, uint32_t v)
+{
+	return to_le32(s->features_incompatible) & v;
+}
+
+/**
+ * @brief   Support check of read only flag.
+ * @param   s superblock descriptor
+ * @param   v flag to check
+ * @return  true if flag is supported
+ **/
+static inline bool ext4_sb_feature_ro_com(struct ext4_sblock *s, uint32_t v)
+{
+	return to_le32(s->features_read_only) & v;
+}
+
+/**
+ * @brief   Block group to flex group.
+ * @param   s superblock descriptor
+ * @param   block_group block group
+ * @return  flex group id
+ **/
+static inline uint32_t ext4_sb_bg_to_flex(struct ext4_sblock *s,
+					  uint32_t block_group)
+{
+	return block_group >> to_le32(s->log_groups_per_flex);
+}
+
+/**
+ * @brief   Flex block group size.
+ * @param   s superblock descriptor
+ * @return  flex bg size
+ **/
+static inline uint32_t ext4_sb_flex_bg_size(struct ext4_sblock *s)
+{
+	return 1 << to_le32(s->log_groups_per_flex);
+}
+
+/**
+ * @brief   Return first meta block group id.
+ * @param   s superblock descriptor
+ * @return  first meta_bg id
+ **/
+static inline uint32_t ext4_sb_first_meta_bg(struct ext4_sblock *s)
+{
+	return to_le32(s->first_meta_bg);
+}
+
+
 #endif /* EXT4_TYPES_H_ */
