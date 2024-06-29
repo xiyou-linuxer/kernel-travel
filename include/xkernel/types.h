@@ -5,6 +5,8 @@
 
 #include <asm-generic/bitsperlong.h>
 
+#define DECLARE_BITMAP(name, bits)	\
+	unsigned long name[BITS_TO_LONGS(bits)]
 
 #undef offsetof
 #define offsetof(t,m) ((size_t)&((t *)0)->m)

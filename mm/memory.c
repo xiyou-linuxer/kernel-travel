@@ -444,7 +444,7 @@ static void __init free_area_init_node(int nid)
 	free_area_init_core(pg_data);
 }
 
-void __init  free_area_init(unsigned long *max_zone_pfn)
+void __init free_area_init(unsigned long *max_zone_pfn)
 {
 	unsigned long start_pfn = PHYS_PFN(memblock_start_of_DRAM());
 	int nid;

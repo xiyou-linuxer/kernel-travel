@@ -75,17 +75,22 @@ int sysnums = 3;
 
 char init_program[70000];
 char filename[50][64] = {0};
+
 void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-	// serial_ns16550a_init(9600);
+	
+	local_irq_disable();
+
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
 	mem_init();
 	trap_init();
 	irq_init();
+
 	local_irq_enable();
+
 	pci_init();
 	console_init();
 	disk_init();
