@@ -20,4 +20,6 @@
 #include <asm-generic/bitops/sched.h>
 #include <asm-generic/bitops/hweight.h>
 
+#include <asm-generic/bitops/non-atomic.h>
+
 #endif /* __ASM_BITOPS_H */
