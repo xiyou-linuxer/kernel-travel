@@ -15,9 +15,9 @@ struct ext4_dir_iter {
 };
 
 /**
- * @brief Get i-node number from directory entry.
- * @param de Directory entry
- * @return I-node number
+ * @brief 从目录项获取 i 节点号
+ * @param de 目录条目
+ * @return inode 号
  */
 static inline uint32_t
 ext4_dir_en_get_inode(struct ext4_dir_en *de)
@@ -26,9 +26,9 @@ ext4_dir_en_get_inode(struct ext4_dir_en *de)
 }
 
 /**
- * @brief Set i-node number to directory entry.
- * @param de Directory entry
- * @param inode I-node number
+ * @brief 将 i 节点号设置为目录项
+ * @param de 目录条目
+ * @param inode inode 号
  */
 static inline void
 ext4_dir_en_set_inode(struct ext4_dir_en *de, uint32_t inode)
@@ -37,9 +37,9 @@ ext4_dir_en_set_inode(struct ext4_dir_en *de, uint32_t inode)
 }
 
 /**
- * @brief Get directory entry length.
- * @param de Directory entry
- * @return Entry length
+ * @brief 获取目录条目长度
+ * @param de 目录条目
+ * @return 入口长度
  */
 static inline uint16_t ext4_dir_en_get_entry_len(struct ext4_dir_en *de)
 {
@@ -47,19 +47,20 @@ static inline uint16_t ext4_dir_en_get_entry_len(struct ext4_dir_en *de)
 }
 
 /**
- * @brief Set directory entry length.
- * @param de     Directory entry
- * @param l Entry length
+ * @brief 设置目录条目长度。
+ * @param de 目录条目
+ * @param l 条目长度
  */
 static inline void ext4_dir_en_set_entry_len(struct ext4_dir_en *de, uint16_t l)
 {
 	de->entry_len = to_le16(l);
 }
 
-/**@brief Get directory entry name length.
- * @param sb Superblock
- * @param de Directory entry
- * @return Entry name length
+/**
+ * @brief 获取目录条目名称长度。
+ * @param sb 超级块
+ * @param de 目录条目
+ * @return 条目名称长度
  */
 static inline uint16_t ext4_dir_en_get_name_len(struct ext4_sblock *sb,
 						struct ext4_dir_en *de)
@@ -73,10 +74,11 @@ static inline uint16_t ext4_dir_en_get_name_len(struct ext4_sblock *sb,
 	return v;
 }
 
-/**@brief Set directory entry name length.
- * @param sb     Superblock
- * @param de     Directory entry
- * @param len Entry name length
+/**
+ * @brief 设置目录条目名称长度。
+ * @param sb 超级块
+ * @param de 目录条目
+ * @param len 条目名称长度
  */
 static inline void ext4_dir_en_set_name_len(struct ext4_sblock *sb,
 					    struct ext4_dir_en *de,
@@ -89,13 +91,13 @@ static inline void ext4_dir_en_set_name_len(struct ext4_sblock *sb,
 		de->in.name_length_high = len >> 8;
 }
 
-/**@brief Get i-node type of directory entry.
- * @param sb Superblock
- * @param de Directory entry
- * @return I-node type (file, dir, etc.)
+/**
+ * @brief 获取目录项的 i 节点类型。
+ * @param sb 超级块
+ * @param de 目录条目
+ * @return I节点类型（文件、目录等）
  */
-static inline uint8_t ext4_dir_en_get_inode_type(struct ext4_sblock *sb,
-						 struct ext4_dir_en *de)
+static inline uint8_t ext4_dir_en_get_inode_type(struct ext4_sblock *sb,struct ext4_dir_en *de)
 {
 	if ((ext4_get32(sb, rev_level) > 0) ||
 	    (ext4_get32(sb, minor_rev_level) >= 5))
@@ -103,12 +105,12 @@ static inline uint8_t ext4_dir_en_get_inode_type(struct ext4_sblock *sb,
 
 	return EXT4_DE_UNKNOWN;
 }
-/**@brief Set i-node type of directory entry.
- * @param sb   Superblock
- * @param de   Directory entry
- * @param t I-node type (file, dir, etc.)
+/**
+ * @brief 设置目录项的 i 节点类型。
+ * @param sb 超级块
+ * @param de 目录条目
+ * @param t I节点类型（文件、目录等）
  */
-
 static inline void ext4_dir_en_set_inode_type(struct ext4_sblock *sb,
 					      struct ext4_dir_en *de, uint8_t t)
 {

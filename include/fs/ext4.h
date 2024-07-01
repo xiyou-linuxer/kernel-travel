@@ -295,6 +295,18 @@ struct ext4_block {
 #define EXT4_FINCOM_LARGEDIR                    0x4000  /* 大目录 (> 2GB 或 3级哈希树) */
 #define EXT4_FINCOM_INLINE_DATA                 0x8000  /* inode中的内联数据 */
 
+/*ext文件系统支持的文件类型*/
+enum 
+{      EXT4_DE_UNKNOWN = 0,
+       EXT4_DE_REG_FILE,
+       EXT4_DE_DIR,
+       EXT4_DE_CHRDEV,
+       EXT4_DE_BLKDEV,
+       EXT4_DE_FIFO,
+       EXT4_DE_SOCK,
+       EXT4_DE_SYMLINK 
+};
+
 static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
 {
 	return to_le32(s->flags) & v;

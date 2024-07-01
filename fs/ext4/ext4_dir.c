@@ -2,6 +2,7 @@
 #include <fs/fs.h>
 #include <fs/ext4_dir.h>
 #include <fs/ext4_inode.h>
+#include <fs/ext4_fs.h>
 #include <fs/mount.h>
 #include <asm-generic/errno-base.h>
 
@@ -93,15 +94,14 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 	if ((it->curr_blk.lb_id == 0) || (current_blk_idx != next_blk_idx)) {
 		// 如果当前块无效或者需要跨块移动，则获取下一个块
 		if (it->curr_blk.lb_id) {
-			// 如果当前块有效，则先设置当前块并清空信息
-			r = ext4_block_set(bdev, &it->curr_blk);
+			//如果当前块无效则将块缓冲区置空
+			it->curr_blk.buf = NULL;
 			it->curr_blk.lb_id = 0;
-
 			if (r != 0)
 				return r;
 		}
 
-		ext4_fsblk_t next_blk;
+		uint64_t next_blk;
 		r = ext4_fs_get_inode_dblk_idx(it->inode_ref, next_blk_idx, &next_blk, false); // 获取下一个块地址
 		if (r != 0)
 			return r;
@@ -126,6 +126,36 @@ int ext4_dir_iterator_init(struct ext4_dir_iter *it,
 	it->curr_off = 0;
 	it->curr_blk.lb_id = 0;
 	return ext4_dir_iterator_seek(it, pos);
+}
+
+
+int ext4_dir_iterator_fini(struct ext4_dir_iter *it)
+{
+	it->curr = 0;
+
+	if (it->curr_blk.lb_id)
+		it->curr_blk.buf == NULL;
+
+	return 0;
+}
+
+int ext4_dir_iterator_next(struct ext4_dir_iter *it)
+{
+	int r = EOK;
+	uint16_t skip;
+
+	while (r == EOK) {
+		skip = ext4_dir_en_get_entry_len(it->curr);
+		r = ext4_dir_iterator_seek(it, it->curr_off + skip);
+
+		if (!it->curr)
+			break;
+		/*Skip NULL referenced entry*/
+		if (ext4_dir_en_get_inode(it->curr) != 0)
+			break;
+	}
+
+	return r;
 }
 
 /**
