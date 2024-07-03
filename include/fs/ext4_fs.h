@@ -3,5 +3,85 @@
 
 #include <xkernel/types.h>
 
+/*块组的引用*/
+struct ext4_block_group_ref {
+	struct ext4_block block;
+	struct ext4_bgroup *block_group;
+	struct ext4_fs *fs;
+	uint32_t index;
+	bool dirty;
+};
+
+/*块组描述符表，位于超级块之后*/
+struct ext4_bgroup {
+    uint32_t block_bitmap_lo;           /* 低32位块位图块地址 */
+    uint32_t inode_bitmap_lo;           /* 低32位inode位图块地址 */
+    uint32_t inode_table_first_block_lo;/* 低32位inode表起始块地址 */
+    uint16_t free_blocks_count_lo;      /* 低16位空闲块计数 */
+    uint16_t free_inodes_count_lo;      /* 低16位空闲inode计数 */
+    uint16_t used_dirs_count_lo;        /* 低16位已使用目录计数 */
+    uint16_t flags;                     /* EXT4_BG_flags (如INODE_UNINIT等) */
+    uint32_t exclude_bitmap_lo;         /* 低32位快照排除位图块地址 */
+    uint16_t block_bitmap_csum_lo;      /* 低16位块位图校验和 (LE，crc32c(s_uuid+grp_num+bbitmap)) */
+    uint16_t inode_bitmap_csum_lo;      /* 低16位inode位图校验和 (LE，crc32c(s_uuid+grp_num+ibitmap)) */
+    uint16_t itable_unused_lo;          /* 低16位未使用的inode计数 */
+    uint16_t checksum;                  /* 块组描述符校验和 (crc16(sb_uuid+group+desc)) */
+
+    uint32_t block_bitmap_hi;           /* 高32位块位图块地址 */
+    uint32_t inode_bitmap_hi;           /* 高32位inode位图块地址 */
+    uint32_t inode_table_first_block_hi;/* 高32位inode表起始块地址 */
+    uint16_t free_blocks_count_hi;      /* 高16位空闲块计数 */
+    uint16_t free_inodes_count_hi;      /* 高16位空闲inode计数 */
+    uint16_t used_dirs_count_hi;        /* 高16位已使用目录计数 */
+    uint16_t itable_unused_hi;          /* 高16位未使用的inode计数 */
+    uint32_t exclude_bitmap_hi;         /* 高32位快照排除位图块地址 */
+    uint16_t block_bitmap_csum_hi;      /* 高16位块位图校验和 (BE，crc32c(s_uuid+grp_num+bbitmap)) */
+    uint16_t inode_bitmap_csum_hi;      /* 高16位inode位图校验和 (BE，crc32c(s_uuid+grp_num+ibitmap)) */
+    uint32_t reserved;                  /* 保留字段，用于填充 */
+};
+
+/**
+ * @brief Convert block address to relative index in block group.
+ * @param s Superblock pointer
+ * @param baddr Block number to convert
+ * @return Relative number of block
+ */
+static inline uint32_t ext4_fs_addr_to_idx_bg(struct ext4_sblock *s,
+						     ext4_fsblk_t baddr)
+{
+	if (ext4_get32(s, first_data_block) && baddr)
+		baddr--;
+
+	return baddr % ext4_get32(s, blocks_per_group);
+}
+
+/**
+ * @brief Convert relative block address in group to absolute address.
+ * @param s Superblock pointer
+ * @param index Relative block address
+ * @param bgid Block group
+ * @return Absolute block address
+ */
+static inline ext4_fsblk_t ext4_fs_bg_idx_to_addr(struct ext4_sblock *s,
+						     uint32_t index,
+						     uint32_t bgid)
+{
+	if (ext4_get32(s, first_data_block))
+		index++;
+
+	return ext4_get32(s, blocks_per_group) * bgid + index;
+}
+
+/**
+ * @brief TODO: 
+*/
+static inline ext4_fsblk_t ext4_fs_first_bg_block_no(struct ext4_sblock *s,
+						 uint32_t bgid)
+{
+	return (uint64_t)bgid * ext4_get32(s, blocks_per_group) +
+	       ext4_get32(s, first_data_block);
+}
+
 int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref,uint64_t iblock, uint64_t *fblock,bool support_unwritten);
+int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,struct ext4_block_group_ref *ref);
 #endif

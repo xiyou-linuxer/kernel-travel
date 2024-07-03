@@ -63,7 +63,7 @@ void ext4_inode_set_mode(struct ext4_sblock *sb, struct ext4_inode *inode, uint3
 uint32_t ext4_inode_get_uid(struct ext4_inode *inode);
 void ext4_inode_set_uid(struct ext4_inode *inode, uint32_t uid);
 uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode);
-int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref,bool initialized);
+int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref);
 int ext4_fs_put_inode_ref(struct ext4_inode_ref* ref);
 void ext4_fs_inode_blocks_init(struct FileSystem *fs,struct ext4_inode_ref *inode_ref);
 #endif

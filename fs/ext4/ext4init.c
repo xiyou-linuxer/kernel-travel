@@ -7,6 +7,7 @@
 #include <fs/mount.h>
 #include <fs/buf.h>
 #include <fs/ext4.h>
+#include <fs/ext4_sb.h>
 #include <sync.h>
 #include <debug.h>
 FileSystem *ext4Fs;
@@ -81,7 +82,39 @@ int fill_sb(FileSystem *fs)
 	fs->superBlock.ext4_sblock.rev_level = ext4_sblock->rev_level;
 	fs->superBlock.ext4_sblock.def_resuid = ext4_sblock->def_resuid;
 	fs->superBlock.ext4_sblock.def_resgid = ext4_sblock->def_resgid;
+
+	uint16_t tmp;
+	// 检查超级块是否有效
+	if (!ext4_sb_check(&ext4Fs->superBlock.ext4_sblock))
+		return -1;
+	// 从超级块获取块大小
+	uint32_t bsize = ext4_sb_get_block_size(&ext4Fs->superBlock.ext4_sblock);
+	if (bsize > EXT4_MAX_BLOCK_SIZE)
+		return -1;
+	// 计算间接块级别的限制
+	uint32_t blocks_id = bsize / sizeof(uint32_t);
+
+	// 设置初始块限制和 inode 的每级块数
+	ext4Fs->ext4_fs.inode_block_limits[0] = EXT4_INODE_DIRECT_BLOCK_COUNT;
+	ext4Fs->ext4_fs.inode_blocks_per_level[0] = 1;
+
+	// 计算接下来三个级别的块限制和每级块数
+	for (int i = 1; i < 4; i++) {
+		ext4Fs->ext4_fs.inode_blocks_per_level[i] =
+		    ext4Fs->ext4_fs.inode_blocks_per_level[i - 1] * blocks_id;
+		ext4Fs->ext4_fs.inode_block_limits[i] = ext4Fs->ext4_fs.inode_block_limits[i - 1] +
+					    ext4Fs->ext4_fs.inode_blocks_per_level[i];
+	}
+	// 验证文件系统状态
+	tmp = ext4_get16(&ext4Fs->superBlock.ext4_sblock, state);
+	if (tmp & EXT4_SUPERBLOCK_STATE_ERROR_FS)
+		printk("上次卸载错误：超级块 fs_error 标志\n");
+	// 标记文件系统为已挂载
+	ext4_set16(ext4_sblock, state, EXT4_SUPERBLOCK_STATE_ERROR_FS);
+	// 更新超级块中的挂载计数
+	ext4_set16(ext4_sblock, mount_count,ext4_get16(&fs->superBlock.ext4_sblock, mount_count) + 1);
 	bufRelease(buf);
+	return 0;
 }
 
 void ext4_init(void)
@@ -92,7 +125,6 @@ void ext4_init(void)
 	ext4Fs->get = bufRead;
 	//初始化超级块信息
 	ASSERT(fill_sb(ext4Fs) == 0);
-	
 	//初始化根目录
 	ext4Fs->root = dirent_alloc();
 	strcpy(ext4Fs->root->name,"/");

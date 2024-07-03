@@ -26,7 +26,7 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 {
     // 计算当前偏移在块中的位置
     uint32_t off_in_block = it->curr_off % block_size;
-    struct ext4_sblock *sb = &it->inode_ref->fs->sb;
+    struct ext4_sblock *sb = &it->inode_ref->fs->superBlock.ext4_sblock;
 
     // 初始化当前条目指针为 NULL
     it->curr = NULL;
@@ -41,7 +41,7 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 
     struct ext4_dir_en *en;
     // 将 en 指针设置为当前块数据的偏移位置
-    en = (void *)(it->curr_blk.data + off_in_block);
+    en = (void *)(it->curr_blk.buf->data + off_in_block);
 
     // 确保整个目录项不会溢出块的边界
     uint16_t length = ext4_dir_en_get_entry_len(en);
@@ -105,8 +105,7 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 		r = ext4_fs_get_inode_dblk_idx(it->inode_ref, next_blk_idx, &next_blk, false); // 获取下一个块地址
 		if (r != 0)
 			return r;
-
-		r = ext4_trans_block_get(bdev, &it->curr_blk, next_blk); // 获取块数据
+		r = bufRead(1,next_blk,1);// 获取块数据
 		if (r != 0) {
 			it->curr_blk.lb_id = 0;
 			return r;
@@ -141,10 +140,10 @@ int ext4_dir_iterator_fini(struct ext4_dir_iter *it)
 
 int ext4_dir_iterator_next(struct ext4_dir_iter *it)
 {
-	int r = EOK;
+	int r = 0;
 	uint16_t skip;
 
-	while (r == EOK) {
+	while (r == 0) {
 		skip = ext4_dir_en_get_entry_len(it->curr);
 		r = ext4_dir_iterator_seek(it, it->curr_off + skip);
 
@@ -178,6 +177,11 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	struct ext4_inode_ref dir_inode; // 目录 i-node 的引用
 	if (dir->next_off == EXT4_DIR_ENTRY_OFFSET_TERM) { // 如果已经遍历到目录尾部
 		return 0; // 返回空指针
+	}
+	// 获取目录 i-node 的引用
+	r = ext4_fs_get_inode_ref(&dir->pdirent->head, dir->pdirent->ext4_dir_en.inode, &dir_inode);
+	if (r != 0) {
+		goto Finish; // 发生错误，跳转到结束处理
 	}
 
 	// 初始化目录迭代器，从指定偏移量开始

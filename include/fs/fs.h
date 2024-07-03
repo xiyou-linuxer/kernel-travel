@@ -48,6 +48,20 @@ typedef struct SuperBlock {
 	};
 }SuperBlock;
 
+struct ext4_fs {
+	bool read_only;
+	struct ext4_sblock sb;
+
+	uint64_t inode_block_limits[4];
+	uint64_t inode_blocks_per_level[4];
+
+	uint32_t last_inode_bg_id;
+
+	struct jbd_fs *jbd_fs;
+	struct jbd_journal *jbd_journal;
+	struct jbd_trans *curr_trans;
+};
+
 typedef struct FileSystem {
 	bool valid; // 是否有效
 	char name[8];
@@ -58,6 +72,10 @@ typedef struct FileSystem {
 	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 获取fs超级快的方式
 	struct FileSystem* next;
 	struct fs_operation* op;//文件系统的操作函数
+	union 
+	{
+		struct ext4_fs ext4_fs;
+	};
 	// 强制规定：传入的fs即为本身的fs
 	// 稍后用read返回的这个Buffer指针进行写入和释放动作
 	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层

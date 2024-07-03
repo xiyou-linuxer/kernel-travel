@@ -2,7 +2,64 @@
 #include <fs/ext4_dir.h>
 #include <fs/ext4_inode.h>
 #include <fs/buf.h>
+#include <fs/ext4_fs.h>
+#include <fs/ext4_sb.h>
 #include <xkernel/stdio.h>
+
+uint32_t ext4_inode_get_flags(struct ext4_inode *inode)
+{
+	return to_le32(inode->flags);
+}
+void ext4_inode_set_flags(struct ext4_inode *inode, uint32_t flags)
+{
+	inode->flags = to_le32(flags);
+}
+bool ext4_inode_is_type(struct ext4_sblock *sb, struct ext4_inode *inode,
+			uint32_t type)
+{
+	return ext4_inode_type(sb, inode) == type;
+}
+void ext4_inode_clear_flag(struct ext4_inode *inode, uint32_t f)
+{
+	uint32_t flags = ext4_inode_get_flags(inode);
+	flags = flags & (~f);
+	ext4_inode_set_flags(inode, flags);
+}
+
+void ext4_inode_set_flag(struct ext4_inode *inode, uint32_t f)
+{
+	uint32_t flags = ext4_inode_get_flags(inode);
+	flags = flags | f;
+	ext4_inode_set_flags(inode, flags);
+}
+/**
+ * ext4_inode_block_bits_count - 计算块大小需要多少位
+ * @block_size: 块大小（以字节为单位）
+ *
+ * 该函数用于计算给定块大小所需的位数。初始位数为8，然后每次将块大小右移1位，
+ * 直到块大小不大于256。每次右移位数增加1。
+ * 
+ * 返回值是块大小所需的位数。
+ */
+static uint32_t ext4_inode_block_bits_count(uint32_t block_size)
+{
+    // 初始化位数为8
+    uint32_t bits = 8;
+    // 将块大小赋值给size变量
+    uint32_t size = block_size;
+
+    // 当块大小大于256时，循环执行
+    do {
+        // 增加位数
+        bits++;
+        // 块大小右移1位（相当于除以2）
+        size = size >> 1;
+    } while (size > 256);
+
+    // 返回计算得到的位数
+    return bits;
+}
+
 /**
  * @brief 获取 inode 的模式（文件类型和权限）
  *
@@ -69,9 +126,7 @@ uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode)
  * @param initialized 是否需要初始化
  * @return 错误代码
  */
-int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,
-			struct ext4_inode_ref *ref,
-			bool initialized)
+int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref)
 {
 	// 计算一个数据块中可容纳的inode数量
 	uint32_t inodes_per_group = ext4_get32(&fs->superBlock.ext4_sblock, inodes_per_group);
@@ -90,7 +145,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,
 
 	// 获取inode表所在的块地址
 	ext4_fsblk_t inode_table_start =
-	    ext4_bg_get_inode_table_first_block(bg_ref.block_group, &fs->sb);
+	    ext4_bg_get_inode_table_first_block(bg_ref.block_group, &fs->superBlock.ext4_sblock);
 
 	// 释放块组引用（不再需要）
 	rc = ext4_fs_put_block_group_ref(&bg_ref);
@@ -99,8 +154,8 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,
 	}
 
 	// 计算inode在块组中的位置
-	uint16_t inode_size = ext4_get16(&fs->sb, inode_size);
-	uint32_t block_size = ext4_sb_get_block_size(&fs->sb);
+	uint16_t inode_size = ext4_get16(&fs->superBlock.ext4_sblock, inode_size);
+	uint32_t block_size = ext4_sb_get_block_size(&fs->superBlock.ext4_sblock);
 	uint32_t byte_offset_in_group = offset_in_group * inode_size;
 
 	// 计算块地址
@@ -114,7 +169,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,
 
 	// 计算inode在数据块中的位置
 	uint32_t offset_in_block = byte_offset_in_group % block_size;
-	ref->inode = (struct ext4_inode *)(ref->block.data + offset_in_block);
+	ref->inode = (struct ext4_inode *)(ref->bl+ offset_in_block);
 
 	// 需要在引用中存储原始的索引值
 	ref->index = index + 1;
@@ -123,7 +178,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,
 
 	// 如果需要初始化且校验和失败，记录警告
 	if (initialized && !ext4_fs_verify_inode_csum(ref)) {
-		printk("Inode checksum failed.""Inode: %" PRIu32"\n",
+		printk("Inode checksum failed.""Inode: %d \n",
 			ref->index);
 	}
 

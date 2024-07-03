@@ -31,6 +31,10 @@ extern FileSystem *ext4Fs;
 #define to_le32(_n) _n
 #define to_le16(_n) _n
 
+#define EXT4_CHECKSUM_CRC32C 1
+
+#define ext4_fsblk_t uint64_t
+#define ext4_lblk_t uint32_t
 
 /*ext4原生的超级块属性*/
 struct ext4_sblock {
@@ -138,6 +142,73 @@ struct ext4_sblock {
     uint32_t checksum;               /* 超级块的 CRC32 校验和 */
 };
 
+/*
+ * 日志文件系统
+ */
+#define JBD_CRC32_CHKSUM   1
+#define JBD_MD5_CHKSUM     2
+#define JBD_SHA1_CHKSUM    3
+#define JBD_CRC32C_CHKSUM  4
+#define JBD_USERS_MAX 48
+#define JBD_USERS_SIZE (UUID_SIZE * JBD_USERS_MAX)
+#define JBD_CRC32_CHKSUM_SIZE 4
+#define JBD_CHECKSUM_BYTES (32 / sizeof(uint32_t))
+
+
+struct jbd_bhdr {
+	uint32_t		magic;
+	uint32_t		blocktype;
+	uint32_t		sequence;
+};
+
+struct jbd_sb {
+/* 0x0000 */
+	struct jbd_bhdr header;
+
+/* 0x000C */
+	/* Static information describing the journal */
+	uint32_t	blocksize;		/* journal device blocksize */
+	uint32_t	maxlen;		/* total blocks in journal file */
+	uint32_t	first;		/* first block of log information */
+
+/* 0x0018 */
+	/* Dynamic information describing the current state of the log */
+	uint32_t	sequence;		/* first commit ID expected in log */
+	uint32_t	start;		/* blocknr of start of log */
+
+/* 0x0020 */
+	/* Error value, as set by journal_abort(). */
+	int32_t 	error_val;
+
+/* 0x0024 */
+	/* Remaining fields are only valid in a version-2 superblock */
+	uint32_t	feature_compat; 	/* compatible feature set */
+	uint32_t	feature_incompat; 	/* incompatible feature set */
+	uint32_t	feature_ro_compat; 	/* readonly-compatible feature set */
+/* 0x0030 */
+	uint8_t 	uuid[UUID_SIZE];		/* 128-bit uuid for journal */
+
+/* 0x0040 */
+	uint32_t	nr_users;		/* Nr of filesystems sharing log */
+
+	uint32_t	dynsuper;		/* Blocknr of dynamic superblock copy*/
+
+/* 0x0048 */
+	uint32_t	max_transaction;	/* Limit of journal blocks per trans.*/
+	uint32_t	max_trandata;	/* Limit of data blocks per trans. */
+
+/* 0x0050 */
+	uint8_t 	checksum_type;	/* checksum type */
+	uint8_t 	padding2[3];
+	uint32_t	padding[42];
+	uint32_t	checksum;		/* crc32c(superblock) */
+
+/* 0x0100 */
+	uint8_t 	users[JBD_USERS_SIZE];		/* ids of all fs'es sharing the log */
+
+/* 0x0400 */
+};
+
 /*inode信息*/
 struct ext4_inode {
 	uint16_t mode;		    /* 文件模式 */
@@ -211,17 +282,21 @@ struct ext4_dir {
 	uint64_t next_off;
 } ext4_dir;
 
-/*对于*/
+/*对于块缓冲的包装*/
 struct ext4_block {
 	/**@brief   Logical block ID*/
 	uint64_t lb_id;
 
 	/**@brief   Buffer */
 	Buffer *buf;
-
-	/**@brief   Data buffer.*/
 };
 
+/* Inode table/bitmap not in use */
+#define EXT4_BLOCK_GROUP_INODE_UNINIT 0x0001
+/* Block bitmap not in use */
+#define EXT4_BLOCK_GROUP_BLOCK_UNINIT 0x0002
+/* On-disk itable initialized to zero */
+#define EXT4_BLOCK_GROUP_ITABLE_ZEROED 0x0004
 
 #define EXT4_SUPERBLOCK_MAGIC 0xEF53
 #define EXT4_SUPERBLOCK_SIZE 1024
