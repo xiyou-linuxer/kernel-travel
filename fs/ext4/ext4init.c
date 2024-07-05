@@ -8,6 +8,8 @@
 #include <fs/buf.h>
 #include <fs/ext4.h>
 #include <fs/ext4_sb.h>
+#include <fs/ext4_inode.h>
+#include <fs/ext4_dir.h>
 #include <sync.h>
 #include <debug.h>
 FileSystem *ext4Fs;
@@ -20,15 +22,15 @@ static void build_dirent_ext4tree(Dirent *parent)
 	Dirent *child;
 	int off = 0; // 当前读到的偏移位置
 	int ret;
-	
+	struct ext4_dir d;
+	d.pdirent = child;
 	while (1) {
 		//获取目录项
-		ret = ext4_dir_entry_next();
+		ret = ext4_dir_entry_next(&d);
 		if (ret == 0) {
 			// 读到末尾
 			break;
 		}
-
 		// 跳过.和..
 		if (strncmp(child->name, ".          ", 11) == 0 ||
 		    strncmp(child->name, "..         ", 11) == 0) {
@@ -85,10 +87,10 @@ int fill_sb(FileSystem *fs)
 
 	uint16_t tmp;
 	// 检查超级块是否有效
-	if (!ext4_sb_check(&ext4Fs->superBlock.ext4_sblock))
+	if (!ext4_sb_check(ext4_sblock))
 		return -1;
 	// 从超级块获取块大小
-	uint32_t bsize = ext4_sb_get_block_size(&ext4Fs->superBlock.ext4_sblock);
+	uint32_t bsize = ext4_sb_get_block_size(ext4_sblock);
 	if (bsize > EXT4_MAX_BLOCK_SIZE)
 		return -1;
 	// 计算间接块级别的限制
@@ -106,13 +108,13 @@ int fill_sb(FileSystem *fs)
 					    ext4Fs->ext4_fs.inode_blocks_per_level[i];
 	}
 	// 验证文件系统状态
-	tmp = ext4_get16(&ext4Fs->superBlock.ext4_sblock, state);
+	tmp = ext4_get16(ext4_sblock, state);
 	if (tmp & EXT4_SUPERBLOCK_STATE_ERROR_FS)
 		printk("上次卸载错误：超级块 fs_error 标志\n");
 	// 标记文件系统为已挂载
 	ext4_set16(ext4_sblock, state, EXT4_SUPERBLOCK_STATE_ERROR_FS);
 	// 更新超级块中的挂载计数
-	ext4_set16(ext4_sblock, mount_count,ext4_get16(&fs->superBlock.ext4_sblock, mount_count) + 1);
+	ext4_set16(ext4_sblock, mount_count,ext4_get16(ext4_sblock, mount_count) + 1);
 	bufRelease(buf);
 	return 0;
 }
@@ -127,9 +129,9 @@ void ext4_init(void)
 	ASSERT(fill_sb(ext4Fs) == 0);
 	//初始化根目录
 	ext4Fs->root = dirent_alloc();
+	ext4Fs->root->ext4_dir_en.inode = EXT4_ROOT_INO;//根目录对应的inode号
 	strcpy(ext4Fs->root->name,"/");
 	ext4Fs->root->file_system = ext4Fs;
-	ext4Fs->root->first_clus = ext4Fs->superBlock.ext4_sblock.first_data_block;/* 根目录项在第一个数据块上 */
 	ext4Fs->op = &ext4_op;
 	ext4Fs->root->type = DIRENT_DIR;
 	//设置目录树的树根

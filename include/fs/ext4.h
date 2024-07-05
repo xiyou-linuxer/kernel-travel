@@ -264,12 +264,12 @@ union ext4_dir_en_internal {
 
 /* 目录项结构 */
 struct ext4_dir_en {
-	uint32_t inode;	/* I-node for the entry */
-	uint16_t entry_len; /* Distance to the next directory entry */
-	uint8_t name_len;   /* Lower 8 bits of name length */
+	uint32_t inode;	/* 与目录项对应的inode号 */
+	uint16_t entry_len; /*到下一个目录条目的距离*/
+	uint8_t name_len;   /* 名称长度的低8位 */
 
 	union ext4_dir_en_internal in;
-	uint8_t name[]; /* Entry name */
+	uint8_t name[]; /* 目录项的名字 */
 };
 
 /* 目录结构 */
@@ -291,17 +291,19 @@ struct ext4_block {
 	Buffer *buf;
 };
 
-/* Inode table/bitmap not in use */
+/* 表示块组中的inode位图未初始化或未使用 */
 #define EXT4_BLOCK_GROUP_INODE_UNINIT 0x0001
-/* Block bitmap not in use */
+/* 表示块组中的块位图未初始化或未使用 */
 #define EXT4_BLOCK_GROUP_BLOCK_UNINIT 0x0002
 /* On-disk itable initialized to zero */
 #define EXT4_BLOCK_GROUP_ITABLE_ZEROED 0x0004
 
+/*ext4文件系统的魔数*/
 #define EXT4_SUPERBLOCK_MAGIC 0xEF53
 #define EXT4_SUPERBLOCK_SIZE 1024
 #define EXT4_SUPERBLOCK_OFFSET 1024
 
+/*ext4超级块中的操作系统标识*/
 #define EXT4_SUPERBLOCK_OS_LINUX 0
 #define EXT4_SUPERBLOCK_OS_HURD 1
 

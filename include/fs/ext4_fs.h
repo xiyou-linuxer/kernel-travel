@@ -5,11 +5,11 @@
 
 /*块组的引用*/
 struct ext4_block_group_ref {
-	struct ext4_block block;
-	struct ext4_bgroup *block_group;
-	struct ext4_fs *fs;
-	uint32_t index;
-	bool dirty;
+	struct ext4_block block; // 用于引用块组描述符表中的块
+	struct ext4_bgroup *block_group; // 指向块组描述符的指针
+	struct ext4_fs *fs; // 文件系统的引用
+	uint32_t index; // 块组的索引
+	bool dirty;//标致ext4_block_group_ref是否为脏
 };
 
 /*块组描述符表，位于超级块之后*/
@@ -84,4 +84,5 @@ static inline ext4_fsblk_t ext4_fs_first_bg_block_no(struct ext4_sblock *s,
 
 int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref,uint64_t iblock, uint64_t *fblock,bool support_unwritten);
 int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,struct ext4_block_group_ref *ref);
+static void ext4_fs_set_inode_checksum(struct ext4_inode_ref* inode_ref);
 #endif

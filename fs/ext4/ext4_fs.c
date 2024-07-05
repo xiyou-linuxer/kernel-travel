@@ -4,6 +4,7 @@
 #include <fs/ext4_fs.h>
 #include <fs/ext4_block_group.h>
 #include <fs/ext4_sb.h>
+#include <fs/ext4_crc32.h>
 #include <fs/buf.h>
 #include <fs/fs.h>
 #include <xkernel/stdio.h>
@@ -45,7 +46,8 @@ static ext4_fsblk_t ext4_fs_get_descriptor_block(struct ext4_sblock *s, uint32_t
     return (has_super + ext4_fs_first_bg_block_no(s, bgid));
 }
 
-/**@brief 初始化块组中的块位图
+/**
+ * @brief 初始化块组中的块位图
  * @param bg_ref 块组的引用
  * @return 错误码
  */
@@ -76,7 +78,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 
 	struct ext4_block block_bitmap;
 	rc = ext4_trans_block_get_noread(bg_ref->fs->bdev, &block_bitmap, bmp_blk);
-	if (rc != EOK)
+	if (rc != 0)
 		return rc;
 
 	// 初始化块位图的内容为0
@@ -140,19 +142,63 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	return ext4_block_set(bg_ref->fs->bdev, &block_bitmap);
 }
 
+/** @brief 初始化块组中的 i-node 位图。
+ *  @param bg_ref 块组引用
+ *  @return 错误代码
+ */
+static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
+{
+	struct ext4_sblock *sb = &bg_ref->fs->sb;
+	struct ext4_bgroup *bg = bg_ref->block_group;
+
+	/* 加载位图 */
+	ext4_fsblk_t bitmap_block_addr = ext4_bg_get_inode_bitmap(bg, sb);
+
+	struct ext4_block b;
+	b.buf = bufRead(1,bitmap_block_addr,1);
+	if (b.buf == NULL)
+		return -1;
+
+	/* 将所有位初始化为零 */
+	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint32_t inodes_per_group = ext4_get32(sb, inodes_per_group);
+
+	memset(b.buf->data, 0, (inodes_per_group + 7) / 8); // 将所有位初始化为0
+
+	uint32_t start_bit = inodes_per_group;
+	uint32_t end_bit = block_size * 8;
+
+	uint32_t i;
+	// 设置起始位到下一个8位的整数倍之间的位为1
+	for (i = start_bit; i < ((start_bit + 7) & ~7UL); i++)
+		ext4_bmap_bit_set(b.buf->data, i);
+
+	// 如果还有剩余的位，将这些位全部设置为1
+	if (i < end_bit)
+		memset(b.buf->data + (i >> 3), 0xff, (end_bit - i) >> 3);
+
+	ext4_trans_set_block_dirty(b.buf); // 标记块为脏
+
+	ext4_ialloc_set_bitmap_csum(sb, bg, b.buf->data); // 计算并设置校验和
+	bg_ref->dirty = true;
+	bufWrite(b.buf);
+	/* 保存位图 */
+	return 0; // 保存位图
+}
+
 
 int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 				struct ext4_block_group_ref *ref)
 {
 	int rc;
-	/* Compute number of descriptors, that fits in one data block */
+	// 计算一个数据块中能容纳的描述符数量
 	uint32_t block_size = ext4_sb_get_block_size(&fs->superBlock);
 	uint32_t dsc_cnt = block_size / ext4_sb_get_desc_size(&fs->superBlock);
 
-	/* Block group descriptor table starts at the next block after
-	 * superblock */
+	// 块组描述符表从超级块之后的下一个块开始
 	uint64_t block_id = ext4_fs_get_descriptor_block(&fs->superBlock, bgid, dsc_cnt);
 
+	// 计算描述符在块中的偏移量
 	uint32_t offset = (bgid % dsc_cnt) * ext4_sb_get_desc_size(&fs->superBlock);
 	ref->block.buf = bufRead(1,block_id,1);
 	
@@ -161,11 +207,11 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	ref->index = bgid;
 	ref->dirty = false;
 	struct ext4_bgroup *bg = ref->block_group;
-
+	//检查块组中块位图与inode位图的使用情况
 	if (ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_BLOCK_UNINIT)) {
 		rc = ext4_fs_init_block_bitmap(ref);
 		if (rc != 0) {
-			ext4_block_set(fs->bdev, &ref->block);
+			bufWrite(ref->block.buf);
 			return rc;
 		}
 		ext4_bg_clear_flag(bg, EXT4_BLOCK_GROUP_BLOCK_UNINIT);
@@ -175,7 +221,7 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	if (ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_INODE_UNINIT)) {
 		rc = ext4_fs_init_inode_bitmap(ref);
 		if (rc != 0) {
-			ext4_block_set(ref->fs->bdev, &ref->block);
+			bufWrite(ref->block.buf);
 			return rc;
 		}
 
@@ -184,7 +230,7 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 		if (!ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_ITABLE_ZEROED)) {
 			rc = ext4_fs_init_inode_table(ref);
 			if (rc != 0) {
-				ext4_block_set(fs->bdev, &ref->block);
+				bufWrite(ref->block.buf);
 				return rc;
 			}
 
@@ -302,6 +348,43 @@ bool support_unwritten __attribute__ ((__unused__)))
 	return 0;
 }
 
+static uint32_t ext4_fs_inode_checksum(struct ext4_inode_ref *inode_ref)
+{
+	uint32_t checksum = 0;
+	struct ext4_sblock *sb = &inode_ref->fs->sb;
+	uint16_t inode_size = ext4_get16(sb, inode_size);
+
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
+		uint32_t orig_checksum;
+
+		uint32_t ino_index = to_le32(inode_ref->index);
+		uint32_t ino_gen =
+		    to_le32(ext4_inode_get_generation(inode_ref->inode));
+
+		/* Preparation: temporarily set bg checksum to 0 */
+		orig_checksum = ext4_inode_get_csum(sb, inode_ref->inode);
+		ext4_inode_set_csum(sb, inode_ref->inode, 0);
+
+		/* First calculate crc32 checksum against fs uuid */
+		checksum =
+		    ext4_crc32c(EXT4_CRC32_INIT, sb->uuid, sizeof(sb->uuid));
+		/* Then calculate crc32 checksum against inode number
+		 * and inode generation */
+		checksum = ext4_crc32c(checksum, &ino_index, sizeof(ino_index));
+		checksum = ext4_crc32c(checksum, &ino_gen, sizeof(ino_gen));
+		/* Finally calculate crc32 checksum against
+		 * the entire inode */
+		checksum = ext4_crc32c(checksum, inode_ref->inode, inode_size);
+		ext4_inode_set_csum(sb, inode_ref->inode, orig_checksum);
+
+		/* If inode size is not large enough to hold the
+		 * upper 16bit of the checksum */
+		if (inode_size == EXT4_GOOD_OLD_INODE_SIZE)
+			checksum &= 0xFFFF;
+	}
+	return checksum;
+}
+
 static void ext4_fs_set_inode_checksum(struct ext4_inode_ref *inode_ref)
 {
 	struct ext4_sblock *sb = &inode_ref->fs->superBlock;
@@ -321,3 +404,4 @@ int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref,
 	return ext4_fs_get_inode_dblk_idx_internal(inode_ref, iblock, fblock,
 						   false, support_unwritten);
 }
+

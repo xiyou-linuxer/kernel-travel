@@ -245,10 +245,10 @@ static inline void ext4_bg_set_checksum(struct ext4_bgroup *bg, uint16_t crc)
 }
 
 /**
- * @brief Check if block group has a flag.
- * @param bg Pointer to block group
- * @param f Flag to be checked
- * @return True if flag is set to 1
+ * @brief 检查块组是否有标志。
+ * @param bg 指向块组的指针
+ * @param f 要检查的标志
+ * @return True 如果标志设置为 1
  */
 static inline bool ext4_bg_has_flag(struct ext4_bgroup *bg, uint32_t f)
 {

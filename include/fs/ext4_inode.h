@@ -14,6 +14,13 @@
 #define EXT4_INODE_MODE_SOCKET 0xC000      // 套接字文件模式
 #define EXT4_INODE_MODE_TYPE_MASK 0xF000   // 文件类型掩码，用于提取文件类型
 
+// 定义EXT4文件系统的特殊inode编号
+#define EXT4_BAD_INO 1         // 用于标识坏块的inode编号
+#define EXT4_ROOT_INO 2        // 根目录的inode编号
+#define EXT4_BOOT_LOADER_INO 5 // 引导加载程序的inode编号
+#define EXT4_UNDEL_DIR_INO 6   // 用于未删除目录的inode编号
+#define EXT4_RESIZE_INO 7      // 用于在线调整文件系统大小的inode编号
+#define EXT4_JOURNAL_INO 8     // 日志文件的inode编号
 
 /**
  * @brief 获取和设置ext4文件系统中字段值的宏定义
@@ -57,7 +64,8 @@ struct ext4_inode_ref {
 
 #define EXT4_IS_DIR(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_DIRECTORY)//判断是否是目录
 #define EXT4_IS_FILE(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_FILE)//判断是否是文件
-
+uint32_t ext4_inode_get_csum(struct ext4_sblock* sb, struct ext4_inode* inode);
+uint32_t ext4_inode_get_generation(struct ext4_inode* inode);
 uint32_t ext4_inode_get_mode(struct ext4_sblock* sb, struct ext4_inode* inode);
 void ext4_inode_set_mode(struct ext4_sblock *sb, struct ext4_inode *inode, uint32_t mode);
 uint32_t ext4_inode_get_uid(struct ext4_inode *inode);

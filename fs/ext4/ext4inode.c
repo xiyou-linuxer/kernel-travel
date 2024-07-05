@@ -6,31 +6,54 @@
 #include <fs/ext4_sb.h>
 #include <xkernel/stdio.h>
 
-uint32_t ext4_inode_get_flags(struct ext4_inode *inode)
+// 从 inode 中获取校验和
+uint32_t ext4_inode_get_csum(struct ext4_sblock *sb, struct ext4_inode *inode)
 {
-	return to_le32(inode->flags);
-}
-void ext4_inode_set_flags(struct ext4_inode *inode, uint32_t flags)
-{
-	inode->flags = to_le32(flags);
-}
-bool ext4_inode_is_type(struct ext4_sblock *sb, struct ext4_inode *inode,
-			uint32_t type)
-{
-	return ext4_inode_type(sb, inode) == type;
-}
-void ext4_inode_clear_flag(struct ext4_inode *inode, uint32_t f)
-{
-	uint32_t flags = ext4_inode_get_flags(inode);
-	flags = flags & (~f);
-	ext4_inode_set_flags(inode, flags);
+	uint16_t inode_size = ext4_get16(sb, inode_size); // 获取 inode 大小
+	uint32_t v = to_le16(inode->osd2.linux2.checksum_lo); // 获取低位校验和
+	if (inode_size > EXT4_GOOD_OLD_INODE_SIZE)
+		v |= ((uint32_t)to_le16(inode->checksum_hi)) << 16; // 如果 inode 大小超过旧版大小，合并高位校验和
+	return v;
 }
 
+// 获取 inode 的 generation 字段
+uint32_t ext4_inode_get_generation(struct ext4_inode *inode)
+{
+	return to_le32(inode->generation);
+}
+
+// 获取 inode 的 flags 字段
+uint32_t ext4_inode_get_flags(struct ext4_inode *inode)
+{
+    return to_le32(inode->flags); // 返回 inode 的 flags 字段，转为小端格式
+}
+
+// 设置 inode 的 flags 字段
+void ext4_inode_set_flags(struct ext4_inode *inode, uint32_t flags)
+{
+    inode->flags = to_le32(flags); // 将 flags 设置到 inode 中，转为小端格式
+}
+
+// 检查 inode 的类型是否与给定类型相同
+bool ext4_inode_is_type(struct ext4_sblock *sb, struct ext4_inode *inode, uint32_t type)
+{
+    return ext4_inode_type(sb, inode) == type; // 比较 inode 的类型与给定类型
+}
+
+// 清除 inode 的指定标志位
+void ext4_inode_clear_flag(struct ext4_inode *inode, uint32_t f)
+{
+    uint32_t flags = ext4_inode_get_flags(inode); // 获取当前 flags
+    flags = flags & (~f); // 清除指定的标志位
+    ext4_inode_set_flags(inode, flags); // 将更新后的 flags 设置回 inode
+}
+
+// 设置 inode 的指定标志位
 void ext4_inode_set_flag(struct ext4_inode *inode, uint32_t f)
 {
-	uint32_t flags = ext4_inode_get_flags(inode);
-	flags = flags | f;
-	ext4_inode_set_flags(inode, flags);
+    uint32_t flags = ext4_inode_get_flags(inode); // 获取当前 flags
+    flags = flags | f; // 设置指定的标志位
+    ext4_inode_set_flags(inode, flags); // 将更新后的 flags 设置回 inode
 }
 /**
  * ext4_inode_block_bits_count - 计算块大小需要多少位
@@ -138,7 +161,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 
 	// 加载inode所在的块组
 	struct ext4_block_group_ref bg_ref;
-	int rc = ext4_fs_get_block_group_ref(fs, block_group, &bg_ref);
+	int rc = ext4_fs_get_block_group_ref(fs, block_group, &bg_ref);//获取块组的引用
 	if (rc != 0) {
 		return rc;
 	}

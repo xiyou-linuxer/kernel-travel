@@ -205,6 +205,7 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	dir->next_off = it.curr ? it.curr_off : EXT4_DIR_ENTRY_OFFSET_TERM;
 
 	ext4_dir_iterator_fini(&it); // 结束目录迭代器的使用
+	ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
 
 Finish:
 	return de; // 返回下一个目录项的指针，如果没有更多目录项可用，则返回NULL

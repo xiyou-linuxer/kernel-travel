@@ -119,4 +119,22 @@ static inline void ext4_dir_en_set_inode_type(struct ext4_sblock *sb,
 		de->in.inode_type = t;
 }
 
+
+/* EXT3 HTree directory indexing */
+
+/* HTree（哈希树）目录索引类型定义 */
+#define EXT2_HTREE_LEGACY 0                 // 传统HTree索引
+#define EXT2_HTREE_HALF_MD4 1               // 使用MD4哈希算法的一半（前16位）
+#define EXT2_HTREE_TEA 2                    // 使用TEA哈希算法
+#define EXT2_HTREE_LEGACY_UNSIGNED 3        // 无符号传统HTree索引
+#define EXT2_HTREE_HALF_MD4_UNSIGNED 4      // 无符号MD4哈希算法的一半
+#define EXT2_HTREE_TEA_UNSIGNED 5           // 无符号TEA哈希算法
+
+/* 表示HTree索引的结尾 */
+#define EXT2_HTREE_EOF 0x7FFFFFFFUL         // HTree索引的结束标记
+
+/* 定义旧版本的inode结构体大小 */
+#define EXT4_GOOD_OLD_INODE_SIZE 128        // 旧版本的inode大小（字节)
+
+const Dirent* ext4_dir_entry_next(struct ext4_dir* dir);
 #endif
