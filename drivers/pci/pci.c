@@ -227,7 +227,7 @@ void pci_device_dump(pci_device_t *device)
 
 static void pci_scan_device(unsigned char bus, unsigned char device, unsigned char function)
 {
-    
+    printk("pci_scan_device\n");
 	/*读取总线设备的设备id*/
     unsigned int val;
     pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,(int *)&val);
