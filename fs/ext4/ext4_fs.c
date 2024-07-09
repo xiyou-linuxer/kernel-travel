@@ -192,14 +192,14 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 {
 	int rc;
 	// 计算一个数据块中能容纳的描述符数量
-	uint32_t block_size = ext4_sb_get_block_size(&fs->superBlock);
-	uint32_t dsc_cnt = block_size / ext4_sb_get_desc_size(&fs->superBlock);
+	uint32_t block_size = ext4_sb_get_block_size(&fs->superBlock.ext4_sblock);
+	uint32_t dsc_cnt = block_size / ext4_sb_get_desc_size(&fs->superBlock.ext4_sblock);
 
 	// 块组描述符表从超级块之后的下一个块开始
-	uint64_t block_id = ext4_fs_get_descriptor_block(&fs->superBlock, bgid, dsc_cnt);
+	uint64_t block_id = ext4_fs_get_descriptor_block(&fs->superBlock.ext4_sblock, bgid, dsc_cnt);
 
 	// 计算描述符在块中的偏移量
-	uint32_t offset = (bgid % dsc_cnt) * ext4_sb_get_desc_size(&fs->superBlock);
+	uint32_t offset = (bgid % dsc_cnt) * ext4_sb_get_desc_size(&fs->superBlock.ext4_sblock);
 	ref->block.buf = bufRead(1,block_id,1);
 	
 	ref->block_group = (void *)(ref->block.buf->data + offset);

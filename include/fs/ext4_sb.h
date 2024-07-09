@@ -5,9 +5,9 @@
 #include <fs/ext4.h>
 
 /**
- * @brief   Blocks count get stored in superblock.
- * @param   s superblock descriptor
- * @return  count of blocks
+ * @brief   块计数存储在超级块中
+ * @param   s 超级块描述符
+ * @return  块数
  **/
 static inline uint64_t ext4_sb_get_blocks_cnt(struct ext4_sblock *s)
 {
@@ -16,9 +16,9 @@ static inline uint64_t ext4_sb_get_blocks_cnt(struct ext4_sblock *s)
 }
 
 /**
- * @brief   Blocks count set  in superblock.
- * @param   s superblock descriptor
- * @param   cnt count of blocks
+ * @brief   超级块中设置的块计数
+ * @param   s 超级块描述符
+ * @param   cnt 块数
  * */
 static inline void ext4_sb_set_blocks_cnt(struct ext4_sblock *s, uint64_t cnt)
 {
@@ -27,9 +27,9 @@ static inline void ext4_sb_set_blocks_cnt(struct ext4_sblock *s, uint64_t cnt)
 }
 
 /**
- * @brief   Free blocks count get stored in superblock.
- * @param   s superblock descriptor
- * @return  free blocks
+ * @brief   空闲块计数存储在超级块中
+ * @param   s 超级块描述符
+ * @return  空闲块数
  **/
 static inline uint64_t ext4_sb_get_free_blocks_cnt(struct ext4_sblock *s)
 {
@@ -39,8 +39,8 @@ static inline uint64_t ext4_sb_get_free_blocks_cnt(struct ext4_sblock *s)
 
 /**
  * @brief   Free blocks count set.
- * @param   s superblock descriptor
- * @param   cnt new value of free blocks
+ * @param   s 超级块描述符
+ * @param   cnt 空闲块的新值
  **/
 static inline void ext4_sb_set_free_blocks_cnt(struct ext4_sblock *s,
 					       uint64_t cnt)
@@ -50,8 +50,8 @@ static inline void ext4_sb_set_free_blocks_cnt(struct ext4_sblock *s,
 }
 
 /**
- * @brief   Block size get from superblock.
- * @param   s superblock descriptor
+ * @brief 块大小从超级块获取
+ * @param   s 超级块描述符
  * @return  block size in bytes
  **/
 static inline uint32_t ext4_sb_get_block_size(struct ext4_sblock *s)
@@ -60,9 +60,9 @@ static inline uint32_t ext4_sb_get_block_size(struct ext4_sblock *s)
 }
 
 /**
- * @brief   Block group descriptor size.
- * @param   s superblock descriptor
- * @return  block group descriptor size in bytes
+ * @brief 块组描述符大小。
+ * @param s 超级块描述符
+ * @return 块组描述符大小（以字节为单位）
  **/
 static inline uint16_t ext4_sb_get_desc_size(struct ext4_sblock *s)
 {
@@ -73,13 +73,11 @@ static inline uint16_t ext4_sb_get_desc_size(struct ext4_sblock *s)
 		   : size;
 }
 
-/*************************Flags and features*********************************/
-
 /**
- * @brief   Support check of flag.
- * @param   s superblock descriptor
- * @param   v flag to check
- * @return  true if flag is supported
+ * @brief 支持标志检查。
+ * @param s 超级块描述符
+ * @param v 要检查的标志
+ * @return true 如果支持flag
  **/
 static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
 {
@@ -87,10 +85,10 @@ static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Support check of feature compatible.
- * @param   s superblock descriptor
- * @param   v feature to check
- * @return  true if feature is supported
+ * @brief 支持功能兼容检查。
+ * @param s 超级块描述符
+ * @param v 要检查的功能
+ * @return true 如果支持该功能
  **/
 static inline bool ext4_sb_feature_com(struct ext4_sblock *s, uint32_t v)
 {
@@ -98,10 +96,10 @@ static inline bool ext4_sb_feature_com(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Support check of feature incompatible.
- * @param   s superblock descriptor
- * @param   v feature to check
- * @return  true if feature is supported
+ * @brief 支持功能不兼容检查。
+ * @param s 超级块描述符
+ * @param v 要检查的功能
+ * @return true 如果支持该功能
  **/
 static inline bool ext4_sb_feature_incom(struct ext4_sblock *s, uint32_t v)
 {
@@ -109,10 +107,10 @@ static inline bool ext4_sb_feature_incom(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Support check of read only flag.
- * @param   s superblock descriptor
- * @param   v flag to check
- * @return  true if flag is supported
+ * @brief 支持只读标志检查。
+ * @param s 超级块描述符
+ * @param v 要检查的标志
+ * @return true 如果支持flag
  **/
 static inline bool ext4_sb_feature_ro_com(struct ext4_sblock *s, uint32_t v)
 {
@@ -120,10 +118,10 @@ static inline bool ext4_sb_feature_ro_com(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Block group to flex group.
- * @param   s superblock descriptor
- * @param   block_group block group
- * @return  flex group id
+ * @brief 块组到弹性组。
+ * @param s 超级块描述符
+ * @param block_group 块组
+ * @return 弹性组 ID
  **/
 static inline uint32_t ext4_sb_bg_to_flex(struct ext4_sblock *s,
 					  uint32_t block_group)
@@ -132,9 +130,9 @@ static inline uint32_t ext4_sb_bg_to_flex(struct ext4_sblock *s,
 }
 
 /**
- * @brief   Flex block group size.
- * @param   s superblock descriptor
- * @return  flex bg size
+ * @brief Flex 块组大小。
+ * @param s 超级块描述符
+ * @return flex 背景大小
  **/
 static inline uint32_t ext4_sb_flex_bg_size(struct ext4_sblock *s)
 {
@@ -142,9 +140,9 @@ static inline uint32_t ext4_sb_flex_bg_size(struct ext4_sblock *s)
 }
 
 /**
- * @brief   Return first meta block group id.
- * @param   s superblock descriptor
- * @return  first meta_bg id
+ * @brief 返回第一个元块组 ID。
+ * @param s 超级块描述符
+ * @return 第一个meta_bg id
  **/
 static inline uint32_t ext4_sb_first_meta_bg(struct ext4_sblock *s)
 {
