@@ -199,15 +199,18 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	dir->de.ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, it.curr); // 获取目录项的 i-node 类型
 
 	de = &dir->de; // 设置目录项指针为当前目录项
-
+	de->file_system = ext4Fs;
+	de->type = EXT4_IS_DIR(dir_inode.inode->mode) ? DIRENT_DIR : DIRENT_FILE;
+	de->parent_dirent = dir->pdirent;
+	list_init(&de->child_list);
+	de->linkcnt = 1;
 	ext4_dir_iterator_next(&it); // 移动到下一个目录项
 
 	// 更新下一个目录项的偏移量，如果没有下一个目录项，则设置为终止偏移量
 	dir->next_off = it.curr ? it.curr_off : EXT4_DIR_ENTRY_OFFSET_TERM;
-
+	de->parent_dir_off = dir->next_off;
 	ext4_dir_iterator_fini(&it); // 结束目录迭代器的使用
 	ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
-
 Finish:
 	return de; // 返回下一个目录项的指针，如果没有更多目录项可用，则返回NULL
 }
