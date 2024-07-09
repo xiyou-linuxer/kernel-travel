@@ -3,6 +3,7 @@
 #include <fs/ext4_dir.h>
 #include <fs/ext4_inode.h>
 #include <fs/ext4_fs.h>
+#include <fs/ext4_sb.h>
 #include <fs/mount.h>
 #include <asm-generic/errno-base.h>
 

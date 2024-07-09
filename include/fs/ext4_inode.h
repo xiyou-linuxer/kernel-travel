@@ -64,6 +64,8 @@ struct ext4_inode_ref {
 
 #define EXT4_IS_DIR(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_DIRECTORY)//判断是否是目录
 #define EXT4_IS_FILE(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_FILE)//判断是否是文件
+void ext4_inode_set_csum(struct ext4_sblock *sb, struct ext4_inode *inode,
+uint32_t checksum);
 uint32_t ext4_inode_get_csum(struct ext4_sblock* sb, struct ext4_inode* inode);
 uint32_t ext4_inode_get_generation(struct ext4_inode* inode);
 uint32_t ext4_inode_get_mode(struct ext4_sblock* sb, struct ext4_inode* inode);

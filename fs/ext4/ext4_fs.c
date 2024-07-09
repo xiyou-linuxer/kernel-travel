@@ -297,75 +297,64 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	return 0;
 }
 
+/* 从原生的 inode 中 */
 static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref,uint64_t iblock,uint64_t *fblock,bool extent_create,
 bool support_unwritten __attribute__ ((__unused__)))
 {
-    struct FileSystem *fs = inode_ref->fs;
+	struct ext4_fs *fs = &inode_ref->fs->ext4_fs;
+	// 对于空文件，直接返回0
+	if (ext4_inode_get_size(&fs->sb, inode_ref->inode) == 0) {
+	    *fblock = 0;
+	    return 0;
+	}
+	uint64_t current_block;
+	struct ext4_inode *inode = inode_ref->inode;
+	// 直接块从i节点结构中的数组读取
+	if (iblock < EXT4_INODE_DIRECT_BLOCK_COUNT) {
+		current_block = ext4_inode_get_direct_block(inode, (uint32_t)iblock);
+		*fblock = current_block;
+		return 0;
+	}
 
-    // 对于空文件，直接返回0
-    if (ext4_inode_get_size(&fs->superBlock.ext4_sblock, inode_ref->inode) == 0) {
-        *fblock = 0;
-        return 0;
-    }
+	// 确定目标块的间接级别
+	unsigned int l = 0;
+	unsigned int i;
+	for (i = 1; i < 4; i++) {
+		if (iblock < fs->inode_block_limits[i]) {
+			l = i;
+			break;
+		}
+	}
 
-    uint64_t current_block;
-    struct ext4_inode *inode = inode_ref->inode;
-
-    // 直接块从i节点结构中的数组读取
-    if (iblock < EXT4_INODE_DIRECT_BLOCK_COUNT) {
-        current_block =
-            ext4_inode_get_direct_block(inode, (uint32_t)iblock);
-        *fblock = current_block;
-        return 0;
-    }
-
-    // 确定目标块的间接级别
-    unsigned int l = 0;
-    unsigned int i;
-    for (i = 1; i < 4; i++) {
-        if (iblock < fs->superBlock.ext4_sblock.inode_block_limits[i]) {
-            l = i;
-            break;
-        }
-    }
-
-    if (l == 0)
-        return -1;
-
-    // 计算顶层的偏移
-    uint32_t blk_off_in_lvl =
-        (uint32_t)(iblock - fs->inode_block_limits[l - 1]);
-    current_block = ext4_inode_get_indirect_block(inode, l - 1);
-    uint32_t off_in_blk =
+	if (l == 0)
+		return -1;
+	// 计算顶层的偏移
+	uint32_t blk_off_in_lvl = (uint32_t)(iblock - fs->inode_block_limits[l - 1]);
+	current_block = ext4_inode_get_indirect_block(inode, l - 1);
+	uint32_t off_in_blk =
         (uint32_t)(blk_off_in_lvl / fs->inode_blocks_per_level[l - 1]);
 
-    // 稀疏文件处理
-    if (current_block == 0) {
-        *fblock = 0;
-        return 0;
+	// 稀疏文件处理
+	if (current_block == 0) {
+		*fblock = 0;
+		return 0;
     }
 
     struct ext4_block block;
-
-    // 通过其他级别导航，直到找到块号或发现稀疏文件的空引用
-    while (l > 0) {
-        // 加载间接块
-        int rc = ext4_trans_block_get(fs->bdev, &block, current_block);
-        if (rc != 0)
-            return rc;
-
-        // 从间接块中读取块地址
-        current_block = to_le32(((uint32_t *)block.data)[off_in_blk]);
-
-        // 未修改的间接块放回
-        rc = ext4_block_set(fs->bdev, &block);
-        if (rc != 0)
-            return rc;
-
-        // 检查是否为稀疏文件
-        if (current_block == 0) {
-            *fblock = 0;
-            return 0;
+	// 通过其他级别导航，直到找到块号或发现稀疏文件的空引用
+	while (l > 0) {
+		// 加载间接块
+		block.buf = bufRead(1, current_block, 1);
+		if (block.buf == NULL)
+		{
+			return -1;
+		}
+		// 从间接块中读取块地址
+		current_block = to_le32(((uint32_t *)block.buf->data)[off_in_blk]);
+		// 检查是否为稀疏文件
+		if (current_block == 0) {
+			*fblock = 0;
+			return 0;
 		}
 		// 跳到下一级
 		l--;
@@ -376,9 +365,7 @@ bool support_unwritten __attribute__ ((__unused__)))
 		blk_off_in_lvl %= fs->inode_blocks_per_level[l];
 		off_in_blk = (uint32_t)(blk_off_in_lvl /fs->inode_blocks_per_level[l - 1]);
 	}
-
 	*fblock = current_block;
-
 	return 0;
 }
 
@@ -395,24 +382,24 @@ static uint32_t ext4_fs_inode_checksum(struct ext4_inode_ref *inode_ref)
 		uint32_t ino_gen =
 		    to_le32(ext4_inode_get_generation(inode_ref->inode));
 
-		/* Preparation: temporarily set bg checksum to 0 */
+		/* 准备工作：暂时将bg checksum设置为0 */
 		orig_checksum = ext4_inode_get_csum(sb, inode_ref->inode);
 		ext4_inode_set_csum(sb, inode_ref->inode, 0);
 
-		/* First calculate crc32 checksum against fs uuid */
+		/* 首先根据 fs uuid 计算 crc32 校验和 */
 		checksum =
 		    ext4_crc32c(EXT4_CRC32_INIT, sb->uuid, sizeof(sb->uuid));
-		/* Then calculate crc32 checksum against inode number
-		 * and inode generation */
+		/* 然后根据 inode 编号计算 crc32 校验和
+		 * 和索引节点生成 */
 		checksum = ext4_crc32c(checksum, &ino_index, sizeof(ino_index));
 		checksum = ext4_crc32c(checksum, &ino_gen, sizeof(ino_gen));
-		/* Finally calculate crc32 checksum against
-		 * the entire inode */
+		/* 最后计算crc32校验和
+		 * 整个索引节点 */
 		checksum = ext4_crc32c(checksum, inode_ref->inode, inode_size);
 		ext4_inode_set_csum(sb, inode_ref->inode, orig_checksum);
 
-		/* If inode size is not large enough to hold the
-		 * upper 16bit of the checksum */
+		/* 如果 inode 大小不足以容纳
+		 * 校验和的高16位 */
 		if (inode_size == EXT4_GOOD_OLD_INODE_SIZE)
 			checksum &= 0xFFFF;
 	}
@@ -428,12 +415,8 @@ static void ext4_fs_set_inode_checksum(struct ext4_inode_ref *inode_ref)
 	uint32_t csum = ext4_fs_inode_checksum(inode_ref);
 	ext4_inode_set_csum(sb, inode_ref->inode, csum);
 }
-/**
- * 
-*/
-int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref,
-			       uint64_t iblock, uint64_t *fblock,
-			       bool support_unwritten)
+
+int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref, uint64_t iblock, uint64_t *fblock, bool support_unwritten)
 {
 	return ext4_fs_get_inode_dblk_idx_internal(inode_ref, iblock, fblock,
 						   false, support_unwritten);

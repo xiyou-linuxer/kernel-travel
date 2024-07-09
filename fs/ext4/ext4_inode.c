@@ -7,6 +7,21 @@
 #include <fs/buf.h>
 #include <xkernel/stdio.h>
 
+void ext4_inode_set_csum(struct ext4_sblock *sb, struct ext4_inode *inode,uint32_t checksum)
+{
+    // 从超级块结构中获取 inode 的大小
+    uint16_t inode_size = ext4_get16(sb, inode_size);
+
+    // 将校验和的低 16 位存储到 inode 结构的 osd2.linux2.checksum_lo 字段中
+    inode->osd2.linux2.checksum_lo =
+        to_le16((checksum << 16) >> 16);
+
+    // 如果 inode 大小大于 EXT4_GOOD_OLD_INODE_SIZE，则将校验和的高 16 位存储到 inode 结构的 checksum_hi 字段中
+    if (inode_size > EXT4_GOOD_OLD_INODE_SIZE)
+        inode->checksum_hi = to_le16(checksum >> 16);
+}
+
+
 // 从 inode 中获取校验和
 uint32_t ext4_inode_get_csum(struct ext4_sblock *sb, struct ext4_inode *inode)
 {
@@ -168,8 +183,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 	}
 
 	// 获取inode表所在的块地址
-	ext4_fsblk_t inode_table_start =
-	    ext4_bg_get_inode_table_first_block(bg_ref.block_group, &fs->superBlock.ext4_sblock);
+	ext4_fsblk_t inode_table_start = ext4_bg_get_inode_table_first_block(bg_ref.block_group, &fs->superBlock.ext4_sblock);
 
 	// 释放块组引用（不再需要）
 	rc = ext4_fs_put_block_group_ref(&bg_ref);
@@ -183,8 +197,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 	uint32_t byte_offset_in_group = offset_in_group * inode_size;
 
 	// 计算块地址
-	ext4_fsblk_t block_id =
-	    inode_table_start + (byte_offset_in_group / block_size);
+	ext4_fsblk_t block_id =inode_table_start + (byte_offset_in_group / block_size);
 	bufRead(1,block_id,1);
  
 	// 计算inode在数据块中的位置
@@ -201,7 +214,6 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 		printk("Inode checksum failed.""Inode: %d \n",
 			ref->index);
 	}
-
 	return 0;
 }
 
