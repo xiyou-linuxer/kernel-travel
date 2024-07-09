@@ -32,6 +32,7 @@ extern FileSystem *ext4Fs;
 #define to_le16(_n) _n
 
 #define EXT4_CHECKSUM_CRC32C 1
+#define EXT4_CRC32_INIT (0xFFFFFFFFUL)
 
 #define ext4_fsblk_t uint64_t
 #define ext4_lblk_t uint32_t
@@ -295,7 +296,7 @@ struct ext4_block {
 #define EXT4_BLOCK_GROUP_INODE_UNINIT 0x0001
 /* 表示块组中的块位图未初始化或未使用 */
 #define EXT4_BLOCK_GROUP_BLOCK_UNINIT 0x0002
-/* On-disk itable initialized to zero */
+/* 磁盘上的 i-node 表已初始化为零 */
 #define EXT4_BLOCK_GROUP_ITABLE_ZEROED 0x0004
 
 /*ext4文件系统的魔数*/
@@ -390,10 +391,10 @@ static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Support check of feature compatible.
- * @param   s superblock descriptor
- * @param   v feature to check
- * @return  true if feature is supported
+ * @brief 支持功能兼容检查。
+ * @param s 超级块描述符
+ * @param v 要检查的功能
+ * @return true 如果支持该功能
  **/
 static inline bool ext4_sb_feature_com(struct ext4_sblock *s, uint32_t v)
 {
@@ -401,10 +402,10 @@ static inline bool ext4_sb_feature_com(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Support check of feature incompatible.
- * @param   s superblock descriptor
- * @param   v feature to check
- * @return  true if feature is supported
+ * @brief 支持功能不兼容检查。
+ * @param s 超级块描述符
+ * @param v 要检查的功能
+ * @return true 如果支持该功能
  **/
 static inline bool ext4_sb_feature_incom(struct ext4_sblock *s, uint32_t v)
 {
@@ -412,10 +413,10 @@ static inline bool ext4_sb_feature_incom(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Support check of read only flag.
- * @param   s superblock descriptor
- * @param   v flag to check
- * @return  true if flag is supported
+ * @brief 支持只读标志检查。
+ * @param s 超级块描述符
+ * @param v 要检查的标志
+ * @return true 如果支持flag
  **/
 static inline bool ext4_sb_feature_ro_com(struct ext4_sblock *s, uint32_t v)
 {
@@ -423,10 +424,10 @@ static inline bool ext4_sb_feature_ro_com(struct ext4_sblock *s, uint32_t v)
 }
 
 /**
- * @brief   Block group to flex group.
- * @param   s superblock descriptor
- * @param   block_group block group
- * @return  flex group id
+ * @brief 块组到弹性组。
+ * @param s 超级块描述符
+ * @param block_group 块组
+ * @return 弹性组 ID
  **/
 static inline uint32_t ext4_sb_bg_to_flex(struct ext4_sblock *s,
 					  uint32_t block_group)
@@ -435,9 +436,9 @@ static inline uint32_t ext4_sb_bg_to_flex(struct ext4_sblock *s,
 }
 
 /**
- * @brief   Flex block group size.
- * @param   s superblock descriptor
- * @return  flex bg size
+ * @brief Flex 块组大小。
+ * @param s 超级块描述符
+ * @return flex 背景大小
  **/
 static inline uint32_t ext4_sb_flex_bg_size(struct ext4_sblock *s)
 {
@@ -445,9 +446,9 @@ static inline uint32_t ext4_sb_flex_bg_size(struct ext4_sblock *s)
 }
 
 /**
- * @brief   Return first meta block group id.
- * @param   s superblock descriptor
- * @return  first meta_bg id
+ * @brief 返回第一个元块组 ID。
+ * @param s 超级块描述符
+ * @return 第一个meta_bg id
  **/
 static inline uint32_t ext4_sb_first_meta_bg(struct ext4_sblock *s)
 {

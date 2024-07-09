@@ -5,10 +5,26 @@
 #include <fs/ext4_block_group.h>
 #include <fs/ext4_sb.h>
 #include <fs/ext4_crc32.h>
+#include <fs/ext4_bitmap.h>
 #include <fs/buf.h>
 #include <fs/fs.h>
 #include <xkernel/stdio.h>
 
+int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref)
+{
+    // 检查引用是否被修改
+    if (ref->dirty) {
+        uint16_t cs;
+
+        // 计算块组的新校验和
+        cs = ext4_fs_bg_checksum(&ref->fs->sb, ref->index, ref->block_group);
+        ref->block_group->checksum = to_le16(cs);
+
+        // 标记块为脏块以便将更改写入物理设备
+        bufWrite(ref->block.buf);
+        ext4_trans_set_block_dirty(ref->block.buf);
+    }
+}
 /**
  * ext4_fs_get_descriptor_block - 获取块组描述符所在的块号
  * @s: 超级块指针
@@ -77,12 +93,9 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	uint32_t inode_table_bcnt = inodes_per_group * inode_size / block_size;
 
 	struct ext4_block block_bitmap;
-	rc = ext4_trans_block_get_noread(bg_ref->fs->bdev, &block_bitmap, bmp_blk);
-	if (rc != 0)
-		return rc;
-
+	bufRead(1,bmp_blk,0);
 	// 初始化块位图的内容为0
-	memset(block_bitmap.data, 0, block_size);
+	memset(block_bitmap.buf->data, 0, block_size);
 	bit_max = ext4_sb_is_super_in_bg(sb, bg_ref->index);
 
 	uint32_t count = ext4_sb_first_meta_bg(sb) * dsc_per_block;
@@ -97,7 +110,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 
 	// 设置块位图中前 bit_max 位为 1
 	for (bit = 0; bit < bit_max; bit++)
-		ext4_bmap_bit_set(block_bitmap.data, bit);
+		ext4_bmap_bit_set(block_bitmap.buf->data, bit);
 
 	if (bg_ref->index == ext4_block_group_cnt(sb) - 1) {
 		/*
@@ -135,11 +148,30 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	ext4_trans_set_block_dirty(block_bitmap.buf);
 
 	// 设置块组的位图校验和
-	ext4_balloc_set_bitmap_csum(sb, bg_ref->block_group, block_bitmap.data);
+	ext4_balloc_set_bitmap_csum(sb, bg_ref->block_group, block_bitmap.buf->data);
 	bg_ref->dirty = true;
 
 	// 保存位图
-	return ext4_block_set(bg_ref->fs->bdev, &block_bitmap);
+	bufWrite(block_bitmap.buf);
+	return 0;
+}
+
+void ext4_ialloc_set_bitmap_csum(struct ext4_sblock *sb, struct ext4_bgroup *bg,
+				 void *bitmap __attribute__ ((__unused__)))
+{
+	int desc_size = ext4_sb_get_desc_size(sb);
+	uint32_t csum = ext4_ialloc_bitmap_csum(sb, bitmap);
+	uint16_t lo_csum = to_le16(csum & 0xFFFF),
+		 hi_csum = to_le16(csum >> 16);
+
+	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
+		return;
+
+	/* See if we need to assign a 32bit checksum */
+	bg->inode_bitmap_csum_lo = lo_csum;
+	if (desc_size == EXT4_MAX_BLOCK_GROUP_DESCRIPTOR_SIZE)
+		bg->inode_bitmap_csum_hi = hi_csum;
+
 }
 
 /** @brief 初始化块组中的 i-node 位图。
@@ -151,10 +183,11 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 	struct ext4_sblock *sb = &bg_ref->fs->sb;
 	struct ext4_bgroup *bg = bg_ref->block_group;
 
-	/* 加载位图 */
+	/* 获取 inode 位图所在的磁盘扇区号 */
 	ext4_fsblk_t bitmap_block_addr = ext4_bg_get_inode_bitmap(bg, sb);
 
 	struct ext4_block b;
+	/*读取*/
 	b.buf = bufRead(1,bitmap_block_addr,1);
 	if (b.buf == NULL)
 		return -1;
@@ -177,13 +210,48 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 	if (i < end_bit)
 		memset(b.buf->data + (i >> 3), 0xff, (end_bit - i) >> 3);
 
-	ext4_trans_set_block_dirty(b.buf); // 标记块为脏
-
 	ext4_ialloc_set_bitmap_csum(sb, bg, b.buf->data); // 计算并设置校验和
 	bg_ref->dirty = true;
-	bufWrite(b.buf);
-	/* 保存位图 */
-	return 0; // 保存位图
+	bufWrite(b.buf);// 保存位图
+	return 0; 
+}
+
+/**
+ * @brief 初始化块组中的i-node表
+ * @param bg_ref 块组的引用
+ * @return 错误代码
+ */
+static int ext4_fs_init_inode_table(struct ext4_block_group_ref *bg_ref)
+{
+	struct ext4_sblock *sb = &bg_ref->fs->sb;
+	struct ext4_bgroup *bg = bg_ref->block_group;
+
+	uint32_t inode_size = ext4_get16(sb, inode_size);
+	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint32_t inodes_per_block = block_size / inode_size;
+	uint32_t inodes_in_group = ext4_inodes_in_group_cnt(sb, bg_ref->index);
+	uint32_t table_blocks = inodes_in_group / inodes_per_block;
+	ext4_fsblk_t fblock;
+
+	// 如果组内的i-node数量不能被每块的i-node数量整除，则需要多一个块
+	if (inodes_in_group % inodes_per_block)
+		table_blocks++;
+
+	// 计算初始化的范围
+	ext4_fsblk_t first_block = ext4_bg_get_inode_table_first_block(bg, sb);
+	ext4_fsblk_t last_block = first_block + table_blocks - 1;
+
+	// 初始化所有i-node表块
+	for (fblock = first_block; fblock <= last_block; ++fblock) {
+		struct ext4_block b;
+		b.buf = bufRead(1,fblock,1);
+		// 将块的数据清零
+		memset(b.buf->data, 0, block_size);
+		// 将块标记为脏块
+		bufWrite(b.buf);
+    }
+
+    return 0; // 返回成功状态
 }
 
 
@@ -207,33 +275,19 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	ref->index = bgid;
 	ref->dirty = false;
 	struct ext4_bgroup *bg = ref->block_group;
-	//检查块组中块位图与inode位图的使用情况
+	//检查块组中块位图的使用情况
 	if (ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_BLOCK_UNINIT)) {
 		rc = ext4_fs_init_block_bitmap(ref);
-		if (rc != 0) {
-			bufWrite(ref->block.buf);
-			return rc;
-		}
 		ext4_bg_clear_flag(bg, EXT4_BLOCK_GROUP_BLOCK_UNINIT);
 		ref->dirty = true;
 	}
-
+	//检查块组中inode位图的使用情况
 	if (ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_INODE_UNINIT)) {
 		rc = ext4_fs_init_inode_bitmap(ref);
-		if (rc != 0) {
-			bufWrite(ref->block.buf);
-			return rc;
-		}
-
 		ext4_bg_clear_flag(bg, EXT4_BLOCK_GROUP_INODE_UNINIT);
 
 		if (!ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_ITABLE_ZEROED)) {
 			rc = ext4_fs_init_inode_table(ref);
-			if (rc != 0) {
-				bufWrite(ref->block.buf);
-				return rc;
-			}
-
 			ext4_bg_set_flag(bg, EXT4_BLOCK_GROUP_ITABLE_ZEROED);
 		}
 
@@ -255,26 +309,6 @@ bool support_unwritten __attribute__ ((__unused__)))
     }
 
     uint64_t current_block;
-
-    // 如果启用了扩展支持并且i节点使用扩展方式存储块
-#if CONFIG_EXTENT_ENABLE && CONFIG_EXTENTS_ENABLE
-    if ((ext4_sb_feature_incom(&fs->sb, EXT4_FINCOM_EXTENTS)) &&
-        (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
-
-        uint64_t current_fsblk;
-        int rc = ext4_extent_get_blocks(
-            inode_ref, iblock, 1, &current_fsblk, extent_create, NULL);
-        if (rc != EOK)
-            return rc;
-
-        current_block = current_fsblk;
-        *fblock = current_block;
-
-        ext4_assert(*fblock || support_unwritten);
-        return EOK;
-    }
-#endif
-
     struct ext4_inode *inode = inode_ref->inode;
 
     // 直接块从i节点结构中的数组读取
@@ -351,7 +385,7 @@ bool support_unwritten __attribute__ ((__unused__)))
 static uint32_t ext4_fs_inode_checksum(struct ext4_inode_ref *inode_ref)
 {
 	uint32_t checksum = 0;
-	struct ext4_sblock *sb = &inode_ref->fs->sb;
+	struct ext4_sblock *sb = &inode_ref->fs->superBlock.ext4_sblock;
 	uint16_t inode_size = ext4_get16(sb, inode_size);
 
 	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {

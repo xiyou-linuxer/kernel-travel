@@ -1,9 +1,10 @@
 #include <fs/ext4.h>
 #include <fs/ext4_dir.h>
 #include <fs/ext4_inode.h>
-#include <fs/buf.h>
 #include <fs/ext4_fs.h>
 #include <fs/ext4_sb.h>
+#include <fs/ext4_block_group.h>
+#include <fs/buf.h>
 #include <xkernel/stdio.h>
 
 // 从 inode 中获取校验和
@@ -149,7 +150,7 @@ uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode)
  * @param initialized 是否需要初始化
  * @return 错误代码
  */
-int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref)
+int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref,bool initialized)
 {
 	// 计算一个数据块中可容纳的inode数量
 	uint32_t inodes_per_group = ext4_get32(&fs->superBlock.ext4_sblock, inodes_per_group);
@@ -184,15 +185,11 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 	// 计算块地址
 	ext4_fsblk_t block_id =
 	    inode_table_start + (byte_offset_in_group / block_size);
-
-	rc = ext4_trans_block_get(fs->bdev, &ref->block, block_id);
-	if (rc != 0) {
-		return rc;
-	}
-
+	bufRead(1,block_id,1);
+ 
 	// 计算inode在数据块中的位置
 	uint32_t offset_in_block = byte_offset_in_group % block_size;
-	ref->inode = (struct ext4_inode *)(ref->bl+ offset_in_block);
+	ref->inode = (struct ext4_inode *)(ref->block->data+ offset_in_block);
 
 	// 需要在引用中存储原始的索引值
 	ref->index = index + 1;
@@ -224,9 +221,7 @@ int ext4_fs_put_inode_ref(struct ext4_inode_ref *ref)
 		/* 标记块为脏，以便将更改写入物理设备 */
 		bufWrite(ref->block);
 	}
-	
-	/* 放回包含 inode 的块到磁盘 */
-	return ext4_block_set(ref->fs->bdev, &ref->block);
+	return 1;
 }
 
 /**

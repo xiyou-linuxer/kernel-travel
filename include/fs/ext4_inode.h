@@ -53,7 +53,7 @@
 		(s)->f = (v);                                                   \
 	} while (0)
 
-
+#define ext4_ialloc_bitmap_csum(...) 0
 struct ext4_inode_ref {
 	Buffer *block;    /**< 关联的块信息。 */
 	struct ext4_inode *inode;   /**< 指向具体的 inode 结构。 */

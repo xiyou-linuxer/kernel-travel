@@ -6,10 +6,10 @@
 #include <fs/ext4_fs.h>
 #include <xkernel/types.h>
 /**
- * @brief Get address of block with data block bitmap.
- * @param bg pointer to block group
- * @param s pointer to superblock
- * @return Address of block with block bitmap
+ * @brief 获取带有数据块位图的块地址。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return 带有块位图的块地址
  */
 static inline uint64_t ext4_bg_get_block_bitmap(struct ext4_bgroup *bg,
 						struct ext4_sblock *s)
@@ -23,10 +23,10 @@ static inline uint64_t ext4_bg_get_block_bitmap(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set address of block with data block bitmap.
- * @param bg pointer to block group
- * @param s pointer to superblock
- * @param blk block to set
+ * @brief 设置带有数据块位图的块地址。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param blk 块来设置
  */
 static inline void ext4_bg_set_block_bitmap(struct ext4_bgroup *bg,
 					    struct ext4_sblock *s, uint64_t blk)
@@ -39,10 +39,10 @@ static inline void ext4_bg_set_block_bitmap(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Get address of block with i-node bitmap.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @return Address of block with i-node bitmap
+ * @brief 获取带有 i 节点位图的块地址。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return 带有 i 节点位图的块地址
  */
 static inline uint64_t ext4_bg_get_inode_bitmap(struct ext4_bgroup *bg,
 						struct ext4_sblock *s)
@@ -57,10 +57,10 @@ static inline uint64_t ext4_bg_get_inode_bitmap(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set address of block with i-node bitmap.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @param blk block to set
+ * @brief 设置带有 i 节点位图的块地址。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param blk 块来设置
  */
 static inline void ext4_bg_set_inode_bitmap(struct ext4_bgroup *bg,
 					    struct ext4_sblock *s, uint64_t blk)
@@ -73,10 +73,10 @@ static inline void ext4_bg_set_inode_bitmap(struct ext4_bgroup *bg,
 
 
 /**
- * @brief Get address of the first block of the i-node table.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @return Address of first block of i-node table
+ * @brief 获取 i 节点表的第一个块的地址。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return i节点表第一个块的地址
  */
 static inline uint64_t
 ext4_bg_get_inode_table_first_block(struct ext4_bgroup *bg,
@@ -91,10 +91,10 @@ ext4_bg_get_inode_table_first_block(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set address of the first block of the i-node table.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @param blk block to set
+ * @brief 设置 i 节点表的第一个块的地址。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param blk 块来设置
  */
 static inline void
 ext4_bg_set_inode_table_first_block(struct ext4_bgroup *bg,
@@ -106,10 +106,10 @@ ext4_bg_set_inode_table_first_block(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Get number of free blocks in block group.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @return Number of free blocks in block group
+ * @brief 获取块组中空闲块的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return 块组中空闲块的数量
  */
 static inline uint32_t ext4_bg_get_free_blocks_count(struct ext4_bgroup *bg,
 						     struct ext4_sblock *s)
@@ -123,10 +123,10 @@ static inline uint32_t ext4_bg_get_free_blocks_count(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set number of free blocks in block group.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @param cnt Number of free blocks in block group
+ * @brief 设置块组中空闲块的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param cnt 块组中空闲块的数量
  */
 static inline void ext4_bg_set_free_blocks_count(struct ext4_bgroup *bg,
 						 struct ext4_sblock *s,
@@ -138,10 +138,10 @@ static inline void ext4_bg_set_free_blocks_count(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Get number of free i-nodes in block group.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @return Number of free i-nodes in block group
+ * @brief 获取块组中空闲 i 节点的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return 块组中空闲i节点的数量
  */
 static inline uint32_t ext4_bg_get_free_inodes_count(struct ext4_bgroup *bg,
 						     struct ext4_sblock *s)
@@ -155,10 +155,10 @@ static inline uint32_t ext4_bg_get_free_inodes_count(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set number of free i-nodes in block group.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @param cnt Number of free i-nodes in block group
+ * @brief 设置块组中空闲 i 节点的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param cnt 块组中空闲i节点的数量
  */
 static inline void ext4_bg_set_free_inodes_count(struct ext4_bgroup *bg,
 						 struct ext4_sblock *s,
@@ -170,10 +170,10 @@ static inline void ext4_bg_set_free_inodes_count(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Get number of used directories in block group.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @return Number of used directories in block group
+ * @brief 获取块组中已使用目录的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return 块组中已使用的目录数
  */
 static inline uint32_t ext4_bg_get_used_dirs_count(struct ext4_bgroup *bg,
 						   struct ext4_sblock *s)
@@ -187,10 +187,10 @@ static inline uint32_t ext4_bg_get_used_dirs_count(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set number of used directories in block group.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @param cnt Number of used directories in block group
+ * @brief 设置块组中使用的目录数。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param cnt 块组中已使用的目录数
  */
 static inline void ext4_bg_set_used_dirs_count(struct ext4_bgroup *bg,
 					       struct ext4_sblock *s,
@@ -202,10 +202,10 @@ static inline void ext4_bg_set_used_dirs_count(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Get number of unused i-nodes.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @return Number of unused i-nodes
+ * @brief 获取未使用的 i 节点的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @return 未使用的 i 节点数
  */
 static inline uint32_t ext4_bg_get_itable_unused(struct ext4_bgroup *bg,
 						 struct ext4_sblock *s)
@@ -220,10 +220,10 @@ static inline uint32_t ext4_bg_get_itable_unused(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief Set number of unused i-nodes.
- * @param bg Pointer to block group
- * @param s Pointer to superblock
- * @param cnt Number of unused i-nodes
+ * @brief 设置未使用的 i 节点的数量。
+ * @param bg 指向块组的指针
+ * @param s 指向超级块的指针
+ * @param cnt 未使用的 i 节点数
  */
 static inline void ext4_bg_set_itable_unused(struct ext4_bgroup *bg,
 					     struct ext4_sblock *s,
@@ -235,9 +235,9 @@ static inline void ext4_bg_set_itable_unused(struct ext4_bgroup *bg,
 }
 
 /**
- * @brief  Set checksum of block group.
- * @param bg Pointer to block group
- * @param crc Cheksum of block group
+ * @brief 设置块组的校验和。
+ * @param bg 指向块组的指针
+ * @param crc 块组校验和
  */
 static inline void ext4_bg_set_checksum(struct ext4_bgroup *bg, uint16_t crc)
 {
@@ -256,9 +256,9 @@ static inline bool ext4_bg_has_flag(struct ext4_bgroup *bg, uint32_t f)
 }
 
 /**
- * @brief Set flag of block group.
- * @param bg Pointer to block group
- * @param f Flag to be set
+ * @brief 设置块组标志。
+ * @param bg 指向块组的指针
+ * @param f 要设置的标志
  */
 static inline void ext4_bg_set_flag(struct ext4_bgroup *bg, uint32_t f)
 {
@@ -268,9 +268,9 @@ static inline void ext4_bg_set_flag(struct ext4_bgroup *bg, uint32_t f)
 }
 
 /**
- * @brief Clear flag of block group.
- * @param bg Pointer to block group
- * @param f Flag to be cleared
+ * @brief 清除块组标志。
+ * @param bg 指向块组的指针
+ * @param f 要清除的标志
  */
 static inline void ext4_bg_clear_flag(struct ext4_bgroup *bg, uint32_t f)
 {
@@ -279,11 +279,13 @@ static inline void ext4_bg_clear_flag(struct ext4_bgroup *bg, uint32_t f)
 	bg->flags = to_le16(flags);
 }
 
-/**@brief Calculate CRC16 of the block group.
- * @param crc Init value
- * @param buffer Input buffer
- * @param len Sizeof input buffer
- * @return Computed CRC16*/
+/**
+ * @brief 计算块组的CRC16。
+ * @param crc 初始值
+ * @param buffer 输入缓冲区
+ * @param len 输入缓冲区的大小
+ * @return 计算出的CRC16
+ **/
 uint16_t ext4_bg_crc16(uint16_t crc, const uint8_t *buffer, size_t len);
 
 
