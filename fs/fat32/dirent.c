@@ -4,6 +4,7 @@
 #include <fs/fs.h>
 #include <fs/vfs.h>
 #include <fs/dirent.h>
+#include <fs/path.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <sync.h>
@@ -294,76 +295,6 @@ int walk_path(FileSystem *fs, char *path, Dirent *baseDir, Dirent **pdir, Dirent
 	return 0;
 }
 
-char *path_parse(char *pathname, char *name_store)
-{
-	if (pathname[0] == '/')
-	{ // 根目录不需要单独解析
-		/* 路径中出现1个或多个连续的字符'/',将这些'/'跳过,如"///a/b" */
-		while (*(++pathname) == '/')
-		;
-	}
-
-	/* 开始一般的路径解析 */
-	while (*pathname != '/' && *pathname != 0)
-	{
-		*name_store++ = *pathname++;
-	}
-
-	if (pathname[0] == 0)
-	{ // 若路径字符串为空则返回NULL
-		return NULL;
-	}
-	return pathname;
-}
-
-/* 返回路径深度,比如/a/b/c,深度为3 */
-int32_t path_depth_cnt(char *pathname)
-{
-	ASSERT(pathname != NULL);
-	char *p = pathname;
-	char name[MAX_NAME_LEN]; // 用于path_parse的参数做路径解析
-	uint32_t depth = 0;
-
-	/* 解析路径,从中拆分出各级名称 */
-	p = path_parse(p, name);
-	while (name[0])
-	{
-		depth++;
-		memset(name, 0, MAX_NAME_LEN);
-		if (p)
-		{ // 如果p不等于NULL,继续分析路径
-			p = path_parse(p, name);
-		}
-	}
-	return depth;
-}
-
-Dirent* search_dir_tree(Dirent* parent,char *name)
-{
-	Dirent *file;
-	struct list_elem* dir_node = parent->child_list.head.next;
-	int ret = 0;
-	
-	while (dir_node!=&parent->child_list.tail)
-	{
-		file = elem2entry(struct Dirent,dirent_tag,dir_node);
-		if (strcmp(file->name, name) == 0)
-		{
-			
-			ret = 1;
-			break;
-		}
-		dir_node = dir_node->next;
-	}
-	if (ret == 1)
-	{
-		return file;
-	}else
-	{
-		return NULL;
-	}
-}
-
 static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int isDir) 
 {
 	lock_acquire(&mtx_file);
@@ -419,8 +350,9 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 		return r;
 	}
 	//4. 填写Dirent的各项信息
-	f->parent_dirent = searched_record.parent_dir;				   // 设置父亲节点，以安排写回
+	f->parent_dirent = searched_record.parent_dir;				 	// 设置父亲节点，以安排写回
 	f->file_system = searched_record.parent_dir->file_system;
+	f->head = f->parent_dirent->head;							 	//子目录的对应
 	if (isDir == 1)
 	{
 		f->type = DIRENT_DIR;
@@ -476,9 +408,9 @@ int makeDirAt(Dirent *baseDir, char *path, int mode)
 /**
  * @brief 创建一个文件
  */
-int r;
 int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
 {
-	return createItemAt(baseDir, path, file, 0);
+    printk("createFile");
+    return createItemAt(baseDir, path, file, 0);
 }
 

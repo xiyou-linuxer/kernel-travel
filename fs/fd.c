@@ -6,6 +6,7 @@
 #include <fs/fd.h>
 #include <fs/fs.h>
 #include <fs/filepnt.h>
+#include <fs/path.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <xkernel/types.h>
@@ -52,6 +53,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 			file_table[globa_fd_idx].refcnt++;
 			break;
 		}
+
 		local_fd_idx++;
 	}
 	if (local_fd_idx == MAX_FILES_OPEN_PER_PROC)
@@ -96,13 +98,16 @@ int file_open(Dirent* file, int flag, mode_t mode)
 	file_table[fd_idx].type = dev_file;
 	file_table[fd_idx].refcnt = 1;
 	lock_init(&file_table[fd_idx].lock);
+	file->file_system->op->file_init(file);//初始化文件
+	//filepnt_init(file);
 	return pcb_fd_install(fd_idx);
 }
 
 int file_create(struct Dirent *baseDir, char *path, int flag,mode_t mode)
 {
 	Dirent *file;
-	createFile(baseDir, path, &file);//创建文件
+	baseDir->file_system->op->file_create(baseDir, path, &file);//创建文件
+	createFile(baseDir, path, &file);
 	int fd_idx = get_free_slot_in_global();
 	if (fd_idx == -1)
 	{
@@ -133,100 +138,6 @@ int file_close(struct fd *_fd)
 		_fd->type = -1;
 	}
 	return 0;
-}
-
-int rm_unused_file(struct Dirent *file) {
-	ASSERT(file->refcnt == 0);
-	char linked_file_path[MAX_NAME_LEN];
-	int cnt = get_entry_count_by_name(file->name);
-	char data = FAT32_INVALID_ENTRY;
-
-
-	// 2. 断开父子关系
-	ASSERT(file->parent_dirent != NULL); // 不处理根目录的情况
-	// 先递归删除子Dirent
-	if (file->type == DIRENT_DIR) {
-		struct list_elem *tmp = file->child_list.head.next;
-		while (tmp!=&file->child_list.tail) {
-			struct list_elem *next = tmp->next;
-			Dirent *file_child = elem2entry(Dirent,dirent_tag,tmp);
-			rmfile(file_child);
-			tmp = next;
-		}
-	}
-
-	list_remove(&file->dirent_tag);// 从父亲的子Dirent列表删除
-	// 3. 释放其占用的Cluster
-	file_shrink(file, 0);
-
-	// 4. 清空目录项
-	for (int i = 0; i < cnt; i++) {
-		int ret = file_write(file->parent_dirent, 0, (unsigned long)&data, file->parent_dir_off - i * DIR_SIZE, 1) < 0;
-		if (ret != 0)
-		{
-			/* code */
-		}
-	}
-	dirent_dealloc(file); // 释放目录项
-	return 0;
-}
-
-/**
- * @brief 删除文件。支持递归删除文件夹
- */
-int rmfile(struct Dirent *file) 
-{
-	//若引用计数大于则报错返回
-	if (file->refcnt > 1) {
-		printk("File is in use\n");
-		return -1;
-	}
-	//return 0;
-	return rm_unused_file(file);
-}
-
-/**
- * @brief 需要保证传入的file->refcnt == 0
- */
-
-
-/**
- * @brief 撤销链接。即删除(链接)文件
- */
-int unlinkat(struct Dirent *dir, char *path) {
-	lock_acquire(&mtx_file);
-
-	Dirent *file;
-	int ret;
-	if ((ret = getFile(dir, path, &file)) < 0) {
-		printk("file %s not found!\n", path);
-		lock_release(&mtx_file);
-		return ret;
-	}
-	ret = rmfile(file);
-	lock_release(&mtx_file);
-	return ret;
-}
-
-int filename2path(Dirent *file,char *newpath)
-{
-    Dirent *dir = file;
-    char buf[MAX_PATH_LEN];
-	strcpy(buf,file->name);
-    while (strcmp(dir->parent_dirent->name,"/"))
-    {
-        strcat(buf,dir->parent_dirent->name);
-        
-        dir = dir->parent_dirent;
-    }
-    strcpy(newpath, "/");
-    while (strchrs(buf,'/')!=0)
-    {
-        strcat(newpath,strrchr(buf,'/'));
-		memset(strrchr(buf,'/'),0,MAX_NAME_LEN);
-    }
-    strcat(newpath,buf);
-    return 1;
 }
 
 bool is_pipe(uint32_t local_fd)

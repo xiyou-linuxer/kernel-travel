@@ -40,7 +40,7 @@
 #define MAX_PAGE_ORDER 10
 #define MAX_ORDER_NR_PAGES (1 << MAX_PAGE_ORDER)
 
-static inline int __ffs(unsigned int x)
+static inline int mem_ffs(unsigned int x)
 {
     return __builtin_ffs(x);
 }

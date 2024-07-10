@@ -215,7 +215,7 @@ unsigned long __init __free_memory_core(phys_addr_t start,
 	// printk("start = 0x%x,end = 0x%x\n", start_pfn, end_pfn);
 	while (start_pfn < end_pfn) {
 		if (start_pfn)
-			order = (int)(min(MAX_PAGE_ORDER, __ffs(start_pfn)));
+			order = (int)(min(MAX_PAGE_ORDER, mem_ffs(start_pfn)));
 		else
 			order = MAX_PAGE_ORDER;
 

@@ -9,6 +9,9 @@
 #include <xkernel/compiler.h>
 #if 0
 
+#ifdef __KERNEL__
+#if 0
+
 /**
  * **************************************************
  * New

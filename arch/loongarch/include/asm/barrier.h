@@ -154,6 +154,6 @@ do {										\
 	}									\
 } while (0)
 
-#include <xkernel/compiler.h>
+#include <asm-generic/barrier.h>
 
 #endif /* __ASM_BARRIER_H */

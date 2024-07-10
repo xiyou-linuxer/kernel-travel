@@ -13,6 +13,7 @@
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
 #include <xkernel/mmap.h>
+#include <xkernel/bitops.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
@@ -75,11 +76,14 @@ int sysnums = 3;
 
 char init_program[70000];
 char filename[50][64] = {0};
+
 void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-	// serial_ns16550a_init(9600);
+	
+	local_irq_disable();
+
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
 	mem_init();
@@ -88,11 +92,13 @@ void __init __no_sanitize_address start_kernel(void)
 	thread_init();
 	timer_init();
 	local_irq_enable();
+
 	pci_init();
 	console_init();
 	disk_init();
 	console_init();
 	syscall_init();
+	vfs_init();
 	fs_init();
 	// thread_start("thread_a",10,thread_a,NULL);
 	//
