@@ -85,12 +85,12 @@ void __init __no_sanitize_address start_kernel(void)
 	mem_init();
 	trap_init();
 	irq_init();
+	thread_init();
+	timer_init();
 	local_irq_enable();
 	pci_init();
 	console_init();
 	disk_init();
-	thread_init();
-	timer_init();
 	console_init();
 	syscall_init();
 	fs_init();
