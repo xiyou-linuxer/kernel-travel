@@ -204,6 +204,7 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	de->parent_dirent = dir->pdirent;
 	list_init(&de->child_list);
 	de->linkcnt = 1;
+	de->mode = dir_inode.inode->mode;
 	ext4_dir_iterator_next(&it); // 移动到下一个目录项
 
 	// 更新下一个目录项的偏移量，如果没有下一个目录项，则设置为终止偏移量

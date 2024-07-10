@@ -22,6 +22,38 @@
 #define EXT4_RESIZE_INO 7      // 用于在线调整文件系统大小的inode编号
 #define EXT4_JOURNAL_INO 8     // 日志文件的inode编号
 
+#define EXT4_INODE_FLAG_SECRM 0x00000001     /* 安全删除 */
+#define EXT4_INODE_FLAG_UNRM 0x00000002      /* 恢复删除 */
+#define EXT4_INODE_FLAG_COMPR 0x00000004     /* 文件压缩 */
+#define EXT4_INODE_FLAG_SYNC 0x00000008      /* 同步更新 */
+#define EXT4_INODE_FLAG_IMMUTABLE 0x00000010 /* 文件不可变 */
+#define EXT4_INODE_FLAG_APPEND 0x00000020    /* 文件只能追加写入 */
+#define EXT4_INODE_FLAG_NODUMP 0x00000040    /* 不转储文件 */
+#define EXT4_INODE_FLAG_NOATIME 0x00000080   /* 不更新访问时间（atime） */
+
+/* 压缩相关标志 */
+#define EXT4_INODE_FLAG_DIRTY 0x00000100     /* 脏文件（需要写回） */
+#define EXT4_INODE_FLAG_COMPRBLK 0x00000200  /* 一个或多个压缩簇 */
+#define EXT4_INODE_FLAG_NOCOMPR 0x00000400   /* 不压缩 */
+#define EXT4_INODE_FLAG_ECOMPR 0x00000800    /* 压缩错误 */
+
+#define EXT4_INODE_FLAG_INDEX 0x00001000     /* 哈希索引目录 */
+#define EXT4_INODE_FLAG_IMAGIC 0x00002000    /* AFS 目录 */
+#define EXT4_INODE_FLAG_JOURNAL_DATA 0x00004000 /* 文件数据应记录到日志中 */
+#define EXT4_INODE_FLAG_NOTAIL 0x00008000    /* 文件尾部不应合并 */
+#define EXT4_INODE_FLAG_DIRSYNC 0x00010000   /* 目录同步行为（仅限目录） */
+#define EXT4_INODE_FLAG_TOPDIR 0x00020000    /* 目录层次结构的顶层 */
+#define EXT4_INODE_FLAG_HUGE_FILE 0x00040000 /* 设置为每个大文件 */
+#define EXT4_INODE_FLAG_EXTENTS 0x00080000   /* inode 使用扩展区 */
+#define EXT4_INODE_FLAG_EA_INODE 0x00200000  /* inode 用于大型扩展属性 (EA) */
+#define EXT4_INODE_FLAG_EOFBLOCKS 0x00400000 /* 分配了超出 EOF 的块 */
+#define EXT4_INODE_FLAG_RESERVED 0x80000000  /* 为 ext4 库保留 */
+
+#define EXT4_INODE_ROOT_INDEX 2               /* 根索引 inode 编号 */
+
+#define EXT4_DIRECTORY_FILENAME_LEN 255       /* ext4 目录中最大文件名长度 */
+
+
 /**
  * @brief 获取和设置ext4文件系统中字段值的宏定义
  */
@@ -64,8 +96,14 @@ struct ext4_inode_ref {
 
 #define EXT4_IS_DIR(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_DIRECTORY)//判断是否是目录
 #define EXT4_IS_FILE(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_FILE)//判断是否是文件
+uint32_t ext4_inode_get_flags(struct ext4_inode *inode);
+bool ext4_inode_is_type(struct ext4_sblock *sb, struct ext4_inode *inode, uint32_t type);
+void ext4_inode_clear_flag(struct ext4_inode *inode, uint32_t f);
+void ext4_inode_set_flag(struct ext4_inode *inode, uint32_t f);
 void ext4_inode_set_csum(struct ext4_sblock *sb, struct ext4_inode *inode,
 uint32_t checksum);
+uint64_t ext4_inode_get_blocks_count(struct ext4_sblock *sb, struct ext4_inode *inode);
+static uint32_t ext4_inode_block_bits_count(uint32_t block_size);
 uint32_t ext4_inode_get_csum(struct ext4_sblock* sb, struct ext4_inode* inode);
 uint32_t ext4_inode_get_generation(struct ext4_inode* inode);
 uint32_t ext4_inode_get_mode(struct ext4_sblock* sb, struct ext4_inode* inode);
@@ -73,7 +111,7 @@ void ext4_inode_set_mode(struct ext4_sblock *sb, struct ext4_inode *inode, uint3
 uint32_t ext4_inode_get_uid(struct ext4_inode *inode);
 void ext4_inode_set_uid(struct ext4_inode *inode, uint32_t uid);
 uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode);
-int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref);
+int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *ref,bool initialized);
 int ext4_fs_put_inode_ref(struct ext4_inode_ref* ref);
 void ext4_fs_inode_blocks_init(struct FileSystem *fs,struct ext4_inode_ref *inode_ref);
 #endif

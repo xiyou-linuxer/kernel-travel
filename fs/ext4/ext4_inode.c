@@ -99,6 +99,34 @@ static uint32_t ext4_inode_block_bits_count(uint32_t block_size)
     return bits;
 }
 
+uint64_t ext4_inode_get_blocks_count(struct ext4_sblock *sb, struct ext4_inode *inode)
+{
+	// 从 inode 结构的 blocks_count_lo 字段读取块计数，并将其转换为小端序
+	uint64_t cnt = to_le32(inode->blocks_count_lo);
+
+	// 检查超级块中是否设置了只读兼容的 EXT4_FRO_COM_HUGE_FILE 特性
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_HUGE_FILE)) {
+
+		// 处理 48 位字段，将高 16 位（blocks_high）左移 32 位后与低 32 位（cnt）合并
+		cnt |= (uint64_t)to_le16(inode->osd2.linux2.blocks_high) << 32;
+
+		// 检查 inode 中是否设置了 EXT4_INODE_FLAG_HUGE_FILE 标志
+		if (ext4_inode_has_flag(inode, EXT4_INODE_FLAG_HUGE_FILE)) {
+
+			// 获取块大小和每块位数
+			uint32_t block_count = ext4_sb_get_block_size(sb);
+			uint32_t b = ext4_inode_block_bits_count(block_count);
+			
+			// 将块计数左移适当的位数以处理大文件
+			return cnt << (b - 9);
+		}
+	}
+
+	// 返回计算的块计数
+	return cnt;
+}
+
+
 /**
  * @brief 获取 inode 的模式（文件类型和权限）
  *
