@@ -151,6 +151,45 @@ uint64_t ext4_inode_get_blocks_count(struct ext4_sblock *sb, struct ext4_inode *
 	return cnt;
 }
 
+int ext4_inode_set_blocks_count(struct ext4_sblock *sb, struct ext4_inode *inode, uint64_t count)
+{
+	/* 32-bit maximum */
+	uint64_t max = 0;
+	max = ~max >> 32;
+
+	if (count <= max) {
+		inode->blocks_count_lo = to_le32((uint32_t)count);
+		inode->osd2.linux2.blocks_high = 0;
+		ext4_inode_clear_flag(inode, EXT4_INODE_FLAG_HUGE_FILE);
+
+		return 0;
+	}
+
+	/* Check if there can be used huge files (many blocks) */
+	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_HUGE_FILE))
+		return -1;
+
+	/* 48-bit maximum */
+	max = 0;
+	max = ~max >> 16;
+
+	if (count <= max) {
+		inode->blocks_count_lo = to_le32((uint32_t)count);
+		inode->osd2.linux2.blocks_high = to_le16((uint16_t)(count >> 32));
+		ext4_inode_clear_flag(inode, EXT4_INODE_FLAG_HUGE_FILE);
+	} else {
+		uint32_t block_count = ext4_sb_get_block_size(sb);
+		uint32_t block_bits =ext4_inode_block_bits_count(block_count);
+
+		ext4_inode_set_flag(inode, EXT4_INODE_FLAG_HUGE_FILE);
+		count = count >> (block_bits - 9);
+		inode->blocks_count_lo = to_le32((uint32_t)count);
+		inode->osd2.linux2.blocks_high = to_le16((uint16_t)(count >> 32));
+	}
+
+	return 0;
+}
+
 
 /**
  * @brief 获取 inode 的模式（文件类型和权限）

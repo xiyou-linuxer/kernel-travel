@@ -16,17 +16,19 @@
 int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref)
 {
 	// 检查引用是否被修改
-    if (ref->dirty) {
-        uint16_t cs;
+	if (ref->dirty) {
+		uint16_t cs;
 
-        // 计算块组的新校验和
-        cs = ext4_fs_bg_checksum(&ref->fs->sb, ref->index, ref->block_group);
-        ref->block_group->checksum = to_le16(cs);
+		// 计算块组的新校验和
+		cs = ext4_fs_bg_checksum(&ref->fs->sb, ref->index, ref->block_group);
+		ref->block_group->checksum = to_le16(cs);
 
-        // 标记块为脏块以便将更改写入物理设备
-        bufWrite(ref->block.buf);
-        ext4_trans_set_block_dirty(ref->block.buf);
-    }
+		// 标记块为脏块以便将更改写入物理设备
+		bufWrite(ref->block.buf);
+	}
+	/*释放缓冲区*/
+	bufRelease(ref->block.buf);
+	return 0;
 }
 /**
  * ext4_fs_get_descriptor_block - 获取块组描述符所在的块号

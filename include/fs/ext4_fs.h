@@ -41,10 +41,10 @@ struct ext4_bgroup {
 };
 
 /**
- * @brief Convert block address to relative index in block group.
- * @param s Superblock pointer
- * @param baddr Block number to convert
- * @return Relative number of block
+ * @brief 将块地址转换为块组中的相对索引。
+ * @param s 超级块指针
+ * @param baddr 要转换的块号
+ * @return 相对区块数
  */
 static inline uint32_t ext4_fs_addr_to_idx_bg(struct ext4_sblock *s,
 						     ext4_fsblk_t baddr)
@@ -56,15 +56,13 @@ static inline uint32_t ext4_fs_addr_to_idx_bg(struct ext4_sblock *s,
 }
 
 /**
- * @brief Convert relative block address in group to absolute address.
- * @param s Superblock pointer
- * @param index Relative block address
- * @param bgid Block group
- * @return Absolute block address
+ * @brief 将组中的相对块地址转换为绝对地址。
+ * @param s 超级块指针
+ * @param index 相对块地址
+ * @param bgid 块组
+ * @return 绝对块地址
  */
-static inline ext4_fsblk_t ext4_fs_bg_idx_to_addr(struct ext4_sblock *s,
-						     uint32_t index,
-						     uint32_t bgid)
+static inline ext4_fsblk_t ext4_fs_bg_idx_to_addr(struct ext4_sblock *s, uint32_t index, uint32_t bgid)
 {
 	if (ext4_get32(s, first_data_block))
 		index++;

@@ -16,7 +16,7 @@
 #include <sync.h>
 #include <debug.h>
 
-int ext4_fread(Dirent *file, void *src, unsigned int off, int n)
+int ext4_fread(Dirent *file, unsigned long dst, unsigned int off, unsigned int n)
 {
 	// 定义一些变量
 	size_t rcnt = 0;
@@ -27,7 +27,7 @@ int ext4_fread(Dirent *file, void *src, unsigned int off, int n)
 	ext4_fsblk_t fblock;
 	ext4_fsblk_t fblock_start;
 	uint32_t fblock_count;
-	uint8_t *u8_buf = src;
+	uint8_t *u8_buf = dst;
 	int r;
 	struct ext4_inode_ref ref;
 
@@ -74,7 +74,7 @@ int ext4_fread(Dirent *file, void *src, unsigned int off, int n)
 			size_t len = n;
 			if (unalg + n > (uint32_t)file->file_size)
 				len = (uint32_t)file->file_size - unalg;
-			memcpy(src, content + unalg, len);
+			memcpy(dst, content + unalg, len);
 			if (rcnt)
 				rcnt = len;
 		}
@@ -168,7 +168,7 @@ Finish:
     return r;
 }
 
-int ext4_fwrite(Dirent *file, const void *src, unsigned int off, size_t n)
+int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int n)
 {
 	int EOK = 0;
 	size_t wcnt = 0;
@@ -331,9 +331,5 @@ out_fsize:
 Finish:
 	r = ext4_fs_put_inode_ref(&ref);
 
-	if (r != EOK)
-		ext4_trans_abort(file->mp);
-	else
-		ext4_trans_stop(file->mp);
 	return r;
 }

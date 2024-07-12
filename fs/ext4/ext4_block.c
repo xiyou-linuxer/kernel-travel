@@ -2,6 +2,7 @@
 #include <xkernel/types.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
+#include <debug.h>
 #include <fs/vfs.h>
 #include <fs/dirent.h>
 #include <fs/mount.h>
@@ -11,16 +12,84 @@
 #include <fs/ext4_fs.h>
 #include <fs/ext4_inode.h>
 #include <fs/ext4_dir.h>
-int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref,
-			    ext4_fsblk_t goal,
-			    ext4_fsblk_t *fblock)
+#include <fs/ext4_bitmap.h>
+#include <fs/ext4_config.h>
+#include <fs/ext4_block_group.h>
+
+uint32_t ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
+				       uint64_t baddr)
 {
+	if (ext4_get32(s, first_data_block) && baddr)
+		baddr--;
+
+	return (uint32_t)(baddr / ext4_get32(s, blocks_per_group));
+}
+
+/**
+ * @brief 计算块组的起始块地址
+ * @param s 超级块指针。
+ * @param bgid 块组索引
+ * @return 区块地址
+ */
+uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
+				       uint32_t bgid)
+{
+	uint64_t baddr = 0;
+	if (ext4_get32(s, first_data_block))
+		baddr++;
+
+	baddr += bgid * ext4_get32(s, blocks_per_group);
+	return baddr;
+}
+
+#define ext4_balloc_verify_bitmap_csum(...) true
+
+#if CONFIG_META_CSUM_ENABLE
+static uint32_t ext4_balloc_bitmap_csum(struct ext4_sblock *sb,
+					void *bitmap)
+{
+	uint32_t checksum = 0;
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
+		uint32_t blocks_per_group = ext4_get32(sb, blocks_per_group);
+
+		/* First calculate crc32 checksum against fs uuid */
+		checksum = ext4_crc32c(EXT4_CRC32_INIT, sb->uuid,
+				sizeof(sb->uuid));
+		/* Then calculate crc32 checksum against block_group_desc */
+		checksum = ext4_crc32c(checksum, bitmap, blocks_per_group / 8);
+	}
+	return checksum;
+}
+#else
+#define ext4_balloc_bitmap_csum(...) 0
+#endif
+
+void ext4_balloc_set_bitmap_csum(struct ext4_sblock *sb, struct ext4_bgroup *bg, void *bitmap __attribute__ ((__unused__)))
+{
+	int desc_size = ext4_sb_get_desc_size(sb);
+	uint32_t checksum = ext4_balloc_bitmap_csum(sb, bitmap);
+	uint16_t lo_checksum = to_le16(checksum & 0xFFFF),
+		 hi_checksum = to_le16(checksum >> 16);
+
+	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
+		return;
+
+	/* See if we need to assign a 32bit checksum */
+	bg->block_bitmap_csum_lo = lo_checksum;
+	if (desc_size == EXT4_MAX_BLOCK_GROUP_DESCRIPTOR_SIZE)
+		bg->block_bitmap_csum_hi = hi_checksum;
+
+}
+
+int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t goal, ext4_fsblk_t *fblock)
+{
+	int EOK = 0;
 	ext4_fsblk_t alloc = 0;
 	ext4_fsblk_t bmp_blk_adr;
 	uint32_t rel_blk_idx = 0;
 	uint64_t free_blocks;
 	int r;
-	struct ext4_sblock *sb = &inode_ref->fs->sb;
+	struct ext4_sblock *sb = &inode_ref->fs->superBlock.ext4_sblock;
 
 	/* 获取目标块所在的块组号和相对索引 */
 	uint32_t bg_id = ext4_balloc_get_bgid_of_block(sb, goal);
@@ -55,31 +124,22 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref,
 	/* 加载包含位图的块 */
 	bmp_blk_adr = ext4_bg_get_block_bitmap(bg_ref.block_group, sb);
 
-	r = ext4_trans_block_get(inode_ref->fs->bdev, &b, bmp_blk_adr);
+	b.buf = bufRead(1,bmp_blk_adr,1);
 	if (r != EOK) {
 		ext4_fs_put_block_group_ref(&bg_ref);
 		return r;
 	}
 
 	if (!ext4_balloc_verify_bitmap_csum(sb, bg, b.data)) {
-		ext4_dbg(DEBUG_BALLOC,
-			DBG_WARN "位图校验和失败."
-			"组: %" PRIu32"\n",
-			bg_ref.index);
+		printk("Bitmap checksum failed, Group: %d \n", bg_ref.index);
 	}
 
 	/* 检查目标是否为空闲 */
-	if (ext4_bmap_is_bit_clr(b.data, idx_in_bg)) {
-		ext4_bmap_bit_set(b.data, idx_in_bg);
-		ext4_balloc_set_bitmap_csum(sb, bg_ref.block_group,
-					    b.data);
-		ext4_trans_set_block_dirty(b.buf);
-		r = ext4_block_set(inode_ref->fs->bdev, &b);
-		if (r != EOK) {
-			ext4_fs_put_block_group_ref(&bg_ref);
-			return r;
-		}
-
+	if (ext4_bmap_is_bit_clr(b.buf->data, idx_in_bg)) {
+		ext4_bmap_bit_set(b.buf->data, idx_in_bg);
+		ext4_balloc_set_bitmap_csum(sb, bg_ref.block_group, b.buf->data);
+		bufWrite(b.buf);
+		bufRelease(b.buf);
 		alloc = ext4_fs_bg_idx_to_addr(sb, idx_in_bg, bg_id);
 		goto success;
 	}
@@ -93,40 +153,29 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref,
 	/* 尝试在目标附近找到空闲块 */
 	uint32_t tmp_idx;
 	for (tmp_idx = idx_in_bg + 1; tmp_idx < end_idx; ++tmp_idx) {
-		if (ext4_bmap_is_bit_clr(b.data, tmp_idx)) {
-			ext4_bmap_bit_set(b.data, tmp_idx);
-
-			ext4_balloc_set_bitmap_csum(sb, bg, b.data);
-			ext4_trans_set_block_dirty(b.buf);
-			r = ext4_block_set(inode_ref->fs->bdev, &b);
-			if (r != EOK) {
-				ext4_fs_put_block_group_ref(&bg_ref);
-				return r;
-			}
-
+		if (ext4_bmap_is_bit_clr(b.buf->data, tmp_idx)) {
+			ext4_bmap_bit_set(b.buf->data, tmp_idx);
+			ext4_balloc_set_bitmap_csum(sb, bg, b.buf->data);
+			bufWrite(b.buf);
+			bufRelease(b.buf);
 			alloc = ext4_fs_bg_idx_to_addr(sb, tmp_idx, bg_id);
 			goto success;
 		}
 	}
 
 	/* 在位图中查找空闲位 */
-	r = ext4_bmap_bit_find_clr(b.data, idx_in_bg, blk_in_bg, &rel_blk_idx);
+	r = ext4_bmap_bit_find_clr(b.buf->data, idx_in_bg, blk_in_bg, &rel_blk_idx);
 	if (r == EOK) {
-		ext4_bmap_bit_set(b.data, rel_blk_idx);
-		ext4_balloc_set_bitmap_csum(sb, bg_ref.block_group, b.data);
-		ext4_trans_set_block_dirty(b.buf);
-		r = ext4_block_set(inode_ref->fs->bdev, &b);
-		if (r != EOK) {
-			ext4_fs_put_block_group_ref(&bg_ref);
-			return r;
-		}
-
+		ext4_bmap_bit_set(b.buf->data, rel_blk_idx);
+		ext4_balloc_set_bitmap_csum(sb, bg_ref.block_group, b.buf->data);
+		bufWrite(b.buf);
+		bufRelease(b.buf);
 		alloc = ext4_fs_bg_idx_to_addr(sb, rel_blk_idx, bg_id);
 		goto success;
 	}
 
 	/* 尚未找到空闲块 */
-	r = ext4_block_set(inode_ref->fs->bdev, &b);
+	bufRelease(b.buf);
 	if (r != EOK) {
 		ext4_fs_put_block_group_ref(&bg_ref);
 		return r;
@@ -157,17 +206,10 @@ goal_failed:
 
 		/* 加载包含位图的块 */
 		bmp_blk_adr = ext4_bg_get_block_bitmap(bg, sb);
-		r = ext4_trans_block_get(inode_ref->fs->bdev, &b, bmp_blk_adr);
-		if (r != EOK) {
-			ext4_fs_put_block_group_ref(&bg_ref);
-			return r;
-		}
+		bufRead(1,bmp_blk_adr,1);
 
-		if (!ext4_balloc_verify_bitmap_csum(sb, bg, b.data)) {
-			ext4_dbg(DEBUG_BALLOC,
-				DBG_WARN "位图校验和失败."
-				"组: %" PRIu32"\n",
-				bg_ref.index);
+		if (!ext4_balloc_verify_bitmap_csum(sb, bg, b.buf->data)) {
+			printk("Bitmap checksum failed, Group: %d \n", bg_ref.index);
 		}
 
 		/* 计算索引 */
@@ -179,23 +221,18 @@ goal_failed:
 		if (idx_in_bg < first_in_bg_index)
 			idx_in_bg = first_in_bg_index;
 
-		r = ext4_bmap_bit_find_clr(b.data, idx_in_bg, blk_in_bg,
+		r = ext4_bmap_bit_find_clr(b.buf->data, idx_in_bg, blk_in_bg,
 				&rel_blk_idx);
 		if (r == EOK) {
-			ext4_bmap_bit_set(b.data, rel_blk_idx);
-			ext4_balloc_set_bitmap_csum(sb, bg, b.data);
-			ext4_trans_set_block_dirty(b.buf);
-			r = ext4_block_set(inode_ref->fs->bdev, &b);
-			if (r != EOK) {
-				ext4_fs_put_block_group_ref(&bg_ref);
-				return r;
-			}
-
+			ext4_bmap_bit_set(b.buf->data, rel_blk_idx);
+			ext4_balloc_set_bitmap_csum(sb, bg, b.buf->data);
+			bufWrite(b.buf);
+			bufRelease(b.buf);
 			alloc = ext4_fs_bg_idx_to_addr(sb, rel_blk_idx, bgid);
-			goto success;
+			goto success;//找到可用的位置
 		}
 
-		r = ext4_block_set(inode_ref->fs->bdev, &b);
+		bufRelease(b.buf);
 		if (r != EOK) {
 			ext4_fs_put_block_group_ref(&bg_ref);
 			return r;
@@ -211,8 +248,8 @@ goal_failed:
 		bgid = (bgid + 1) % block_group_count;
 		count--;
 	}
-
-	return ENOSPC;
+	//遍历所有块组都未找到则返回错误
+	return -1;
 
 success:
     /* 空命令 - 因为语法原因 */
@@ -246,6 +283,7 @@ success:
 int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 			    ext4_fsblk_t first, uint32_t count)
 {
+	int EOK = 0;
 	int rc = EOK;
 	uint32_t blk_cnt = count; // 要释放的块数
 	ext4_fsblk_t start_block = first; // 第一个要释放的块
@@ -259,9 +297,7 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 	if (!ext4_sb_feature_incom(sb, EXT4_FINCOM_FLEX_BG)) {
 		/* 如果未启用FLEX_BG特性，确保所有块在同一块组内 */
 		if (bg_last != bg_first) {
-			ext4_dbg(DEBUG_BALLOC, DBG_WARN "FLEX_BG: disabled & "
-				"bg_last: %"PRIu32" bg_first: %"PRIu32"\n",
-				bg_last, bg_first);
+			printk("FLEX_BG: disabled & bg_last: %d  bg_first: %d\n", bg_last, bg_first);
 		}
 	}
 
@@ -283,18 +319,15 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 		ext4_fsblk_t bitmap_blk = ext4_bg_get_block_bitmap(bg, sb);
 
 		struct ext4_block blk;
-		rc = ext4_trans_block_get(fs->bdev, &blk, bitmap_blk);
+		bufRead(1,bitmap_blk,1);
 		if (rc != EOK) {
 			ext4_fs_put_block_group_ref(&bg_ref);
 			return rc;
 		}
 
 		/* 验证位图校验和 */
-		if (!ext4_balloc_verify_bitmap_csum(sb, bg, blk.data)) {
-			ext4_dbg(DEBUG_BALLOC,
-				DBG_WARN "位图校验和失败."
-				"组: %" PRIu32"\n",
-				bg_ref.index);
+		if (!ext4_balloc_verify_bitmap_csum(sb, bg, blk.buf->data)) {
+			ext4_dbg("位图校验和失败.组: %d\n",bg_ref.index);
 		}
 
 		/* 计算要释放的块数 */
@@ -305,8 +338,8 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 		free_cnt = count > free_cnt ? free_cnt : count;
 
 		/* 修改位图 */
-		ext4_bmap_bits_free(blk.data, idx_in_bg_first, free_cnt);
-		ext4_balloc_set_bitmap_csum(sb, bg, blk.data);
+		ext4_bmap_bits_free(blk.buf->data, idx_in_bg_first, free_cnt);
+		ext4_balloc_set_bitmap_csum(sb, bg, blk.buf->data);
 		ext4_trans_set_block_dirty(blk.buf);
 
 		/* 更新计数和索引 */
@@ -314,11 +347,7 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 		first += free_cnt;
 
 		/* 释放包含位图的块 */
-		rc = ext4_block_set(fs->bdev, &blk);
-		if (rc != EOK) {
-			ext4_fs_put_block_group_ref(&bg_ref);
-			return rc;
-		}
+		bufRelease(blk.buf);
 
 		uint32_t block_size = ext4_sb_get_block_size(sb);
 
@@ -350,19 +379,11 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 		bg_first++;
 	}
 
-	/* 尝试撤销块 */
-	uint32_t i;
-	for (i = 0; i < blk_cnt; i++) {
-		rc = ext4_trans_try_revoke_block(fs->bdev, start_block + i);
-		if (rc != EOK)
-			return rc;
-	}
-
 	/* 使缓存中的块无效 */
-	ext4_bcache_invalidate_lba(fs->bdev->bc, start_block, blk_cnt);
+	//ext4_bcache_invalidate_lba(fs->bdev->bc, start_block, blk_cnt);
 
 	/* 确保所有块都已释放 */
-	ext4_assert(count == 0);
+	ASSERT(count == 0);
 
 	return rc;
 }
@@ -402,18 +423,18 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 
 	// 处理对齐的数据
 	blen = len / ph_bsize;
-
 	if (blen != 0) {
 		// 读取对齐的块
-		Buffer *buffer = bufRead(1, block_idx, 1);
-		if (r != 0)
-			return r;
-
-		// 更新指针和剩余长度
-		p += ph_bsize * blen;
-		len -= ph_bsize * blen;
-
-		block_idx += blen;
+		int count = 0;
+		while (count < blen)
+		{
+			Buffer *buffer = bufRead(1, block_idx, 1);
+			memcpy(p, buffer->data, ph_bsize);
+			p += ph_bsize;
+			len -= ph_bsize;
+			block_idx++;
+			count++;
+		}
 	}
 	// 处理剩余的数据
 	if (len) {
@@ -428,71 +449,51 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 	return r;
 }
 
-int ext4_block_writebytes(struct ext4_blockdev *bdev, uint64_t off,
-			  const void *buf, uint32_t len)
+int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 {
 	uint64_t block_idx;
 	uint32_t blen;
 	uint32_t unalg;
-	int r = EOK;
-
+	int r = 0;
+	int ph_bsize = 512;
 	const uint8_t *p = (void *)buf;
 
-	ext4_assert(bdev && buf);
-
-	if (!bdev->bdif->ph_refctr)
-		return EIO;
-
-	if (off + len > bdev->part_size)
-		return EINVAL; /*Ups. Out of range operation*/
-
-	block_idx = ((off + bdev->part_offset) / bdev->bdif->ph_bsize);
+	block_idx = (off / ph_bsize);
 
 	/*OK lets deal with the first possible unaligned block*/
-	unalg = (off & (bdev->bdif->ph_bsize - 1));
+	unalg = (off & (ph_bsize - 1));
 	if (unalg) {
-
-		uint32_t wlen = (bdev->bdif->ph_bsize - unalg) > len
-				    ? len
-				    : (bdev->bdif->ph_bsize - unalg);
-
-		r = ext4_bdif_bread(bdev, bdev->bdif->ph_bbuf, block_idx, 1);
-		if (r != EOK)
-			return r;
-
-		memcpy(bdev->bdif->ph_bbuf + unalg, p, wlen);
-		r = ext4_bdif_bwrite(bdev, bdev->bdif->ph_bbuf, block_idx, 1);
-		if (r != EOK)
-			return r;
-
+		uint32_t wlen = (ph_bsize - unalg) > len ? len : (ph_bsize - unalg);
+		Buffer *buffer = bufRead(1,block_idx,1);
+		memcpy(buffer->data + unalg, p, wlen);
+		bufWrite(buffer);
 		p += wlen;
 		len -= wlen;
 		block_idx++;
 	}
 
 	/*Aligned data*/
-	blen = len / bdev->bdif->ph_bsize;
+	blen = len / ph_bsize;
 	if (blen != 0) {
-		r = ext4_bdif_bwrite(bdev, p, block_idx, blen);
-		if (r != EOK)
-			return r;
-
-		p += bdev->bdif->ph_bsize * blen;
-		len -= bdev->bdif->ph_bsize * blen;
-
-		block_idx += blen;
+		int count = 0;
+		while (count < blen)
+		{
+			Buffer *buffer = bufRead(1,block_idx,1);
+			memcpy(buffer->data,p,ph_bsize);
+			p+=ph_bsize;
+			len -= ph_bsize;
+			block_idx++;
+			count++;
+		}
 	}
 
 	/*Rest of the data*/
 	if (len) {
-		r = ext4_bdif_bread(bdev, bdev->bdif->ph_bbuf, block_idx, 1);
-		if (r != EOK)
-			return r;
+		Buffer *buffer = bufRead(1,block_idx,1);
 
-		memcpy(bdev->bdif->ph_bbuf, p, len);
-		r = ext4_bdif_bwrite(bdev, bdev->bdif->ph_bbuf, block_idx, 1);
-		if (r != EOK)
-			return r;
+		memcpy(buffer->data, p, len);
+
+		bufWrite(buffer);
 	}
 
 	return r;

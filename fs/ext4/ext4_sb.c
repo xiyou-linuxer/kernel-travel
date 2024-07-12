@@ -170,22 +170,34 @@ static uint32_t ext4_bg_num_gdb_nometa(struct ext4_sblock *s, uint32_t group)
 	return db_count;
 }
 
+/**
+ * 计算特定块组的组描述符块数。
+ *
+ * @param s 指向超级块的指针。
+ * @param group 要计算的块组号。
+ * @return 块组的组描述符块数。
+ */
 uint32_t ext4_bg_num_gdb(struct ext4_sblock *s, uint32_t group)
 {
-	uint32_t dsc_per_block =
-	    ext4_sb_get_block_size(s) / ext4_sb_get_desc_size(s);
+	// 每个块中的组描述符数量
+	uint32_t dsc_per_block = ext4_sb_get_block_size(s) / ext4_sb_get_desc_size(s);
+
+	// 获取第一个元数据块组
 	uint32_t first_meta_bg = ext4_sb_first_meta_bg(s);
+
+	// 计算元数据组
 	uint32_t metagroup = group / dsc_per_block;
 
-	if (!ext4_sb_feature_incom(s,EXT4_FINCOM_META_BG) ||
-	    metagroup < first_meta_bg)
+	// 如果不支持META_BG特性或元数据组小于第一个元数据块组
+	if (!ext4_sb_feature_incom(s, EXT4_FINCOM_META_BG) || metagroup < first_meta_bg)
 		return ext4_bg_num_gdb_nometa(s, group);
 
+	// 如果支持META_BG特性且元数据组大于等于第一个元数据块组
 	return ext4_bg_num_gdb_meta(s, group);
 }
 
-uint32_t ext4_num_base_meta_clusters(struct ext4_sblock *s,
-				     uint32_t block_group)
+
+uint32_t ext4_num_base_meta_clusters(struct ext4_sblock *s, uint32_t block_group)
 {
 	uint32_t num;
 	uint32_t dsc_per_block =

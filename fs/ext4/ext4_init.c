@@ -15,7 +15,8 @@
 #include <debug.h>
 FileSystem *ext4Fs;
 static const struct fs_operation ext4_op = {
-	ext4_init
+ 	.file_init = ext4_init,
+	.file_read = 
 };
 
 static void build_dirent_ext4tree(Dirent *parent)
