@@ -96,7 +96,13 @@ struct ext4_inode_ref {
 
 #define EXT4_IS_DIR(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_DIRECTORY)//判断是否是目录
 #define EXT4_IS_FILE(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_FILE)//判断是否是文件
-uint32_t ext4_inode_get_flags(struct ext4_inode *inode);
+void ext4_inode_set_indirect_block(struct ext4_inode *inode, uint32_t idx, uint32_t block);
+void ext4_inode_set_direct_block(struct ext4_inode *inode, uint32_t idx, uint32_t block);
+uint32_t ext4_inode_get_indirect_block(struct ext4_inode* inode, uint32_t idx);
+bool ext4_inode_has_flag(struct ext4_inode* inode, uint32_t f);
+struct ext4_extent_header * ext4_inode_get_extent_header(struct ext4_inode *inode);
+void ext4_inode_set_size(struct ext4_inode* inode, uint64_t size);
+uint32_t ext4_inode_get_flags(struct ext4_inode* inode);
 bool ext4_inode_is_type(struct ext4_sblock *sb, struct ext4_inode *inode, uint32_t type);
 void ext4_inode_clear_flag(struct ext4_inode *inode, uint32_t f);
 void ext4_inode_set_flag(struct ext4_inode *inode, uint32_t f);

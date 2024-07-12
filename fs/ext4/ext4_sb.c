@@ -1,6 +1,7 @@
 #include <fs/ext4.h>
-#include <ext4_sb.h>
-#include <ext4_crc32.h>
+#include <fs/ext4_sb.h>
+#include <fs/ext4_crc32.h>
+#include <fs/ext4_fs.h>
 
 uint32_t ext4_block_group_cnt(struct ext4_sblock *s)
 {
@@ -63,12 +64,12 @@ static void ext4_sb_set_csum(struct ext4_sblock *s)
 int ext4_sb_write(struct ext4_blockdev *bdev, struct ext4_sblock *s)
 {
 	ext4_sb_set_csum(s);
-	//return ext4_block_writebytes(bdev, EXT4_SUPERBLOCK_OFFSET, s,EXT4_SUPERBLOCK_SIZE);
+	return ext4_block_writebytes(EXT4_SUPERBLOCK_OFFSET, s, EXT4_SUPERBLOCK_SIZE);
 }
 
 int ext4_sb_read(struct ext4_blockdev *bdev, struct ext4_sblock *s)
 {
-	//return ext4_block_readbytes(bdev, EXT4_SUPERBLOCK_OFFSET, s, EXT4_SUPERBLOCK_SIZE);
+	return ext4_block_readbytes(EXT4_SUPERBLOCK_OFFSET, s, EXT4_SUPERBLOCK_SIZE);
 }
 
 bool ext4_sb_check(struct ext4_sblock *s)

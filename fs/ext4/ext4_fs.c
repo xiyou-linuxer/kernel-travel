@@ -6,13 +6,16 @@
 #include <fs/ext4_sb.h>
 #include <fs/ext4_crc32.h>
 #include <fs/ext4_bitmap.h>
+#include <fs/ext4_config.h>
+#include <xkernel/debug.h>
 #include <fs/buf.h>
 #include <fs/fs.h>
 #include <xkernel/stdio.h>
+#include <xkernel/string.h>
 
 int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref)
 {
-    // 检查引用是否被修改
+	// 检查引用是否被修改
     if (ref->dirty) {
         uint16_t cs;
 
@@ -37,29 +40,29 @@ int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref)
  */
 static ext4_fsblk_t ext4_fs_get_descriptor_block(struct ext4_sblock *s, uint32_t bgid, uint32_t dsc_per_block)
 {
-    uint32_t first_meta_bg, dsc_id;
-    int has_super = 0;
+	uint32_t first_meta_bg, dsc_id;
+	int has_super = 0;
 
-    // 计算描述符ID
-    dsc_id = bgid / dsc_per_block;
-    
-    // 获取第一个元数据块组
-    first_meta_bg = ext4_sb_first_meta_bg(s);
+	// 计算描述符ID
+	dsc_id = bgid / dsc_per_block;
 
-    // 检查是否启用了元数据块组特性
-    bool meta_bg = ext4_sb_feature_incom(s, EXT4_FINCOM_META_BG);
+	// 获取第一个元数据块组
+	first_meta_bg = ext4_sb_first_meta_bg(s);
 
-    // 如果未启用元数据块组特性，或者描述符ID小于第一个元数据块组
-    if (!meta_bg || dsc_id < first_meta_bg)
-        // 返回第一个数据块 + 描述符ID + 1
-        return ext4_get32(s, first_data_block) + dsc_id + 1;
+	// 检查是否启用了元数据块组特性
+	bool meta_bg = ext4_sb_feature_incom(s, EXT4_FINCOM_META_BG);
 
-    // 检查块组中是否包含超级块
-    if (ext4_sb_is_super_in_bg(s, bgid))
-        has_super = 1;
+	// 如果未启用元数据块组特性，或者描述符ID小于第一个元数据块组
+	if (!meta_bg || dsc_id < first_meta_bg)
+		// 返回第一个数据块 + 描述符ID + 1
+		return ext4_get32(s, first_data_block) + dsc_id + 1;
 
-    // 返回超级块偏移量 + 块组的第一个块号
-    return (has_super + ext4_fs_first_bg_block_no(s, bgid));
+	// 检查块组中是否包含超级块
+	if (ext4_sb_is_super_in_bg(s, bgid))
+		has_super = 1;
+
+	// 返回超级块偏移量 + 块组的第一个块号
+	return (has_super + ext4_fs_first_bg_block_no(s, bgid));
 }
 
 /**
@@ -93,6 +96,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	uint32_t inode_table_bcnt = inodes_per_group * inode_size / block_size;
 
 	struct ext4_block block_bitmap;
+	//获取数据块，因为全部清0,所以不用从磁盘清0,直接在内存中获取buf
 	bufRead(1,bmp_blk,0);
 	// 初始化块位图的内容为0
 	memset(block_bitmap.buf->data, 0, block_size);
@@ -153,6 +157,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 
 	// 保存位图
 	bufWrite(block_bitmap.buf);
+	bufRelease(block_bitmap.buf);
 	return 0;
 }
 
@@ -187,8 +192,8 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 	ext4_fsblk_t bitmap_block_addr = ext4_bg_get_inode_bitmap(bg, sb);
 
 	struct ext4_block b;
-	/*读取*/
-	b.buf = bufRead(1,bitmap_block_addr,1);
+	/*获取数据块*/
+	b.buf = bufRead(1,bitmap_block_addr,0);
 	if (b.buf == NULL)
 		return -1;
 
@@ -213,6 +218,7 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 	ext4_ialloc_set_bitmap_csum(sb, bg, b.buf->data); // 计算并设置校验和
 	bg_ref->dirty = true;
 	bufWrite(b.buf);// 保存位图
+	bufRelease(b.buf);
 	return 0; 
 }
 
@@ -244,14 +250,19 @@ static int ext4_fs_init_inode_table(struct ext4_block_group_ref *bg_ref)
 	// 初始化所有i-node表块
 	for (fblock = first_block; fblock <= last_block; ++fblock) {
 		struct ext4_block b;
-		b.buf = bufRead(1,fblock,1);
+		b.buf = bufRead(1,fblock,0);
+		if (b.buf == NULL)
+		{
+			return -1;
+		}
 		// 将块的数据清零
 		memset(b.buf->data, 0, block_size);
 		// 将块标记为脏块
 		bufWrite(b.buf);
-    }
+		bufRelease(b.buf);
+	}
 
-    return 0; // 返回成功状态
+	return 0; // 返回成功状态
 }
 
 
@@ -278,16 +289,28 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	//检查块组中块位图的使用情况
 	if (ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_BLOCK_UNINIT)) {
 		rc = ext4_fs_init_block_bitmap(ref);
+		if (rc != 0) {
+			bufRelease(ref->block.buf);
+			return rc;
+		}
 		ext4_bg_clear_flag(bg, EXT4_BLOCK_GROUP_BLOCK_UNINIT);
 		ref->dirty = true;
 	}
 	//检查块组中inode位图的使用情况
 	if (ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_INODE_UNINIT)) {
 		rc = ext4_fs_init_inode_bitmap(ref);
+		if (rc != 0) {
+			bufRelease(ref->block.buf);
+			return rc;
+		}
 		ext4_bg_clear_flag(bg, EXT4_BLOCK_GROUP_INODE_UNINIT);
 
 		if (!ext4_bg_has_flag(bg, EXT4_BLOCK_GROUP_ITABLE_ZEROED)) {
 			rc = ext4_fs_init_inode_table(ref);
+			if (rc != 0) {
+				bufRelease(ref->block.buf);
+				return rc;
+			}
 			ext4_bg_set_flag(bg, EXT4_BLOCK_GROUP_ITABLE_ZEROED);
 		}
 
@@ -297,9 +320,8 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	return 0;
 }
 
-/* 从原生的 inode 中 */
-static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref,uint64_t iblock,uint64_t *fblock,bool extent_create,
-bool support_unwritten __attribute__ ((__unused__)))
+/* 从原生的 inode 中获取块索引，存在 fblock 里面*/
+static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref, uint64_t iblock,uint64_t *fblock, bool extent_create, bool support_unwritten __attribute__ ((__unused__)))
 {
 	struct ext4_fs *fs = &inode_ref->fs->ext4_fs;
 	// 对于空文件，直接返回0
@@ -308,6 +330,23 @@ bool support_unwritten __attribute__ ((__unused__)))
 	    return 0;
 	}
 	uint64_t current_block;
+	/*#if CONFIG_EXTENT_ENABLE && CONFIG_EXTENTS_ENABLE //磁盘中并未设置extent
+	/* Handle i-node using extents */
+	/*if ((ext4_sb_feature_incom(&fs->sb, EXT4_FINCOM_EXTENTS)) &&
+	    (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
+
+		ext4_fsblk_t current_fsblk;
+		int rc = ext4_extent_get_blocks(inode_ref, iblock, 1, &current_fsblk, extent_create, NULL);
+		if (rc != 0)
+			return rc;
+
+		current_block = current_fsblk;
+		*fblock = current_block;
+
+		ASSERT(*fblock || support_unwritten);
+		return 0;
+	}
+	#endif*/
 	struct ext4_inode *inode = inode_ref->inode;
 	// 直接块从i节点结构中的数组读取
 	if (iblock < EXT4_INODE_DIRECT_BLOCK_COUNT) {
@@ -331,8 +370,7 @@ bool support_unwritten __attribute__ ((__unused__)))
 	// 计算顶层的偏移
 	uint32_t blk_off_in_lvl = (uint32_t)(iblock - fs->inode_block_limits[l - 1]);
 	current_block = ext4_inode_get_indirect_block(inode, l - 1);
-	uint32_t off_in_blk =
-        (uint32_t)(blk_off_in_lvl / fs->inode_blocks_per_level[l - 1]);
+	uint32_t off_in_blk = (uint32_t)(blk_off_in_lvl / fs->inode_blocks_per_level[l - 1]);
 
 	// 稀疏文件处理
 	if (current_block == 0) {
@@ -351,6 +389,9 @@ bool support_unwritten __attribute__ ((__unused__)))
 		}
 		// 从间接块中读取块地址
 		current_block = to_le32(((uint32_t *)block.buf->data)[off_in_blk]);
+
+		bufRelease(block.buf);
+
 		// 检查是否为稀疏文件
 		if (current_block == 0) {
 			*fblock = 0;
@@ -422,3 +463,387 @@ int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref, uint64_t iblock
 						   false, support_unwritten);
 }
 
+int ext4_fs_init_inode_dblk_idx(struct ext4_inode_ref *inode_ref,
+				ext4_lblk_t iblock, ext4_fsblk_t *fblock)
+{
+	return ext4_fs_get_inode_dblk_idx_internal(inode_ref, iblock, fblock,
+						   true, true);
+}
+
+int ext4_fs_indirect_find_goal(struct ext4_inode_ref *inode_ref, ext4_fsblk_t *goal)
+{
+	int r;
+	int EOK = 0;
+	struct ext4_sblock *sb = &inode_ref->fs->superBlock.ext4_sblock;
+	*goal = 0; // 初始化目标块为0
+
+	uint64_t inode_size = ext4_inode_get_size(sb, inode_ref->inode);
+	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint32_t iblock_cnt = (uint32_t)(inode_size / block_size);
+
+	// 如果inode的大小不是块大小的整数倍，则增加一个块计数
+	if (inode_size % block_size != 0)
+		iblock_cnt++;
+
+	/* 如果inode有一些块，获取最后一个块的地址并增加1 */
+	if (iblock_cnt > 0) {
+		r = ext4_fs_get_inode_dblk_idx(inode_ref, iblock_cnt - 1, goal, false);
+		if (r != EOK)
+			return r;
+
+		if (*goal != 0) {
+			(*goal)++; // 如果goal不是0，增加1并返回
+			return r;
+		}
+
+		/* 如果goal == 0，表示稀疏文件，继续处理 */
+	}
+
+	/* 确定inode所在的块组 */
+	uint32_t inodes_per_bg = ext4_get32(sb, inodes_per_group);
+	uint32_t block_group = (inode_ref->index - 1) / inodes_per_bg;
+	block_size = ext4_sb_get_block_size(sb);
+
+	/* 加载块组引用 */
+	struct ext4_block_group_ref bg_ref;
+	r = ext4_fs_get_block_group_ref(inode_ref->fs, block_group, &bg_ref);
+	if (r != EOK)
+		return r;
+
+	struct ext4_bgroup *bg = bg_ref.block_group;
+
+	/* 计算索引 */
+	uint32_t bg_count = ext4_block_group_cnt(sb);
+	ext4_fsblk_t itab_first_block = ext4_bg_get_inode_table_first_block(bg, sb);
+	uint16_t itab_item_size = ext4_get16(sb, inode_size);
+	uint32_t itab_bytes;
+
+	/* 检查是否为最后一个块组 */
+	if (block_group < bg_count - 1) {
+		itab_bytes = inodes_per_bg * itab_item_size;
+	} else {
+		/* 最后一个块组可能更小 */
+		uint32_t inodes_cnt = ext4_get32(sb, inodes_count);
+
+		itab_bytes = (inodes_cnt - ((bg_count - 1) * inodes_per_bg));
+		itab_bytes *= itab_item_size;
+	}
+
+	ext4_fsblk_t inode_table_blocks = itab_bytes / block_size;
+
+	if (itab_bytes % block_size)
+		inode_table_blocks++;
+
+	*goal = itab_first_block + inode_table_blocks; // 设置目标块为inode表的最后一个块
+
+	return ext4_fs_put_block_group_ref(&bg_ref); // 释放块组引用并返回结果
+}
+
+static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
+					      ext4_lblk_t iblock,
+					      ext4_fsblk_t fblock)
+{
+	struct ext4_fs *fs = inode_ref->fs;
+	int EOK = 0;
+
+#if CONFIG_EXTENT_ENABLE && CONFIG_EXTENTS_ENABLE
+	/* 处理使用extent的inode */
+	if ((ext4_sb_feature_incom(&fs->sb, EXT4_FINCOM_EXTENTS)) &&
+	    (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
+		/* 不可达 */
+		return -1;
+	}
+#endif
+
+	/* 处理直接引用的简单情况 */
+	if (iblock < EXT4_INODE_DIRECT_BLOCK_COUNT) {
+		ext4_inode_set_direct_block(inode_ref->inode, (uint32_t)iblock, (uint32_t)fblock);
+		inode_ref->dirty = true;
+
+		return EOK;
+	}
+
+	/* 确定需要的间接级别 */
+	unsigned int l = 0;
+	unsigned int i;
+	for (i = 1; i < 4; i++) {
+		if (iblock < fs->inode_block_limits[i]) {
+			l = i;
+			break;
+		}
+	}
+
+	if (l == 0)
+		return -1;
+
+	uint32_t block_size = ext4_sb_get_block_size(&fs->sb);
+
+	/* 计算顶层的偏移量 */
+	uint32_t blk_off_in_lvl = (uint32_t)(iblock - fs->inode_block_limits[l - 1]);
+	ext4_fsblk_t current_block = ext4_inode_get_indirect_block(inode_ref->inode, l - 1);
+	uint32_t off_in_blk = (uint32_t)(blk_off_in_lvl / fs->inode_blocks_per_level[l - 1]);
+
+	ext4_fsblk_t new_blk;
+
+	struct ext4_block block;
+	struct ext4_block new_block;
+
+	/* 如果在inode级别需要分配间接块 */
+	if (current_block == 0) {
+		/* 分配新的间接块 */
+		ext4_fsblk_t goal;
+		int rc = ext4_fs_indirect_find_goal(inode_ref, &goal);
+		if (rc != EOK)
+			return rc;
+
+		rc = ext4_balloc_alloc_block(inode_ref, goal, &new_blk);
+		if (rc != EOK)
+			return rc;
+
+		/* 更新inode */
+		ext4_inode_set_indirect_block(inode_ref->inode, l - 1,(uint32_t)new_blk);
+		inode_ref->dirty = true;
+
+		/* 加载新分配的块 */
+		new_block.buf = bufRead(1,new_blk,0);//直接从内存加载
+		//rc = ext4_trans_block_get_noread(fs->bdev, &new_block, new_blk);
+		if (new_block.buf == NULL) {
+			ext4_balloc_free_block(inode_ref, new_blk);
+			return rc;
+		}
+
+		/* 初始化新块 */
+		memset(new_block.buf->data, 0, block_size);
+		bufWrite(new_block.buf);//标记为脏页
+		
+		/* 释放分配的块 */
+		bufRelease(new_block.buf);
+		
+		current_block = new_blk;
+	}
+
+	/*
+	 * 通过其他级别，直到找到块号或找到空引用，表示稀疏文件
+	 */
+	while (l > 0) {
+		block.buf = bufRead(1,current_block,1);
+		if (block.buf == NULL)
+			return -1;
+
+		current_block = to_le32(((uint32_t *)block.buf->data)[off_in_blk]);
+		if ((l > 1) && (current_block == 0)) {
+			ext4_fsblk_t goal;
+			int rc = ext4_fs_indirect_find_goal(inode_ref, &goal);
+			if (rc != EOK) {
+				bufRelease(block.buf);
+				return rc;
+			}
+			/* 分配新块 */
+			rc = ext4_balloc_alloc_block(inode_ref, goal, &new_blk);
+			if (rc != EOK) {
+				bufRelease(block.buf);
+				return rc;
+			}
+
+			/* 加载新分配的块 */
+			new_block.buf = bufRead(1,new_blk,0);//直接从内存加载
+
+			if (rc != EOK) {
+				bufRelease(block.buf);
+				return rc;
+			}
+
+			/* 初始化分配的块 */
+			memset(new_block.buf->data, 0, block_size);
+			bufWrite(new_block.buf);//标记为脏页
+
+			if (rc != EOK) {
+				bufRelease(block.buf);
+				return rc;
+			}
+
+			/* 将块地址写入父块 */
+			uint32_t *p = (uint32_t *)block.buf->data;
+			p[off_in_blk] = to_le32((uint32_t)new_blk);
+			ext4_trans_set_block_dirty(block.buf);
+			current_block = new_blk;
+		}
+
+		/* 在最后一级，写入fblock地址 */
+		if (l == 1) {
+			uint32_t *p = (uint32_t *)block.buf->data;
+			p[off_in_blk] = to_le32((uint32_t)fblock);
+			ext4_trans_set_block_dirty(block.buf);
+		}
+		//回收资源
+		bufRelease(block.buf);
+
+		l--;
+
+		/*
+		 * 如果在最后一级，直接退出，因为没有下一级
+		 */
+		if (l == 0)
+			break;
+
+		/* 访问下一级 */
+		blk_off_in_lvl %= fs->inode_blocks_per_level[l];
+		off_in_blk = (uint32_t)(blk_off_in_lvl / fs->inode_blocks_per_level[l - 1]);
+	}
+
+	return EOK;
+}
+
+int ext4_fs_append_inode_dblk(struct ext4_inode_ref *inode_ref, ext4_fsblk_t *fblock, ext4_lblk_t *iblock)
+{
+	struct ext4_sblock *sb = &inode_ref->fs->superBlock.ext4_sblock;
+
+	/* 计算下一个块索引并分配数据块 */
+	uint64_t inode_size = ext4_inode_get_size(sb, inode_ref->inode);
+	uint32_t block_size = ext4_sb_get_block_size(sb);
+
+	/* 对齐inode的大小 */
+	if ((inode_size % block_size) != 0)
+		inode_size += block_size - (inode_size % block_size);
+
+	/* 逻辑块从0开始编号 */
+	uint32_t new_block_idx = (uint32_t)(inode_size / block_size);
+
+	/* 分配新的物理块 */
+	ext4_fsblk_t goal, phys_block;
+	int rc = ext4_fs_indirect_find_goal(inode_ref, &goal);
+	if (rc != 0)
+		return rc;
+
+	rc = ext4_balloc_alloc_block(inode_ref, goal, &phys_block);
+	if (rc != 0)
+		return rc;
+
+	/* 将物理块地址添加到inode */
+	rc = ext4_fs_set_inode_data_block_index(inode_ref, new_block_idx,phys_block);
+	if (rc != 0) {
+		ext4_balloc_free_block(inode_ref, phys_block);
+		return rc;
+	}
+
+	/* 更新inode */
+	ext4_inode_set_size(inode_ref->inode, inode_size + block_size);
+	inode_ref->dirty = true;
+
+	*fblock = phys_block;
+	*iblock = new_block_idx;
+
+	return 0;
+}
+
+
+static void ext4_fs_debug_features_inc(uint32_t features_incompatible)
+{
+	if (features_incompatible & EXT4_FINCOM_COMPRESSION)
+		printk("compression\n");
+	if (features_incompatible & EXT4_FINCOM_FILETYPE)
+		printk("filetype\n");
+	if (features_incompatible & EXT4_FINCOM_RECOVER)
+		printk("recover\n");
+	if (features_incompatible & EXT4_FINCOM_JOURNAL_DEV)
+		printk("journal_dev\n");
+	if (features_incompatible & EXT4_FINCOM_META_BG)
+		printk("meta_bg\n");
+	if (features_incompatible & EXT4_FINCOM_EXTENTS)
+		printk("extents\n");
+	if (features_incompatible & EXT4_FINCOM_64BIT)
+		printk("64bit\n");
+	if (features_incompatible & EXT4_FINCOM_MMP)
+		printk("mnp\n");
+	if (features_incompatible & EXT4_FINCOM_FLEX_BG)
+		printk("flex_bg\n");
+	if (features_incompatible & EXT4_FINCOM_EA_INODE)
+		printk("ea_inode\n");
+	if (features_incompatible & EXT4_FINCOM_DIRDATA)
+		printk("dirdata\n");
+	if (features_incompatible & EXT4_FINCOM_BG_USE_META_CSUM)
+		printk("meta_csum\n");
+	if (features_incompatible & EXT4_FINCOM_LARGEDIR)
+		printk("largedir\n");
+	if (features_incompatible & EXT4_FINCOM_INLINE_DATA)
+		printk("inline_data\n");
+}
+static void ext4_fs_debug_features_comp(uint32_t features_compatible)
+{
+	if (features_compatible & EXT4_FCOM_DIR_PREALLOC)
+		printk("dir_prealloc\n");
+	if (features_compatible & EXT4_FCOM_IMAGIC_INODES)
+		printk("imagic_inodes\n");
+	if (features_compatible & EXT4_FCOM_HAS_JOURNAL)
+		printk("has_journal\n");
+	if (features_compatible & EXT4_FCOM_EXT_ATTR)
+		printk("ext_attr\n");
+	if (features_compatible & EXT4_FCOM_RESIZE_INODE)
+		printk("resize_inode\n");
+	if (features_compatible & EXT4_FCOM_DIR_INDEX)
+		printk("dir_index\n");
+}
+
+static void ext4_fs_debug_features_ro(uint32_t features_ro)
+{
+	if (features_ro & EXT4_FRO_COM_SPARSE_SUPER)
+		printk("sparse_super\n");
+	if (features_ro & EXT4_FRO_COM_LARGE_FILE)
+		printk("large_file\n");
+	if (features_ro & EXT4_FRO_COM_BTREE_DIR)
+		printk("btree_dir\n");
+	if (features_ro & EXT4_FRO_COM_HUGE_FILE)
+		printk("huge_file\n");
+	if (features_ro & EXT4_FRO_COM_GDT_CSUM)
+		printk("gtd_csum\n");
+	if (features_ro & EXT4_FRO_COM_DIR_NLINK)
+		printk("dir_nlink\n");
+	if (features_ro & EXT4_FRO_COM_EXTRA_ISIZE)
+		printk("extra_isize\n");
+	if (features_ro & EXT4_FRO_COM_QUOTA)
+		printk("quota\n");
+	if (features_ro & EXT4_FRO_COM_BIGALLOC)
+		printk("bigalloc\n");
+	if (features_ro & EXT4_FRO_COM_METADATA_CSUM)
+		printk("metadata_csum\n");
+}
+int ext4_fs_check_features(struct ext4_fs *fs, bool *read_only)
+{
+	ext4_assert(fs && read_only);
+	uint32_t v;
+	if (ext4_get32(&fs->sb, rev_level) == 0) {
+		*read_only = false;
+		return 1;
+	}
+
+	printk("sblock features_incompatible:\n");
+	ext4_fs_debug_features_inc(ext4_get32(&fs->sb, features_incompatible));
+
+	printk("sblock features_compatible:\n");
+	ext4_fs_debug_features_comp(ext4_get32(&fs->sb, features_compatible));
+
+	printk("sblock features_read_only:\n");
+	ext4_fs_debug_features_ro(ext4_get32(&fs->sb, features_read_only));
+
+	/*检查功能不兼容*/
+	v = (ext4_get32(&fs->sb, features_incompatible) &
+	     (~CONFIG_SUPPORTED_FINCOM));
+	if (v) {
+		printk("sblock has unsupported features incompatible:\n");
+		ext4_fs_debug_features_inc(v);
+		return -1;
+	}
+
+	/*检查 features_read_only*/
+	v = ext4_get32(&fs->sb, features_read_only);
+	v &= ~CONFIG_SUPPORTED_FRO_COM;
+	if (v) {
+		printk("sblock has unsupported features read only:\n");
+		ext4_fs_debug_features_ro(v);
+		*read_only = true;
+		return 1;
+	}
+	*read_only = false;
+
+	return 1;
+}

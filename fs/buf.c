@@ -233,7 +233,6 @@ void bufRelease(Buffer *buf) {
 }
 
 void bufSync(void) {
-
 	printk( "begin sync all pages to disk!\n");
 	for (int i = 0; i < BGROUP_NUM; i++) {
 		BufferGroup *b = &bufferGroups[i];

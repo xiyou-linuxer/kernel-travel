@@ -73,8 +73,9 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 		// 如果位置超出了 i-node 的大小，则处理结束
 		if (it->curr_blk.lb_id) {
 			// 如果当前块有效，则设置块并清空当前块信息
+			bufRelease(it->curr_blk.buf);
 			it->curr_blk.lb_id = 0;
-			it->curr_blk.buf = NULL;
+			it->curr_blk.buf->data = 0;
 			if (r != 0)
 				return r;
 		}
@@ -96,8 +97,9 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 		// 如果当前块无效或者需要跨块移动，则获取下一个块
 		if (it->curr_blk.lb_id) {
 			//如果当前块无效则将块缓冲区置空
-			it->curr_blk.buf = NULL;
+			bufRelease(it->curr_blk.buf);
 			it->curr_blk.lb_id = 0;
+			it->curr_blk.buf->data = 0;
 			if (r != 0)
 				return r;
 		}
@@ -187,6 +189,10 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 
 	// 初始化目录迭代器，从指定偏移量开始
 	r = ext4_dir_iterator_init(&it, &dir->pdirent, dir->next_off);
+	if (r != 0) {
+		ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
+		goto Finish; // 发生错误，跳转到结束处理
+	}
 
 	memset(&dir->de.name, 0, sizeof(dir->de.name)); // 清空目录项的名称字段
 	name_length = ext4_dir_en_get_name_len(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, it.curr); // 获取目录项名称长度
@@ -202,7 +208,7 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	de->file_system = ext4Fs;
 	de->type = EXT4_IS_DIR(dir_inode.inode->mode) ? DIRENT_DIR : DIRENT_FILE;
 	de->parent_dirent = dir->pdirent;
-	list_init(&de->child_list);
+	list_init(&de->child_list);//初始化dirent项的子目录项
 	de->linkcnt = 1;
 	de->mode = dir_inode.inode->mode;
 	ext4_dir_iterator_next(&it); // 移动到下一个目录项

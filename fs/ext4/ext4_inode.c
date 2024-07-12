@@ -5,7 +5,13 @@
 #include <fs/ext4_sb.h>
 #include <fs/ext4_block_group.h>
 #include <fs/buf.h>
+#include <xkernel/string.h>
 #include <xkernel/stdio.h>
+
+struct ext4_extent_header * ext4_inode_get_extent_header(struct ext4_inode *inode)
+{
+	return (struct ext4_extent_header *)inode->blocks;
+}
 
 void ext4_inode_set_csum(struct ext4_sblock *sb, struct ext4_inode *inode,uint32_t checksum)
 {
@@ -21,7 +27,6 @@ void ext4_inode_set_csum(struct ext4_sblock *sb, struct ext4_inode *inode,uint32
         inode->checksum_hi = to_le16(checksum >> 16);
 }
 
-
 // 从 inode 中获取校验和
 uint32_t ext4_inode_get_csum(struct ext4_sblock *sb, struct ext4_inode *inode)
 {
@@ -30,6 +35,21 @@ uint32_t ext4_inode_get_csum(struct ext4_sblock *sb, struct ext4_inode *inode)
 	if (inode_size > EXT4_GOOD_OLD_INODE_SIZE)
 		v |= ((uint32_t)to_le16(inode->checksum_hi)) << 16; // 如果 inode 大小超过旧版大小，合并高位校验和
 	return v;
+}
+
+void ext4_inode_set_direct_block(struct ext4_inode *inode, uint32_t idx, uint32_t block)
+{
+	inode->blocks[idx] = to_le32(block);
+}
+
+uint32_t ext4_inode_get_indirect_block(struct ext4_inode *inode, uint32_t idx)
+{
+	return to_le32(inode->blocks[idx + EXT4_INODE_INDIRECT_BLOCK]);
+}
+
+void ext4_inode_set_indirect_block(struct ext4_inode *inode, uint32_t idx, uint32_t block)
+{
+	inode->blocks[idx + EXT4_INODE_INDIRECT_BLOCK] = to_le32(block);
 }
 
 // 获取 inode 的 generation 字段
@@ -42,6 +62,11 @@ uint32_t ext4_inode_get_generation(struct ext4_inode *inode)
 uint32_t ext4_inode_get_flags(struct ext4_inode *inode)
 {
     return to_le32(inode->flags); // 返回 inode 的 flags 字段，转为小端格式
+}
+
+bool ext4_inode_has_flag(struct ext4_inode *inode, uint32_t f)
+{
+	return ext4_inode_get_flags(inode) & f;
 }
 
 // 设置 inode 的 flags 字段
@@ -82,21 +107,21 @@ void ext4_inode_set_flag(struct ext4_inode *inode, uint32_t f)
  */
 static uint32_t ext4_inode_block_bits_count(uint32_t block_size)
 {
-    // 初始化位数为8
-    uint32_t bits = 8;
-    // 将块大小赋值给size变量
-    uint32_t size = block_size;
+	// 初始化位数为8
+	uint32_t bits = 8;
+	// 将块大小赋值给size变量
+	uint32_t size = block_size;
 
-    // 当块大小大于256时，循环执行
-    do {
-        // 增加位数
-        bits++;
-        // 块大小右移1位（相当于除以2）
-        size = size >> 1;
-    } while (size > 256);
+	// 当块大小大于256时，循环执行
+	do {
+		// 增加位数
+		bits++;
+		// 块大小右移1位（相当于除以2）
+		size = size >> 1;
+	} while (size > 256);
 
-    // 返回计算得到的位数
-    return bits;
+	// 返回计算得到的位数
+	return bits;
 }
 
 uint64_t ext4_inode_get_blocks_count(struct ext4_sblock *sb, struct ext4_inode *inode)
@@ -182,6 +207,12 @@ uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode)
 		v |= ((uint64_t)to_le32(inode->size_hi)) << 32;
 
 	return v;
+}
+
+void ext4_inode_set_size(struct ext4_inode *inode, uint64_t size)
+{
+	inode->size_lo = to_le32((size << 32) >> 32);
+	inode->size_hi = to_le32(size >> 32);
 }
 
 /**

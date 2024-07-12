@@ -373,6 +373,63 @@ struct ext4_block {
 #define EXT4_FINCOM_LARGEDIR                    0x4000  /* 大目录 (> 2GB 或 3级哈希树) */
 #define EXT4_FINCOM_INLINE_DATA                 0x8000  /* inode中的内联数据 */
 
+/*
+ * EXT2 supported feature set
+ */
+#define EXT2_SUPPORTED_FCOM 0x0000
+
+#define EXT2_SUPPORTED_FINCOM                                   \
+	(EXT4_FINCOM_FILETYPE | EXT4_FINCOM_META_BG)
+
+#define EXT2_SUPPORTED_FRO_COM                                  \
+	(EXT4_FRO_COM_SPARSE_SUPER |                            \
+	 EXT4_FRO_COM_LARGE_FILE)
+
+/*
+ * EXT3 supported feature set
+ */
+#define EXT3_SUPPORTED_FCOM (EXT4_FCOM_DIR_INDEX)
+
+#define EXT3_SUPPORTED_FINCOM                                 \
+	(EXT4_FINCOM_FILETYPE | EXT4_FINCOM_META_BG)
+
+#define EXT3_SUPPORTED_FRO_COM                                \
+	(EXT4_FRO_COM_SPARSE_SUPER | EXT4_FRO_COM_LARGE_FILE)
+
+/*
+ * EXT4 supported feature set
+ */
+#define EXT4_SUPPORTED_FCOM (EXT4_FCOM_DIR_INDEX)
+
+#define EXT4_SUPPORTED_FINCOM                              \
+	(EXT4_FINCOM_FILETYPE | EXT4_FINCOM_META_BG |      \
+	 EXT4_FINCOM_EXTENTS | EXT4_FINCOM_FLEX_BG |       \
+	 EXT4_FINCOM_64BIT)
+
+#define EXT4_SUPPORTED_FRO_COM                             \
+	(EXT4_FRO_COM_SPARSE_SUPER |                       \
+	 EXT4_FRO_COM_METADATA_CSUM |                      \
+	 EXT4_FRO_COM_LARGE_FILE | EXT4_FRO_COM_GDT_CSUM | \
+	 EXT4_FRO_COM_DIR_NLINK |                          \
+	 EXT4_FRO_COM_EXTRA_ISIZE | EXT4_FRO_COM_HUGE_FILE)
+
+/*Ignored features:
+ * RECOVER - journaling in lwext4 is not supported
+ *           (probably won't be ever...)
+ * MMP - multi-mout protection (impossible scenario)
+ * */
+#define EXT_FINCOM_IGNORED                                 \
+	EXT4_FINCOM_RECOVER | EXT4_FINCOM_MMP
+
+/* Inode table/bitmap not in use */
+#define EXT4_BLOCK_GROUP_INODE_UNINIT 0x0001
+/* Block bitmap not in use */
+#define EXT4_BLOCK_GROUP_BLOCK_UNINIT 0x0002
+/* On-disk itable initialized to zero */
+#define EXT4_BLOCK_GROUP_ITABLE_ZEROED 0x0004
+
+
+
 /*ext文件系统支持的文件类型*/
 enum 
 {      EXT4_DE_UNKNOWN = 0,
@@ -384,6 +441,31 @@ enum
        EXT4_DE_SOCK,
        EXT4_DE_SYMLINK 
 };
+
+#define EXT4_MIN_BLOCK_GROUP_DESCRIPTOR_SIZE 32
+// EXT4 文件系统中块组描述符的最小大小（32字节）。
+#define EXT4_MAX_BLOCK_GROUP_DESCRIPTOR_SIZE 64
+// EXT4 文件系统中块组描述符的最大大小（64字节）。
+#define EXT4_MIN_BLOCK_SIZE 1024  /* 1 KiB */
+// EXT4 文件系统中支持的最小块大小（1024字节，即1 KiB）。
+#define EXT4_MAX_BLOCK_SIZE 65536 /* 64 KiB */
+// EXT4 文件系统中支持的最大块大小（65536字节，即64 KiB）。
+#define EXT4_REV0_INODE_SIZE 128
+// EXT4 文件系统中，修订版0的inode大小（128字节）。
+#define EXT4_INODE_BLOCK_SIZE 512
+// EXT4 文件系统中，inode表的块大小（512字节）。
+#define EXT4_INODE_DIRECT_BLOCK_COUNT 12
+// EXT4 inode 结构中直接块指针的数量（12个）。
+#define EXT4_INODE_INDIRECT_BLOCK EXT4_INODE_DIRECT_BLOCK_COUNT
+// EXT4 inode 结构中间接块指针的索引，与直接块指针的数量相同（12）。
+#define EXT4_INODE_DOUBLE_INDIRECT_BLOCK (EXT4_INODE_INDIRECT_BLOCK + 1)
+// EXT4 inode 结构中双重间接块指针的索引（13）。
+#define EXT4_INODE_TRIPPLE_INDIRECT_BLOCK (EXT4_INODE_DOUBLE_INDIRECT_BLOCK + 1)
+// EXT4 inode 结构中三重间接块指针的索引（14）。
+#define EXT4_INODE_BLOCKS (EXT4_INODE_TRIPPLE_INDIRECT_BLOCK + 1)
+// EXT4 inode 结构中总的块指针数量（15）。
+#define EXT4_INODE_INDIRECT_BLOCK_COUNT (EXT4_INODE_BLOCKS - EXT4_INODE_DIRECT_BLOCK_COUNT)
+// EXT4 inode 结构中间接块指针的总数量（3），包括单重、双重和三重间接块。
 
 static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
 {
