@@ -341,7 +341,7 @@ static struct ext4_extent_header *ext_inode_hdr(struct ext4_inode *inode)
 
 static struct ext4_extent_header *ext_block_hdr(struct ext4_block *block)
 {
-	return (struct ext4_extent_header *)block->buf->data;
+	return (struct ext4_extent_header *)block->buf->data->data;
 }
 
 static uint16_t ext_depth(struct ext4_inode *inode)

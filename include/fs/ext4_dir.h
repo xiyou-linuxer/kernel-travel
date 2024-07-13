@@ -1,6 +1,6 @@
 
-#ifndef EXT4_DIR_H_
-#define EXT4_DIR_H_
+#ifndef EXT4_DIR_
+#define EXT4_DIR_
 #include <fs/fs.h>
 #include <fs/buf.h>
 #include <fs/ext4.h>

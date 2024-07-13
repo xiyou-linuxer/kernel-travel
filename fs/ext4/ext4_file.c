@@ -46,7 +46,7 @@ int ext4_fread(Dirent *file, unsigned long dst, unsigned int off, unsigned int n
 	struct ext4_sblock *const sb = &ext4Fs->superBlock.ext4_sblock;
 
 	// 获取 inode 引用
-	r = ext4_fs_get_inode_ref(fs, file->ext4_dir_en.inode, &ref,1);
+	r = ext4_fs_get_inode_ref(ext4Fs, file->ext4_dir_en.inode, &ref,1);
 	if (r != 0) {
 		return r;
 	}
@@ -194,7 +194,7 @@ int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int 
 	struct ext4_fs* const fs = &ext4Fs->ext4_fs;
 	struct ext4_sblock* const sb = &ext4Fs->superBlock.ext4_sblock;
 
-	r = ext4_fs_get_inode_ref(fs, file->ext4_dir_en.inode, &ref,1);
+	r = ext4_fs_get_inode_ref(ext4Fs, file->ext4_dir_en.inode, &ref,1);
 	if (r != EOK) {
 		return r;
 	}

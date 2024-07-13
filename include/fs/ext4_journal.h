@@ -3,6 +3,7 @@
 
 #include <xkernel/types.h>
 #include <fs/ext4.h>
+#include <fs/fs.h>
 #include <fs/ext4_inode.h>
 #include <xkernel/list.h>
 #include <xkernel/rbtree.h>
@@ -68,7 +69,7 @@ struct jbd_journal {
 	struct jbd_fs *jbd_fs;
 };
 
-int jbd_get_fs(struct ext4_fs *fs,
+int jbd_get_fs(struct FileSystem *fs,
 	       struct jbd_fs *jbd_fs);
 int jbd_put_fs(struct jbd_fs *jbd_fs);
 int jbd_inode_bmap(struct jbd_fs *jbd_fs,

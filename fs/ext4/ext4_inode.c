@@ -300,7 +300,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
  
 	// 计算inode在数据块中的位置
 	uint32_t offset_in_block = byte_offset_in_group % block_size;
-	ref->inode = (struct ext4_inode *)(ref->block->data+ offset_in_block);
+	ref->inode = (struct ext4_inode *)(ref->block->data->data+ offset_in_block);
 
 	// 需要在引用中存储原始的索引值
 	ref->index = index + 1;

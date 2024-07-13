@@ -3,10 +3,10 @@
 
 #include <xkernel/list.h>
 #include <xkernel/types.h>
-#include <asm-generic/int-ll64.h>
 #include <asm/page.h>
 #include <fs/fat32.h>
 #include <fs/file_time.h>
+#include <fs/ext4.h>
 
 #define MAX_FS_COUNT 16 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
@@ -17,6 +17,7 @@
 typedef struct FileSystem FileSystem;
 typedef struct Dirent Dirent;
 typedef struct SuperBlock SuperBlock;
+typedef struct ext4_sblock ext4_sblock;
 
 // 对应目录、文件、设备
 typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
@@ -50,7 +51,6 @@ typedef struct SuperBlock {
 
 struct ext4_fs {
 	bool read_only;
-	struct ext4_sblock sb;
 
 	uint64_t inode_block_limits[4];
 	uint64_t inode_blocks_per_level[4];

@@ -101,7 +101,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	//获取数据块，因为全部清0,所以不用从磁盘清0,直接在内存中获取buf
 	bufRead(1,bmp_blk,0);
 	// 初始化块位图的内容为0
-	memset(block_bitmap.buf->data, 0, block_size);
+	memset(block_bitmap.buf->data->data, 0, block_size);
 	bit_max = ext4_sb_is_super_in_bg(sb, bg_ref->index);
 
 	uint32_t count = ext4_sb_first_meta_bg(sb) * dsc_per_block;
@@ -116,7 +116,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 
 	// 设置块位图中前 bit_max 位为 1
 	for (bit = 0; bit < bit_max; bit++)
-		ext4_bmap_bit_set(block_bitmap.buf->data, bit);
+		ext4_bmap_bit_set(block_bitmap.buf->data->data, bit);
 
 	if (bg_ref->index == ext4_block_group_cnt(sb) - 1) {
 		/*
@@ -134,27 +134,27 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	bool in_bg;
 	in_bg = ext4_block_in_group(sb, bmp_blk, bg_ref->index);
 	if (!flex_bg || in_bg)
-		ext4_bmap_bit_set(block_bitmap.buf->data, (uint32_t)(bmp_blk - first_bg));
+		ext4_bmap_bit_set(block_bitmap.buf->data->data, (uint32_t)(bmp_blk - first_bg));
 
 	in_bg = ext4_block_in_group(sb, bmp_inode, bg_ref->index);
 	if (!flex_bg || in_bg)
-		ext4_bmap_bit_set(block_bitmap.buf->data, (uint32_t)(bmp_inode - first_bg));
+		ext4_bmap_bit_set(block_bitmap.buf->data->data, (uint32_t)(bmp_inode - first_bg));
 
 	// 设置 inode 表中所有块在块位图中的对应位为 1
 	for (i = inode_table; i < inode_table + inode_table_bcnt; i++) {
 		in_bg = ext4_block_in_group(sb, i, bg_ref->index);
 		if (!flex_bg || in_bg)
-			ext4_bmap_bit_set(block_bitmap.buf->data, (uint32_t)(i - first_bg));
+			ext4_bmap_bit_set(block_bitmap.buf->data->data, (uint32_t)(i - first_bg));
 	}
 
 	/*
 	 * 如果组内的块数小于块大小 * 8（这是位图的大小），则将块位图的其余部分设置为1
 	 */
-	ext4_fs_mark_bitmap_end(group_blocks, block_size * 8, block_bitmap.buf->data);
+	ext4_fs_mark_bitmap_end(group_blocks, block_size * 8, block_bitmap.buf->data->data);
 	ext4_trans_set_block_dirty(block_bitmap.buf);
 
 	// 设置块组的位图校验和
-	ext4_balloc_set_bitmap_csum(sb, bg_ref->block_group, block_bitmap.buf->data);
+	ext4_balloc_set_bitmap_csum(sb, bg_ref->block_group, block_bitmap.buf->data->data);
 	bg_ref->dirty = true;
 
 	// 保存位图
@@ -203,7 +203,7 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 	uint32_t block_size = ext4_sb_get_block_size(sb);
 	uint32_t inodes_per_group = ext4_get32(sb, inodes_per_group);
 
-	memset(b.buf->data, 0, (inodes_per_group + 7) / 8); // 将所有位初始化为0
+	memset(b.buf->data->data, 0, (inodes_per_group + 7) / 8); // 将所有位初始化为0
 
 	uint32_t start_bit = inodes_per_group;
 	uint32_t end_bit = block_size * 8;
@@ -211,13 +211,13 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 	uint32_t i;
 	// 设置起始位到下一个8位的整数倍之间的位为1
 	for (i = start_bit; i < ((start_bit + 7) & ~7UL); i++)
-		ext4_bmap_bit_set(b.buf->data, i);
+		ext4_bmap_bit_set(b.buf->data->data, i);
 
 	// 如果还有剩余的位，将这些位全部设置为1
 	if (i < end_bit)
-		memset(b.buf->data + (i >> 3), 0xff, (end_bit - i) >> 3);
+		memset(b.buf->data->data + (i >> 3), 0xff, (end_bit - i) >> 3);
 
-	ext4_ialloc_set_bitmap_csum(sb, bg, b.buf->data); // 计算并设置校验和
+	ext4_ialloc_set_bitmap_csum(sb, bg, b.buf->data->data); // 计算并设置校验和
 	bg_ref->dirty = true;
 	bufWrite(b.buf);// 保存位图
 	bufRelease(b.buf);
@@ -258,7 +258,7 @@ static int ext4_fs_init_inode_table(struct ext4_block_group_ref *bg_ref)
 			return -1;
 		}
 		// 将块的数据清零
-		memset(b.buf->data, 0, block_size);
+		memset(b.buf->data->data, 0, block_size);
 		// 将块标记为脏块
 		bufWrite(b.buf);
 		bufRelease(b.buf);
@@ -283,7 +283,7 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	uint32_t offset = (bgid % dsc_cnt) * ext4_sb_get_desc_size(&fs->superBlock.ext4_sblock);
 	ref->block.buf = bufRead(1,block_id,1);
 	
-	ref->block_group = (void *)(ref->block.buf->data + offset);
+	ref->block_group = (void *)(ref->block.buf->data->data + offset);
 	ref->fs = fs;
 	ref->index = bgid;
 	ref->dirty = false;
@@ -390,7 +390,7 @@ static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref,
 			return -1;
 		}
 		// 从间接块中读取块地址
-		current_block = to_le32(((uint32_t *)block.buf->data)[off_in_blk]);
+		current_block = to_le32(((uint32_t *)block.buf->data->data)[off_in_blk]);
 
 		bufRelease(block.buf);
 
@@ -615,7 +615,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 		}
 
 		/* 初始化新块 */
-		memset(new_block.buf->data, 0, block_size);
+		memset(new_block.buf->data->data, 0, block_size);
 		bufWrite(new_block.buf);//标记为脏页
 		
 		/* 释放分配的块 */
@@ -632,7 +632,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 		if (block.buf == NULL)
 			return -1;
 
-		current_block = to_le32(((uint32_t *)block.buf->data)[off_in_blk]);
+		current_block = to_le32(((uint32_t *)block.buf->data->data)[off_in_blk]);
 		if ((l > 1) && (current_block == 0)) {
 			ext4_fsblk_t goal;
 			int rc = ext4_fs_indirect_find_goal(inode_ref, &goal);
@@ -656,7 +656,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 			}
 
 			/* 初始化分配的块 */
-			memset(new_block.buf->data, 0, block_size);
+			memset(new_block.buf->data->data, 0, block_size);
 			bufWrite(new_block.buf);//标记为脏页
 
 			if (rc != EOK) {
@@ -665,7 +665,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 			}
 
 			/* 将块地址写入父块 */
-			uint32_t *p = (uint32_t *)block.buf->data;
+			uint32_t *p = (uint32_t *)block.buf->data->data;
 			p[off_in_blk] = to_le32((uint32_t)new_blk);
 			ext4_trans_set_block_dirty(block.buf);
 			current_block = new_blk;
@@ -673,7 +673,8 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 
 		/* 在最后一级，写入fblock地址 */
 		if (l == 1) {
-			uint32_t *p = (uint32_t *)block.buf->data;
+			uint32_t *p = (uint32_t *)block.buf->data->data
+			;
 			p[off_in_blk] = to_le32((uint32_t)fblock);
 			ext4_trans_set_block_dirty(block.buf);
 		}

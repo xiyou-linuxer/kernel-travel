@@ -2,9 +2,11 @@
 #define EXT4_TYPES_H_
 
 #include <xkernel/types.h>
-#include <fs/fs.h>
 #include <fs/buf.h>
-#include <fs/ext4_inode.h>
+#include <fs/ext4.h>
+
+typedef struct FileSystem FileSystem;
+typedef struct Dirent Dirent;
 
 extern FileSystem *ext4Fs;
 
@@ -278,10 +280,10 @@ struct ext4_dir {
 	/** @brief 当前dir结构体对应的Dirent项 */
 	Dirent *pdirent;
 	/** @brief 当前目录项。 */
-	Dirent de;
+	Dirent *de;
 	/** @brief 下一个目录项的偏移量。 */
 	uint64_t next_off;
-} ext4_dir;
+};
 
 /*对于块缓冲的包装*/
 struct ext4_block {
@@ -466,76 +468,6 @@ enum
 // EXT4 inode 结构中总的块指针数量（15）。
 #define EXT4_INODE_INDIRECT_BLOCK_COUNT (EXT4_INODE_BLOCKS - EXT4_INODE_DIRECT_BLOCK_COUNT)
 // EXT4 inode 结构中间接块指针的总数量（3），包括单重、双重和三重间接块。
-
-static inline bool ext4_sb_check_flag(struct ext4_sblock *s, uint32_t v)
-{
-	return to_le32(s->flags) & v;
-}
-
-/**
- * @brief 支持功能兼容检查。
- * @param s 超级块描述符
- * @param v 要检查的功能
- * @return true 如果支持该功能
- **/
-static inline bool ext4_sb_feature_com(struct ext4_sblock *s, uint32_t v)
-{
-	return to_le32(s->features_compatible) & v;
-}
-
-/**
- * @brief 支持功能不兼容检查。
- * @param s 超级块描述符
- * @param v 要检查的功能
- * @return true 如果支持该功能
- **/
-static inline bool ext4_sb_feature_incom(struct ext4_sblock *s, uint32_t v)
-{
-	return to_le32(s->features_incompatible) & v;
-}
-
-/**
- * @brief 支持只读标志检查。
- * @param s 超级块描述符
- * @param v 要检查的标志
- * @return true 如果支持flag
- **/
-static inline bool ext4_sb_feature_ro_com(struct ext4_sblock *s, uint32_t v)
-{
-	return to_le32(s->features_read_only) & v;
-}
-
-/**
- * @brief 块组到弹性组。
- * @param s 超级块描述符
- * @param block_group 块组
- * @return 弹性组 ID
- **/
-static inline uint32_t ext4_sb_bg_to_flex(struct ext4_sblock *s,
-					  uint32_t block_group)
-{
-	return block_group >> to_le32(s->log_groups_per_flex);
-}
-
-/**
- * @brief Flex 块组大小。
- * @param s 超级块描述符
- * @return flex 背景大小
- **/
-static inline uint32_t ext4_sb_flex_bg_size(struct ext4_sblock *s)
-{
-	return 1 << to_le32(s->log_groups_per_flex);
-}
-
-/**
- * @brief 返回第一个元块组 ID。
- * @param s 超级块描述符
- * @return 第一个meta_bg id
- **/
-static inline uint32_t ext4_sb_first_meta_bg(struct ext4_sblock *s)
-{
-	return to_le32(s->first_meta_bg);
-}
 
 
 #endif /* EXT4_TYPES_H_ */

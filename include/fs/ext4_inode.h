@@ -3,6 +3,10 @@
 
 #include <fs/fs.h>
 #include <fs/buf.h>
+#include <fs/ext4.h>
+
+typedef struct FileSystem FileSystem;
+typedef struct Dirent Dirent;
 
 // 定义 EXT4 文件系统中 inode 的文件类型模式
 #define EXT4_INODE_MODE_FIFO 0x1000        // FIFO（命名管道）文件模式

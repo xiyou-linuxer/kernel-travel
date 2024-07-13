@@ -5,17 +5,8 @@
 #include <fs/ext4_fs.h>
 #include <fs/ext4_sb.h>
 #include <fs/mount.h>
+#include <fs/dirent.h>
 #include <asm-generic/errno-base.h>
-
-/**
- * @brief 获取目录条目长度
- * @param de Directory 项
- * @return 返回值为entry的长度
- */
-static inline uint16_t ext4_dir_en_get_entry_len(struct ext4_dir_en *de)
-{
-	return to_le16(de->entry_len);
-}
 
 /** 
  * @brief 在返回迭代器之前进行一些检查。
@@ -42,7 +33,7 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 
     struct ext4_dir_en *en;
     // 将 en 指针设置为当前块数据的偏移位置
-    en = (void *)(it->curr_blk.buf->data + off_in_block);
+    en = (void *)(it->curr_blk.buf->data->data + off_in_block);
 
     // 确保整个目录项不会溢出块的边界
     uint16_t length = ext4_dir_en_get_entry_len(en);
@@ -54,13 +45,13 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
         return EIO;
 
     // 一切检查通过后，设置当前目录项指针
-    it->curr = en;
+    it->curr->ext4_dir_en = *en;
     return 0;
 }
 
 static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 {
-	struct ext4_sblock *sb = &it->pdirent->file_system->superBlock; // 超级块指针
+	struct ext4_sblock *sb = &it->pdirent->file_system->superBlock.ext4_sblock; // 超级块指针
 	struct ext4_inode *inode = it->pdirent->ext4_dir_en.inode;//获取迭代器对应目录对应的inode
 	uint64_t size = ext4_inode_get_size(sb, inode); // 获取 i-node 的大小
 	int r; 
@@ -147,13 +138,13 @@ int ext4_dir_iterator_next(struct ext4_dir_iter *it)
 	uint16_t skip;
 
 	while (r == 0) {
-		skip = ext4_dir_en_get_entry_len(it->curr);
+		skip = ext4_dir_en_get_entry_len(&it->curr->ext4_dir_en);
 		r = ext4_dir_iterator_seek(it, it->curr_off + skip);
 
 		if (!it->curr)
 			break;
 		/*Skip NULL referenced entry*/
-		if (ext4_dir_en_get_inode(it->curr) != 0)
+		if (ext4_dir_en_get_inode(&it->curr->ext4_dir_en) != 0)
 			break;
 	}
 
@@ -182,29 +173,31 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 		return 0; // 返回空指针
 	}
 	// 获取目录 i-node 的引用
-	r = ext4_fs_get_inode_ref(&dir->pdirent->head, dir->pdirent->ext4_dir_en.inode, &dir_inode);
+	r = ext4_fs_get_inode_ref(dir->pdirent->file_system, dir->pdirent->ext4_dir_en.inode, &dir_inode,1);
 	if (r != 0) {
 		goto Finish; // 发生错误，跳转到结束处理
 	}
 
 	// 初始化目录迭代器，从指定偏移量开始
-	r = ext4_dir_iterator_init(&it, &dir->pdirent, dir->next_off);
+	r = ext4_dir_iterator_init(&it, dir->pdirent, dir->next_off);
 	if (r != 0) {
 		ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
 		goto Finish; // 发生错误，跳转到结束处理
 	}
 
-	memset(&dir->de.name, 0, sizeof(dir->de.name)); // 清空目录项的名称字段
-	name_length = ext4_dir_en_get_name_len(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, it.curr); // 获取目录项名称长度
-	memcpy(&dir->de.name, it.curr->name, name_length); // 复制目录项的名称
+	dir->de = dirent_alloc();
+
+	memset(&dir->de->name, 0, sizeof(dir->de->name)); // 清空目录项的名称字段
+	name_length = ext4_dir_en_get_name_len(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, &it.curr->ext4_dir_en); // 获取目录项名称长度
+	memcpy(&dir->de->name, it.curr->name, name_length); // 复制目录项的名称
 
 	// 复制目录项的信息到目录项结构
-	dir->de.ext4_dir_en.inode = ext4_dir_en_get_inode(it.curr); // 获取目录项的 i-node 号
-	dir->de.ext4_dir_en.entry_len = ext4_dir_en_get_entry_len(it.curr); // 获取目录项的长度
-	dir->de.ext4_dir_en.name_len = name_length; // 设置目录项的名称长度
-	dir->de.ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, it.curr); // 获取目录项的 i-node 类型
+	dir->de->ext4_dir_en.inode = ext4_dir_en_get_inode(&it.curr->ext4_dir_en); // 获取目录项的 i-node 号
+	dir->de->ext4_dir_en.entry_len = ext4_dir_en_get_entry_len(&it.curr->ext4_dir_en); // 获取目录项的长度
+	dir->de->ext4_dir_en.name_len = name_length; // 设置目录项的名称长度
+	dir->de->ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, &it.curr->ext4_dir_en); // 获取目录项的 i-node 类型
 
-	de = &dir->de; // 设置目录项指针为当前目录项
+	de = dir->de; // 设置目录项指针为当前目录项
 	de->file_system = ext4Fs;
 	de->type = EXT4_IS_DIR(dir_inode.inode->mode) ? DIRENT_DIR : DIRENT_FILE;
 	de->parent_dirent = dir->pdirent;
