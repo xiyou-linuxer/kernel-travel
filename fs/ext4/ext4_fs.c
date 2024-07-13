@@ -12,6 +12,94 @@
 #include <fs/fs.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
+#include <debug.h>
+
+static void ext4_fs_mark_bitmap_end(int start_bit, int end_bit, void *bitmap)
+{
+	int i;
+
+	if (start_bit >= end_bit)
+		return;
+
+	for (i = start_bit; (unsigned)i < ((start_bit + 7) & ~7UL); i++)
+		ext4_bmap_bit_set(bitmap, i);
+
+	if (i < end_bit)
+		memset((char *)bitmap + (i >> 3), 0xff, (end_bit - i) >> 3);
+}
+
+static bool ext4_block_in_group(struct ext4_sblock *s, ext4_fsblk_t baddr,
+				uint32_t bgid)
+{
+	uint32_t actual_bgid;
+	actual_bgid = ext4_balloc_get_bgid_of_block(s, baddr);
+	if (actual_bgid == bgid)
+		return true;
+	return false;
+}
+
+static uint16_t ext4_fs_bg_checksum(struct ext4_sblock *sb, uint32_t bgid,
+				    struct ext4_bgroup *bg)
+{
+	/* If checksum not supported, 0 will be returned */
+	uint16_t crc = 0;
+#if CONFIG_META_CSUM_ENABLE
+	/* Compute the checksum only if the filesystem supports it */
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
+		/* Use metadata_csum algorithm instead */
+		uint32_t le32_bgid = to_le32(bgid);
+		uint32_t orig_checksum, checksum;
+
+		/* Preparation: temporarily set bg checksum to 0 */
+		orig_checksum = bg->checksum;
+		bg->checksum = 0;
+
+		/* First calculate crc32 checksum against fs uuid */
+		checksum =
+		    ext4_crc32c(EXT4_CRC32_INIT, sb->uuid, sizeof(sb->uuid));
+		/* Then calculate crc32 checksum against bgid */
+		checksum = ext4_crc32c(checksum, &le32_bgid, sizeof(bgid));
+		/* Finally calculate crc32 checksum against block_group_desc */
+		checksum = ext4_crc32c(checksum, bg, ext4_sb_get_desc_size(sb));
+		bg->checksum = orig_checksum;
+
+		crc = checksum & 0xFFFF;
+		return crc;
+	}
+#endif
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_GDT_CSUM)) {
+		uint8_t *base = (uint8_t *)bg;
+		uint8_t *checksum = (uint8_t *)&bg->checksum;
+
+		uint32_t offset = (uint32_t)(checksum - base);
+
+		/* Convert block group index to little endian */
+		uint32_t group = to_le32(bgid);
+
+		/* Initialization */
+		crc = ext4_bg_crc16(~0, sb->uuid, sizeof(sb->uuid));
+
+		/* Include index of block group */
+		crc = ext4_bg_crc16(crc, (uint8_t *)&group, sizeof(group));
+
+		/* Compute crc from the first part (stop before checksum field)
+		 */
+		crc = ext4_bg_crc16(crc, (uint8_t *)bg, offset);
+
+		/* Skip checksum */
+		offset += sizeof(bg->checksum);
+
+		/* Checksum of the rest of block group descriptor */
+		if ((ext4_sb_feature_incom(sb, EXT4_FINCOM_64BIT)) &&
+		    (offset < ext4_sb_get_desc_size(sb))) {
+
+			const uint8_t *start = ((uint8_t *)bg) + offset;
+			size_t len = ext4_sb_get_desc_size(sb) - offset;
+			crc = ext4_bg_crc16(crc, start, len);
+		}
+	}
+	return crc;
+}
 
 int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref)
 {
@@ -20,7 +108,7 @@ int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref)
 		uint16_t cs;
 
 		// 计算块组的新校验和
-		cs = ext4_fs_bg_checksum(&ref->fs->sb, ref->index, ref->block_group);
+		cs = ext4_fs_bg_checksum(&ext4Fs->superBlock.ext4_sblock, ref->index, ref->block_group);
 		ref->block_group->checksum = to_le16(cs);
 
 		// 标记块为脏块以便将更改写入物理设备
@@ -74,7 +162,7 @@ static ext4_fsblk_t ext4_fs_get_descriptor_block(struct ext4_sblock *s, uint32_t
  */
 static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 {
-	struct ext4_sblock *sb = &bg_ref->fs->sb;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
 	struct ext4_bgroup *bg = bg_ref->block_group;
 	int rc;
 
@@ -187,7 +275,7 @@ void ext4_ialloc_set_bitmap_csum(struct ext4_sblock *sb, struct ext4_bgroup *bg,
  */
 static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 {
-	struct ext4_sblock *sb = &bg_ref->fs->sb;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
 	struct ext4_bgroup *bg = bg_ref->block_group;
 
 	/* 获取 inode 位图所在的磁盘扇区号 */
@@ -231,7 +319,7 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
  */
 static int ext4_fs_init_inode_table(struct ext4_block_group_ref *bg_ref)
 {
-	struct ext4_sblock *sb = &bg_ref->fs->sb;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
 	struct ext4_bgroup *bg = bg_ref->block_group;
 
 	uint32_t inode_size = ext4_get16(sb, inode_size);
@@ -284,7 +372,7 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	ref->block.buf = bufRead(1,block_id,1);
 	
 	ref->block_group = (void *)(ref->block.buf->data->data + offset);
-	ref->fs = fs;
+	//ref->fs = fs;
 	ref->index = bgid;
 	ref->dirty = false;
 	struct ext4_bgroup *bg = ref->block_group;
@@ -325,9 +413,9 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 /* 从原生的 inode 中获取块索引，存在 fblock 里面*/
 static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref, uint64_t iblock,uint64_t *fblock, bool extent_create, bool support_unwritten __attribute__ ((__unused__)))
 {
-	struct ext4_fs *fs = &inode_ref->fs->ext4_fs;
+	struct ext4_fs *fs = &ext4Fs->ext4_fs;
 	// 对于空文件，直接返回0
-	if (ext4_inode_get_size(&fs->sb, inode_ref->inode) == 0) {
+	if (ext4_inode_get_size(&ext4Fs->superBlock.ext4_sblock, inode_ref->inode) == 0) {
 	    *fblock = 0;
 	    return 0;
 	}
@@ -449,9 +537,9 @@ static uint32_t ext4_fs_inode_checksum(struct ext4_inode_ref *inode_ref)
 	return checksum;
 }
 
-static void ext4_fs_set_inode_checksum(struct ext4_inode_ref *inode_ref)
+void ext4_fs_set_inode_checksum(struct ext4_inode_ref *inode_ref)
 {
-	struct ext4_sblock *sb = &inode_ref->fs->superBlock;
+	struct ext4_sblock *sb = &inode_ref->fs->superBlock.ext4_sblock;
 	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
 		return;
 
@@ -545,12 +633,13 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 					      ext4_lblk_t iblock,
 					      ext4_fsblk_t fblock)
 {
-	struct ext4_fs *fs = inode_ref->fs;
+	struct ext4_fs *fs = &inode_ref->fs->ext4_fs;
+	struct ext4_sblock * sb = &inode_ref->fs->superBlock.ext4_sblock;
 	int EOK = 0;
 
 #if CONFIG_EXTENT_ENABLE && CONFIG_EXTENTS_ENABLE
 	/* 处理使用extent的inode */
-	if ((ext4_sb_feature_incom(&fs->sb, EXT4_FINCOM_EXTENTS)) &&
+	if ((ext4_sb_feature_incom(sb, EXT4_FINCOM_EXTENTS)) &&
 	    (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
 		/* 不可达 */
 		return -1;
@@ -578,7 +667,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 	if (l == 0)
 		return -1;
 
-	uint32_t block_size = ext4_sb_get_block_size(&fs->sb);
+	uint32_t block_size = ext4_sb_get_block_size(sb);
 
 	/* 计算顶层的偏移量 */
 	uint32_t blk_off_in_lvl = (uint32_t)(iblock - fs->inode_block_limits[l - 1]);
@@ -610,7 +699,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 		new_block.buf = bufRead(1,new_blk,0);//直接从内存加载
 		//rc = ext4_trans_block_get_noread(fs->bdev, &new_block, new_blk);
 		if (new_block.buf == NULL) {
-			ext4_balloc_free_block(inode_ref, new_blk);
+			ext4_balloc_free_blocks(inode_ref, new_blk,1);
 			return rc;
 		}
 
@@ -725,7 +814,7 @@ int ext4_fs_append_inode_dblk(struct ext4_inode_ref *inode_ref, ext4_fsblk_t *fb
 	/* 将物理块地址添加到inode */
 	rc = ext4_fs_set_inode_data_block_index(inode_ref, new_block_idx,phys_block);
 	if (rc != 0) {
-		ext4_balloc_free_block(inode_ref, phys_block);
+		ext4_balloc_free_blocks(inode_ref, phys_block,1);
 		return rc;
 	}
 
@@ -812,24 +901,25 @@ static void ext4_fs_debug_features_ro(uint32_t features_ro)
 }
 int ext4_fs_check_features(struct ext4_fs *fs, bool *read_only)
 {
-	ext4_assert(fs && read_only);
+	(fs && read_only);
 	uint32_t v;
-	if (ext4_get32(&fs->sb, rev_level) == 0) {
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
+	if (ext4_get32(sb, rev_level) == 0) {
 		*read_only = false;
 		return 1;
 	}
 
 	printk("sblock features_incompatible:\n");
-	ext4_fs_debug_features_inc(ext4_get32(&fs->sb, features_incompatible));
+	ext4_fs_debug_features_inc(ext4_get32(sb, features_incompatible));
 
 	printk("sblock features_compatible:\n");
-	ext4_fs_debug_features_comp(ext4_get32(&fs->sb, features_compatible));
+	ext4_fs_debug_features_comp(ext4_get32(sb, features_compatible));
 
 	printk("sblock features_read_only:\n");
-	ext4_fs_debug_features_ro(ext4_get32(&fs->sb, features_read_only));
+	ext4_fs_debug_features_ro(ext4_get32(sb, features_read_only));
 
 	/*检查功能不兼容*/
-	v = (ext4_get32(&fs->sb, features_incompatible) &
+	v = (ext4_get32(sb, features_incompatible) &
 	     (~CONFIG_SUPPORTED_FINCOM));
 	if (v) {
 		printk("sblock has unsupported features incompatible:\n");
@@ -838,7 +928,7 @@ int ext4_fs_check_features(struct ext4_fs *fs, bool *read_only)
 	}
 
 	/*检查 features_read_only*/
-	v = ext4_get32(&fs->sb, features_read_only);
+	v = ext4_get32(sb, features_read_only);
 	v &= ~CONFIG_SUPPORTED_FRO_COM;
 	if (v) {
 		printk("sblock has unsupported features read only:\n");

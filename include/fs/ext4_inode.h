@@ -100,6 +100,8 @@ struct ext4_inode_ref {
 
 #define EXT4_IS_DIR(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_DIRECTORY)//判断是否是目录
 #define EXT4_IS_FILE(mode) (((mode) & EXT4_INODE_MODE_TYPE_MASK) == EXT4_INODE_MODE_FILE)//判断是否是文件
+uint32_t ext4_inode_get_direct_block(struct ext4_inode *inode, uint32_t idx);
+
 void ext4_inode_set_indirect_block(struct ext4_inode *inode, uint32_t idx, uint32_t block);
 void ext4_inode_set_direct_block(struct ext4_inode *inode, uint32_t idx, uint32_t block);
 uint32_t ext4_inode_get_indirect_block(struct ext4_inode* inode, uint32_t idx);

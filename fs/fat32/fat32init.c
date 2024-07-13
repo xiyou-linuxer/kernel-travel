@@ -45,6 +45,7 @@ static void build_dirent_tree(Dirent *parent) {
 		    strncmp(child->name, "..         ", 11) == 0) {
 			continue;
 		}
+
 		list_append(&parent->child_list,&child->dirent_tag);
 
 		// 如果为目录，就向下一层递归
@@ -153,7 +154,7 @@ void init_root_fs(void)
 	//extern FileSystem *fatFs;
 	lock_init(&mtx_file);
 	allocFs(&fatFs);
-
+	allocFs(&ext4Fs);
 	fatFs->deviceNumber = 0;
 
 	fat32_init(fatFs);

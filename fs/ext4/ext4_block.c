@@ -17,6 +17,49 @@
 #include <fs/ext4_crc32.h>
 #include <fs/ext4_block_group.h>
 
+/**
+ * @brief 读取连续的扇区
+ * @param 缓冲区 超级块指针。
+ * @param lba 其实扇区号
+ * @param cnt 连续读取的数量
+ */
+
+int ext4_blocks_get_direct(const void *buf,uint64_t lba, uint32_t cnt)
+{
+	int count = 0;
+	uint8_t* p = (void*)buf;
+	while (count < cnt)
+	{
+		Buffer *buf = bufRead(1,lba+count,1);
+		memcpy(p,buf->data->data,BUF_SIZE);
+		p+=BUF_SIZE;
+		count++;
+	}
+	return count;
+}
+
+/**
+ * @brief 写取连续的扇区
+ * @param 缓冲区 超级块指针。
+ * @param lba 其实扇区号
+ * @param cnt 连续读取的数量
+ */
+
+int ext4_blocks_set_direct(const void *buf,uint64_t lba, uint32_t cnt)
+{
+	int count = 0;
+	uint8_t* p = (void*)buf;
+	while (count < cnt)
+	{
+		Buffer *buf = bufRead(1,lba+count,0);
+		memcpy(buf->data->data,p,BUF_SIZE);
+		bufWrite(buf);
+		p+=BUF_SIZE;
+		count++;
+	}
+	return count;
+}
+
 int ext4_trans_set_block_dirty(struct Buffer *buf)
 {
     buf->dirty = 1;
@@ -38,8 +81,7 @@ uint32_t ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
  * @param bgid 块组索引
  * @return 区块地址
  */
-uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
-				       uint32_t bgid)
+uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,uint32_t bgid)
 {
 	uint64_t baddr = 0;
 	if (ext4_get32(s, first_data_block))
@@ -52,8 +94,7 @@ uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
 #define ext4_balloc_verify_bitmap_csum(...) true
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t ext4_balloc_bitmap_csum(struct ext4_sblock *sb,
-					void *bitmap)
+static uint32_t ext4_balloc_bitmap_csum(struct ext4_sblock *sb, void *bitmap)
 {
 	uint32_t checksum = 0;
 	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {

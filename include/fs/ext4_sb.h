@@ -155,4 +155,5 @@ uint32_t ext4_inodes_in_group_cnt(struct ext4_sblock* s, uint32_t bgid);
 bool ext4_sb_check(struct ext4_sblock* s);
 bool ext4_sb_sparse(uint32_t group);
 bool ext4_sb_is_super_in_bg(struct ext4_sblock* s, uint32_t group);
+uint32_t ext4_bg_num_gdb(struct ext4_sblock* s, uint32_t group);
 #endif

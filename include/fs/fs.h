@@ -113,7 +113,7 @@ typedef struct Dirent {
 	unsigned int first_clus;	// 第一个簇的簇号（如果为0，表示文件尚未分配簇）
 	unsigned int file_size;		// 文件大小
 	/* for OS */
-	struct vfsmount *head;		//挂载在当前目录下的mount结构体
+	struct vfsmount *head;		//挂载在当前目录下的mount结构体,如果未挂载则默认与父目录的head一致
 	DirentPointer pointer;
 	// 在上一个目录项中的内容偏移，用于写回
 	unsigned int parent_dir_off;

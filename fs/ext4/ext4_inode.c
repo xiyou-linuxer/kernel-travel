@@ -37,6 +37,11 @@ uint32_t ext4_inode_get_csum(struct ext4_sblock *sb, struct ext4_inode *inode)
 	return v;
 }
 
+uint32_t ext4_inode_get_direct_block(struct ext4_inode *inode, uint32_t idx)
+{
+	return to_le32(inode->blocks[idx]);
+}
+
 void ext4_inode_set_direct_block(struct ext4_inode *inode, uint32_t idx, uint32_t block)
 {
 	inode->blocks[idx] = to_le32(block);
@@ -73,6 +78,11 @@ bool ext4_inode_has_flag(struct ext4_inode *inode, uint32_t f)
 void ext4_inode_set_flags(struct ext4_inode *inode, uint32_t flags)
 {
     inode->flags = to_le32(flags); // 将 flags 设置到 inode 中，转为小端格式
+}
+
+uint32_t ext4_inode_type(struct ext4_sblock *sb, struct ext4_inode *inode)
+{
+	return (ext4_inode_get_mode(sb, inode) & EXT4_INODE_MODE_TYPE_MASK);
 }
 
 // 检查 inode 的类型是否与给定类型相同
@@ -254,6 +264,21 @@ void ext4_inode_set_size(struct ext4_inode *inode, uint64_t size)
 	inode->size_hi = to_le32(size >> 32);
 }
 
+#if CONFIG_META_CSUM_ENABLE
+static bool ext4_fs_verify_inode_csum(struct ext4_inode_ref *inode_ref)
+{
+	struct ext4_sblock *sb = &inode_ref->fs->sb;
+	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
+		return true;
+
+	return ext4_inode_get_csum(sb, inode_ref->inode) ==
+	       ext4_fs_inode_checksum(inode_ref);
+}
+#else
+#define ext4_fs_verify_inode_csum(...) true
+#endif
+
+
 /**
  * @brief 获取指定索引的inode引用
  * 
@@ -348,7 +373,7 @@ void ext4_fs_inode_blocks_init(struct FileSystem *fs,
 	struct ext4_inode *inode = inode_ref->inode;
 
 	/* 重置块数组。对于不是文件或目录的 inode，直接填充块数组为 0 */
-	switch (ext4_inode_type(&fs->superBlock, inode_ref->inode)) {
+	switch (ext4_inode_type(&fs->superBlock.ext4_sblock, inode_ref->inode)) {
 	case EXT4_INODE_MODE_FILE:
 	case EXT4_INODE_MODE_DIRECTORY:
 		break;

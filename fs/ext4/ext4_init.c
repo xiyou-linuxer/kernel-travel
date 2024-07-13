@@ -11,12 +11,14 @@
 #include <fs/ext4_fs.h>
 #include <fs/ext4_inode.h>
 #include <fs/ext4_dir.h>
+#include <fs/ext4_file.h>
 #include <sync.h>
 #include <debug.h>
 FileSystem *ext4Fs;
 static const struct fs_operation ext4_op = {
- 	.file_init = ext4_init,
-	.file_read = 
+ 	.fs_init_ptr = ext4_init,
+	.file_read = ext4_fread,
+	.file_write = ext4_fwrite
 };
 
 static void build_dirent_ext4tree(Dirent *parent)
@@ -52,8 +54,7 @@ static void build_dirent_ext4tree(Dirent *parent)
 int fill_sb(FileSystem *fs)
 {
 	ASSERT(fs != NULL);
-	ASSERT(fs->get != NULL);
-	Buffer *buf = fs->get(fs, 2, true);//磁盘中ext4超级块位于第二扇区
+	Buffer *buf = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
 	if (buf == NULL) {
 		printk("buf == NULL\n");
 		return -E_DEV_ERROR;
@@ -95,7 +96,7 @@ int fill_sb(FileSystem *fs)
 	if (bsize > EXT4_MAX_BLOCK_SIZE)
 		return -1;
 	// 检查文件系统特性并在必要时更新只读标志
-	int r = ext4_fs_check_features(fs, 0);
+	int r = ext4_fs_check_features(&fs->ext4_fs, 0);
 	if (r != 0)
 		return r;
 	// 计算间接块级别的限制
@@ -124,12 +125,10 @@ int fill_sb(FileSystem *fs)
 	return 0;
 }
 
-void ext4_init(void)
+void ext4_init(FileSystem* fs)
 {
-	allocFs(&ext4Fs);
 	printk("ext4 is initing...\n");
 	strcpy(ext4Fs->name, "ext4");
-	ext4Fs->get = bufRead;
 	//初始化超级块信息
 	ASSERT(fill_sb(ext4Fs) == 0);
 	//初始化根目录

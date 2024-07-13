@@ -185,7 +185,7 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 			}
 			if (dir_e->type == DIRENT_DIR )// 如果被打开的是目录
 			{ 
-				if (dir_e->head!=NULL&&dir_e->head->mnt_rootdir!=NULL)/* 判断目录下是否有挂载的文件系统 */
+				if (dir_e->head!=NULL && dir_e->head!=dir_e->parent_dirent->head && dir_e->head->mnt_rootdir!=NULL)/* 判断目录下是否有挂载的文件系统，父目录与子目录对应的head若不同则说明子目录下挂载了其他文件系统 */
 				{
 					dir_e = dir_e->head->mnt_rootdir; //完成挂载点到被挂载文件系统的转换
 				}

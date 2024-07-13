@@ -12,6 +12,7 @@
 #include <fs/ext4_inode.h>
 #include <fs/ext4_dir.h>
 #include <fs/ext4_fs.h>
+#include <fs/ext4_block_group.h>
 #include <xkernel/string.h>
 #include <sync.h>
 #include <debug.h>
