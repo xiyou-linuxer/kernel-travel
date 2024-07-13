@@ -130,6 +130,8 @@ bash quick_start.sh distclean
 * [pci总线驱动](./doc/pci总线驱动.md)
 * [磁盘驱动](./doc/磁盘驱动.md)
 * [文件系统](./doc/文件系统.md)
+* [虚拟内存管理](./doc/虚拟内存管理.md)
+* [物理内存管理](./doc/物理内存管理.md)
 
 ## 参考资料
 
