@@ -82,7 +82,7 @@ static inline ext4_fsblk_t ext4_fs_first_bg_block_no(struct ext4_sblock *s,
 	       ext4_get32(s, first_data_block);
 }
 int ext4_fs_init_inode_dblk_idx(struct ext4_inode_ref *inode_ref, ext4_lblk_t iblock, ext4_fsblk_t *fblock);
-int ext4_fs_check_features(struct ext4_fs* fs, bool* read_only);
+int ext4_fs_check_features(struct ext4_fs* fs);
 int ext4_block_readbytes(uint64_t off, void* buf, uint32_t len);
 int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len);
 int ext4_fs_get_inode_dblk_idx(struct ext4_inode_ref *inode_ref,uint64_t iblock, uint64_t *fblock,bool support_unwritten);

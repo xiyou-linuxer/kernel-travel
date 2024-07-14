@@ -86,7 +86,13 @@ int fill_sb(FileSystem *fs)
 	fs->superBlock.ext4_sblock.rev_level = ext4_sblock->rev_level;
 	fs->superBlock.ext4_sblock.def_resuid = ext4_sblock->def_resuid;
 	fs->superBlock.ext4_sblock.def_resgid = ext4_sblock->def_resgid;
-
+	fs->superBlock.ext4_sblock.first_inode = ext4_sblock->first_inode;
+	fs->superBlock.ext4_sblock.inode_size = ext4_sblock->inode_size;
+	fs->superBlock.ext4_sblock.block_group_index = ext4_sblock->block_group_index;
+	fs->superBlock.ext4_sblock.features_compatible = ext4_sblock->features_compatible;
+	fs->superBlock.ext4_sblock.features_incompatible = ext4_sblock->features_incompatible;
+	fs->superBlock.ext4_sblock.features_read_only = ext4_sblock->features_read_only;
+	
 	uint16_t tmp;
 	// 检查超级块是否有效
 	if (!ext4_sb_check(ext4_sblock))
@@ -96,7 +102,7 @@ int fill_sb(FileSystem *fs)
 	if (bsize > EXT4_MAX_BLOCK_SIZE)
 		return -1;
 	// 检查文件系统特性并在必要时更新只读标志
-	int r = ext4_fs_check_features(&fs->ext4_fs, 0);
+	int r = ext4_fs_check_features(&fs->ext4_fs);
 	if (r != 0)
 		return r;
 	// 计算间接块级别的限制
@@ -130,7 +136,7 @@ void ext4_init(FileSystem* fs)
 	printk("ext4 is initing...\n");
 	strcpy(ext4Fs->name, "ext4");
 	//初始化超级块信息
-	ASSERT(fill_sb(ext4Fs) == 0);
+	ASSERT(fill_sb(ext4Fs) != 0);
 	//初始化根目录
 	ext4Fs->root = dirent_alloc();
 	ext4Fs->root->ext4_dir_en.inode = EXT4_ROOT_INO;//根目录对应的inode号

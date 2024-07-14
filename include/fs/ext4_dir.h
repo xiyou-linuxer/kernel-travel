@@ -11,7 +11,7 @@ struct ext4_dir_iter {
 	struct ext4_inode_ref *inode_ref; /**< 指向目录 i-node 的引用 */
 	struct ext4_block curr_blk;       /*< 当前数据块 */
 	uint64_t curr_off;                /* 当前偏移量 */
-	struct Dirent  *curr;         /* 当前目录项指针 */
+	struct ext4_dir_en *curr;         /* 当前目录项指针 */
 };
 
 /**

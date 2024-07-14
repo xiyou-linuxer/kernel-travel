@@ -899,13 +899,11 @@ static void ext4_fs_debug_features_ro(uint32_t features_ro)
 	if (features_ro & EXT4_FRO_COM_METADATA_CSUM)
 		printk("metadata_csum\n");
 }
-int ext4_fs_check_features(struct ext4_fs *fs, bool *read_only)
+int ext4_fs_check_features(struct ext4_fs *fs)
 {
-	(fs && read_only);
 	uint32_t v;
 	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
 	if (ext4_get32(sb, rev_level) == 0) {
-		*read_only = false;
 		return 1;
 	}
 
@@ -919,24 +917,22 @@ int ext4_fs_check_features(struct ext4_fs *fs, bool *read_only)
 	ext4_fs_debug_features_ro(ext4_get32(sb, features_read_only));
 
 	/*检查功能不兼容*/
-	v = (ext4_get32(sb, features_incompatible) &
-	     (~CONFIG_SUPPORTED_FINCOM));
+	v = (ext4_get32(sb, features_incompatible) & (~CONFIG_SUPPORTED_FINCOM));
+	
 	if (v) {
 		printk("sblock has unsupported features incompatible:\n");
 		ext4_fs_debug_features_inc(v);
 		return -1;
 	}
-
+	
 	/*检查 features_read_only*/
 	v = ext4_get32(sb, features_read_only);
 	v &= ~CONFIG_SUPPORTED_FRO_COM;
 	if (v) {
 		printk("sblock has unsupported features read only:\n");
 		ext4_fs_debug_features_ro(v);
-		*read_only = true;
 		return 1;
 	}
-	*read_only = false;
-
+	printk("ext4_fs_check_features\n");
 	return 1;
 }
