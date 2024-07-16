@@ -469,5 +469,6 @@ enum
 // EXT4 inode 结构中总的块指针数量（15）。
 #define EXT4_INODE_INDIRECT_BLOCK_COUNT (EXT4_INODE_BLOCKS - EXT4_INODE_DIRECT_BLOCK_COUNT)
 // EXT4 inode 结构中间接块指针的总数量（3），包括单重、双重和三重间接块。
+#define IN_RANGE(b, first, len)	((b) >= (first) && (b) <= (first) + (len) - 1)
 void ext4_init(FileSystem* fs);
 #endif /* EXT4_TYPES_H_ */

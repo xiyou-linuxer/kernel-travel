@@ -7,3 +7,4 @@ obj-y	+= ext4_fs.o
 obj-y	+= ext4_init.o
 obj-y	+= ext4_inode.o
 obj-y	+= ext4_sb.o
+obj-y	+= ext4_extent.o
