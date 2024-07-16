@@ -125,5 +125,6 @@ int umount_fs(char *dirPath) {
 	}
 
 	int ret = free_vfsmount(dir->head);
+	dir->head = dir->parent_dirent->head;//卸载后与父目录所记录的挂载点保持一致
 	return ret;
 }

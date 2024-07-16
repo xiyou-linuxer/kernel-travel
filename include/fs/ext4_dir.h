@@ -5,6 +5,7 @@
 #include <fs/buf.h>
 #include <fs/ext4.h>
 #include <fs/ext4_inode.h>
+#include <xkernel/stdio.h>
 /*目录迭代器*/
 struct ext4_dir_iter {
 	struct Dirent *pdirent; /* 迭代器对应的目录项 */
@@ -66,7 +67,6 @@ static inline uint16_t ext4_dir_en_get_name_len(struct ext4_sblock *sb,
 						struct ext4_dir_en *de)
 {
 	uint16_t v = de->name_len;
-
 	if ((ext4_get32(sb, rev_level) == 0) &&
 	    (ext4_get32(sb, minor_rev_level) < 5))
 		v |= ((uint16_t)de->in.name_length_high) << 8;

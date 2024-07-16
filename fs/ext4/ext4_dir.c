@@ -16,48 +16,56 @@
  */
 static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 {
-    // 计算当前偏移在块中的位置
-    uint32_t off_in_block = it->curr_off % block_size;
-    struct ext4_sblock *sb = &it->inode_ref->fs->superBlock.ext4_sblock;
+	// 计算当前偏移在块中的位置
+	uint32_t off_in_block = it->curr_off % block_size;
+	struct ext4_sblock *sb = &it->inode_ref->fs->superBlock.ext4_sblock;
 
-    // 初始化当前条目指针为 NULL
-    it->curr = NULL;
+	// 初始化当前条目指针为 NULL
+	it->curr = NULL;
+	
+	// 确保偏移在块内的对齐是正确的（必须是 4 的倍数）
+	if ((off_in_block % 4) != 0)
+	{
+		return EIO;
+	}
+	// 确保目录项的核心不会溢出块的边界
+	if (off_in_block > block_size - 8)
+	{
+		return EIO;
+	}
+	struct ext4_dir_en *en;
+	// 将 en 指针设置为当前块数据的偏移位置
+	en = (void *)(it->curr_blk.buf->data->data + off_in_block);
+	printk("off_in_block:%x inode_num:%x entry_len:%x",off_in_block,en->inode,en->entry_len);
+	printk("name:%s\n",en->name);
+	// 确保整个目录项不会溢出块的边界
+	uint16_t length = ext4_dir_en_get_entry_len(en);
+	if (off_in_block + length > block_size)
+	{
+		printk("3\n");
+		return EIO;
+	}
 
-    // 确保偏移在块内的对齐是正确的（必须是 4 的倍数）
-    if ((off_in_block % 4) != 0)
-        return EIO;
+	int name_len = ext4_dir_en_get_name_len(sb, en);
+	// 确保目录项中的名称长度不过大
+	if (name_len > length - 8)
+	{
+		return EIO;
+	}
 
-    // 确保目录项的核心不会溢出块的边界
-    if (off_in_block > block_size - 8)
-        return EIO;
-
-    struct ext4_dir_en *en;
-    // 将 en 指针设置为当前块数据的偏移位置
-    en = (void *)(it->curr_blk.buf->data->data + off_in_block);
-
-    // 确保整个目录项不会溢出块的边界
-    uint16_t length = ext4_dir_en_get_entry_len(en);
-    if (off_in_block + length > block_size)
-        return EIO;
-
-    // 确保目录项中的名称长度不过大
-    if (ext4_dir_en_get_name_len(sb, en) > length - 8)
-        return EIO;
-
-    // 一切检查通过后，设置当前目录项指针
-    it->curr = en;
-    return 0;
+	// 一切检查通过后，设置当前目录项指针
+	it->curr = en;
+	printk("ext4_dir_iterator_set\n");
+	return 0;
 }
 
 static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 {
-	
 	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock; // 超级块指针
 	struct ext4_inode *inode = it->inode_ref->inode;//获取迭代器对应目录对应的inode
 	
 	uint64_t size = ext4_inode_get_size(sb, inode); // 获取 i-node 的大小
 	int r; 
-	
 	/* 迭代器在定位到所需位置之前是无效的 */
 	it->curr = NULL;
 
@@ -72,7 +80,6 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 			if (r != 0)
 				return r;
 		}
-
 		it->curr_off = pos; // 更新当前位置为指定位置
 		return 0; // 返回操作成功
 	}
@@ -96,18 +103,20 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 			if (r != 0)
 				return r;
 		}
-
 		uint64_t next_blk;
 		r = ext4_fs_get_inode_dblk_idx(it->inode_ref, next_blk_idx, &next_blk, false); // 获取下一个块地址
 		if (r != 0)
 			return r;
-		r = bufRead(1,next_blk,1);// 获取块数据
-		if (r != 0) {
+		it->curr_blk.buf = bufRead(1,EXT4_LBA2PBA(next_blk),1);// 获取块数据
+		printk("next_blk:%d\n",next_blk);
+		it->curr_blk.lb_id = next_blk;
+		if (it->curr_blk.buf == NULL) {
 			it->curr_blk.lb_id = 0;
 			return r;
 		}
 	}
 	it->curr_off = pos; // 更新当前位置为指定位置
+	
 	return ext4_dir_iterator_set(it, block_size); // 设置迭代器到指定位置
 }
 
@@ -118,6 +127,7 @@ int ext4_dir_iterator_init(struct ext4_dir_iter *it, struct ext4_inode_ref *inod
 	it->curr = 0;
 	it->curr_off = 0;
 	it->curr_blk.lb_id = 0;
+	printk("ext4_dir_iterator_init\n");
 	return ext4_dir_iterator_seek(it, pos);
 }
 
@@ -173,7 +183,14 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 		return 0; // 返回空指针
 	}
 	// 获取目录 i-node 的引用
-	r = ext4_fs_get_inode_ref(dir->pdirent->file_system, dir->pdirent->ext4_dir_en.inode, &dir_inode,1);
+	
+	r = ext4_fs_get_inode_ref(ext4Fs, dir->pdirent->ext4_dir_en.inode, &dir_inode,1);
+	for (int i = 0; i < 15; i++)
+	{
+		printk("%x ",dir_inode.inode->blocks[i]);
+	}
+	
+	
 	if (r != 0) {
 		goto Finish; // 发生错误，跳转到结束处理
 	}
@@ -188,10 +205,9 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	dir->de = dirent_alloc();
 
 	memset(&dir->de->name, 0, sizeof(dir->de->name)); // 清空目录项的名称字段
-	printk("ext4_dir_en_get_name_len 1\n");
 	name_length = ext4_dir_en_get_name_len(&ext4Fs->superBlock.ext4_sblock, it.curr); // 获取目录项名称长度
-	printk("ext4_dir_en_get_name_len 2\n");
 	memcpy(&dir->de->name, it.curr->name, name_length); // 复制目录项的名称
+	printk("dir_name:%s\n",it.curr->name);
 	// 复制目录项的信息到目录项结构
 	dir->de->ext4_dir_en.inode = ext4_dir_en_get_inode(it.curr); // 获取目录项的 i-node 号
 	dir->de->ext4_dir_en.entry_len = ext4_dir_en_get_entry_len(it.curr); // 获取目录项的长度
@@ -205,6 +221,7 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	list_init(&de->child_list);//初始化dirent项的子目录项
 	de->linkcnt = 1;
 	de->mode = dir_inode.inode->mode;
+	
 	ext4_dir_iterator_next(&it); // 移动到下一个目录项
 
 	// 更新下一个目录项的偏移量，如果没有下一个目录项，则设置为终止偏移量

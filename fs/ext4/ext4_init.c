@@ -54,51 +54,21 @@ static void build_dirent_ext4tree(Dirent *parent)
 int fill_sb(FileSystem *fs)
 {
 	ASSERT(fs != NULL);
-	Buffer *buf = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
-	if (buf == NULL) {
-		printk("buf == NULL\n");
-		return -E_DEV_ERROR;
-	}
+
 	/*填写超级块中ext4的基本属性*/
-	struct ext4_sblock *ext4_sblock = (struct ext4_sblock *)(buf->data->data);
-	fs->superBlock.ext4_sblock.inodes_count = ext4_sblock->inodes_count;
-	fs->superBlock.ext4_sblock.blocks_count_lo = ext4_sblock->blocks_count_lo;
-	fs->superBlock.ext4_sblock.reserved_blocks_count_lo = ext4_sblock->reserved_blocks_count_lo;
-	fs->superBlock.ext4_sblock.free_blocks_count_lo = ext4_sblock->free_blocks_count_lo;
-	fs->superBlock.ext4_sblock.free_inodes_count = ext4_sblock->free_inodes_count;
-	fs->superBlock.ext4_sblock.first_data_block = ext4_sblock->first_data_block;
-	fs->superBlock.ext4_sblock.log_block_size = ext4_sblock->log_block_size;
-	fs->superBlock.ext4_sblock.log_cluster_size = ext4_sblock->log_cluster_size;
-	fs->superBlock.ext4_sblock.blocks_per_group = ext4_sblock->blocks_per_group;
-	fs->superBlock.ext4_sblock.frags_per_group = ext4_sblock->frags_per_group;
-	fs->superBlock.ext4_sblock.inodes_per_group = ext4_sblock->inodes_per_group;
-	fs->superBlock.ext4_sblock.mount_time = ext4_sblock->mount_time;
-	fs->superBlock.ext4_sblock.write_time = ext4_sblock->write_time;
-	fs->superBlock.ext4_sblock.mount_count = ext4_sblock->mount_count;
-	fs->superBlock.ext4_sblock.max_mount_count = ext4_sblock->max_mount_count;
-	fs->superBlock.ext4_sblock.magic = ext4_sblock->magic;
-	fs->superBlock.ext4_sblock.state = ext4_sblock->state;
-	fs->superBlock.ext4_sblock.errors = ext4_sblock->errors;
-	fs->superBlock.ext4_sblock.minor_rev_level = ext4_sblock->minor_rev_level;
-	fs->superBlock.ext4_sblock.last_check_time = ext4_sblock->last_check_time;
-	fs->superBlock.ext4_sblock.check_interval = ext4_sblock->check_interval;
-	fs->superBlock.ext4_sblock.creator_os = ext4_sblock->creator_os;
-	fs->superBlock.ext4_sblock.rev_level = ext4_sblock->rev_level;
-	fs->superBlock.ext4_sblock.def_resuid = ext4_sblock->def_resuid;
-	fs->superBlock.ext4_sblock.def_resgid = ext4_sblock->def_resgid;
-	fs->superBlock.ext4_sblock.first_inode = ext4_sblock->first_inode;
-	fs->superBlock.ext4_sblock.inode_size = ext4_sblock->inode_size;
-	fs->superBlock.ext4_sblock.block_group_index = ext4_sblock->block_group_index;
-	fs->superBlock.ext4_sblock.features_compatible = ext4_sblock->features_compatible;
-	fs->superBlock.ext4_sblock.features_incompatible = ext4_sblock->features_incompatible;
-	fs->superBlock.ext4_sblock.features_read_only = ext4_sblock->features_read_only;
-	
+	Buffer *buf0 = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
+	void *p = &fs->superBlock.ext4_sblock;
+	memcpy(p,buf0->data->data,512);
+	bufRelease(buf0);
+	Buffer *buf1 = bufRead(1,3,1);
+	memcpy(p+512,buf1->data->data,512);
+	bufRelease(buf1);
 	uint16_t tmp;
 	// 检查超级块是否有效
-	if (!ext4_sb_check(ext4_sblock))
+	if (!ext4_sb_check(&fs->superBlock.ext4_sblock))
 		return -1;
 	// 从超级块获取块大小
-	uint32_t bsize = ext4_sb_get_block_size(ext4_sblock);
+	uint32_t bsize = ext4_sb_get_block_size(&fs->superBlock.ext4_sblock);
 	if (bsize > EXT4_MAX_BLOCK_SIZE)
 		return -1;
 	// 检查文件系统特性并在必要时更新只读标志
@@ -120,14 +90,13 @@ int fill_sb(FileSystem *fs)
 					    ext4Fs->ext4_fs.inode_blocks_per_level[i];
 	}
 	// 验证文件系统状态
-	tmp = ext4_get16(ext4_sblock, state);
+	tmp = ext4_get16(&fs->superBlock.ext4_sblock, state);
 	if (tmp & EXT4_SUPERBLOCK_STATE_ERROR_FS)
 		printk("上次卸载错误：超级块 fs_error 标志\n");
 	// 标记文件系统为已挂载
-	ext4_set16(ext4_sblock, state, EXT4_SUPERBLOCK_STATE_ERROR_FS);
+	ext4_set16(&fs->superBlock.ext4_sblock, state, EXT4_SUPERBLOCK_STATE_ERROR_FS);
 	// 更新超级块中的挂载计数
-	ext4_set16(ext4_sblock, mount_count,ext4_get16(ext4_sblock, mount_count) + 1);
-	bufRelease(buf);
+	ext4_set16(&fs->superBlock.ext4_sblock, mount_count,ext4_get16(&fs->superBlock.ext4_sblock, mount_count) + 1);
 	return 0;
 }
 

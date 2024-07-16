@@ -30,7 +30,7 @@ int ext4_blocks_get_direct(const void *buf,uint64_t lba, uint32_t cnt)
 	uint8_t* p = (void*)buf;
 	while (count < cnt)
 	{
-		Buffer *buf = bufRead(1,lba+count,1);
+		Buffer *buf = bufRead(1,EXT4_LBA2PBA(lba+count),1);
 		memcpy(p,buf->data->data,BUF_SIZE);
 		p+=BUF_SIZE;
 		count++;
@@ -51,7 +51,7 @@ int ext4_blocks_set_direct(const void *buf,uint64_t lba, uint32_t cnt)
 	uint8_t* p = (void*)buf;
 	while (count < cnt)
 	{
-		Buffer *buf = bufRead(1,lba+count,0);
+		Buffer *buf = bufRead(1,EXT4_LBA2PBA(lba+count),0);
 		memcpy(buf->data->data,p,BUF_SIZE);
 		bufWrite(buf);
 		p+=BUF_SIZE;
@@ -173,7 +173,7 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t goal,
 	/* 加载包含位图的块 */
 	bmp_blk_adr = ext4_bg_get_block_bitmap(bg_ref.block_group, sb);
 
-	b.buf = bufRead(1,bmp_blk_adr,1);
+	b.buf = bufRead(1,EXT4_LBA2PBA(bmp_blk_adr),1);
 	if (r != EOK) {
 		ext4_fs_put_block_group_ref(&bg_ref);
 		return r;
@@ -255,7 +255,7 @@ goal_failed:
 
 		/* 加载包含位图的块 */
 		bmp_blk_adr = ext4_bg_get_block_bitmap(bg, sb);
-		bufRead(1,bmp_blk_adr,1);
+		bufRead(1,EXT4_LBA2PBA(bmp_blk_adr),1);
 
 		if (!ext4_balloc_verify_bitmap_csum(sb, bg, b.buf->data.\)) {
 			printk("Bitmap checksum failed, Group: %d \n", bg_ref.index);
@@ -366,7 +366,7 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 		ext4_fsblk_t bitmap_blk = ext4_bg_get_block_bitmap(bg, sb);
 
 		struct ext4_block blk;
-		bufRead(1,bitmap_blk,1);
+		bufRead(1,EXT4_LBA2PBA(bitmap_blk) ,1);
 		if (rc != EOK) {
 			ext4_fs_put_block_group_ref(&bg_ref);
 			return rc;
@@ -456,7 +456,7 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 		uint32_t rlen = (ph_bsize - unalg) > len ? len : (ph_bsize - unalg);
 
 		// 读取整个块到临时缓冲区
-		Buffer *buffer = bufRead(1, block_idx, 1);
+		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) , 1);
 		if (r != 0)
 			return r;
 
@@ -476,7 +476,7 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 		int count = 0;
 		while (count < blen)
 		{
-			Buffer *buffer = bufRead(1, block_idx, 1);
+			Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) , 1);
 			memcpy(p, buffer->data->data, ph_bsize);
 			p += ph_bsize;
 			len -= ph_bsize;
@@ -487,7 +487,7 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 	// 处理剩余的数据
 	if (len) {
 		// 读取最后一个块到临时缓冲区
-		Buffer *buffer = bufRead(1, block_idx, 1);
+		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) , 1);
 		if (r != 0)
 			return r;
 
@@ -512,7 +512,7 @@ int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 	unalg = (off & (ph_bsize - 1));
 	if (unalg) {
 		uint32_t wlen = (ph_bsize - unalg) > len ? len : (ph_bsize - unalg);
-		Buffer *buffer = bufRead(1,block_idx,1);
+		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx),1);
 		memcpy(buffer->data->data + unalg, p, wlen);
 		bufWrite(buffer);
 		p += wlen;
@@ -526,7 +526,7 @@ int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 		int count = 0;
 		while (count < blen)
 		{
-			Buffer *buffer = bufRead(1,block_idx,1);
+			Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) ,1);
 			memcpy(buffer->data->data,p,ph_bsize);
 			p+=ph_bsize;
 			len -= ph_bsize;
@@ -537,7 +537,7 @@ int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 
 	/*Rest of the data*/
 	if (len) {
-		Buffer *buffer = bufRead(1,block_idx,1);
+		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) ,1);
 
 		memcpy(buffer->data->data, p, len);
 

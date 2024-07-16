@@ -150,7 +150,6 @@ static ext4_fsblk_t ext4_fs_get_descriptor_block(struct ext4_sblock *s, uint32_t
 	// 检查块组中是否包含超级块
 	if (ext4_sb_is_super_in_bg(s, bgid))
 		has_super = 1;
-
 	// 返回超级块偏移量 + 块组的第一个块号
 	return (has_super + ext4_fs_first_bg_block_no(s, bgid));
 }
@@ -187,7 +186,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 
 	struct ext4_block block_bitmap;
 	//获取数据块，因为全部清0,所以不用从磁盘清0,直接在内存中获取buf
-	bufRead(1,bmp_blk,0);
+	bufRead(1,EXT4_LBA2PBA(bmp_blk),0);
 	// 初始化块位图的内容为0
 	memset(block_bitmap.buf->data->data, 0, block_size);
 	bit_max = ext4_sb_is_super_in_bg(sb, bg_ref->index);
@@ -283,7 +282,7 @@ static int ext4_fs_init_inode_bitmap(struct ext4_block_group_ref *bg_ref)
 
 	struct ext4_block b;
 	/*获取数据块*/
-	b.buf = bufRead(1,bitmap_block_addr,0);
+	b.buf = bufRead(1,EXT4_LBA2PBA(bitmap_block_addr) ,0);
 	if (b.buf == NULL)
 		return -1;
 
@@ -340,7 +339,7 @@ static int ext4_fs_init_inode_table(struct ext4_block_group_ref *bg_ref)
 	// 初始化所有i-node表块
 	for (fblock = first_block; fblock <= last_block; ++fblock) {
 		struct ext4_block b;
-		b.buf = bufRead(1,fblock,0);
+		b.buf = bufRead(1,EXT4_LBA2PBA(fblock) ,0);
 		if (b.buf == NULL)
 		{
 			return -1;
@@ -366,13 +365,12 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 
 	// 块组描述符表从超级块之后的下一个块开始
 	uint64_t block_id = ext4_fs_get_descriptor_block(&fs->superBlock.ext4_sblock, bgid, dsc_cnt);
-
 	// 计算描述符在块中的偏移量
 	uint32_t offset = (bgid % dsc_cnt) * ext4_sb_get_desc_size(&fs->superBlock.ext4_sblock);
-	ref->block.buf = bufRead(1,block_id,1);
-	
+	ref->block.buf = bufRead(1,EXT4_LBA2PBA(block_id),1);
+	printk("offset %d\n",offset);
 	ref->block_group = (void *)(ref->block.buf->data->data + offset);
-	//ref->fs = fs;
+	ref->fs = &fs->ext4_fs;
 	ref->index = bgid;
 	ref->dirty = false;
 	struct ext4_bgroup *bg = ref->block_group;
@@ -472,7 +470,7 @@ static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref,
 	// 通过其他级别导航，直到找到块号或发现稀疏文件的空引用
 	while (l > 0) {
 		// 加载间接块
-		block.buf = bufRead(1, current_block, 1);
+		block.buf = bufRead(1, EXT4_LBA2PBA(current_block) , 1);
 		if (block.buf == NULL)
 		{
 			return -1;
@@ -696,7 +694,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 		inode_ref->dirty = true;
 
 		/* 加载新分配的块 */
-		new_block.buf = bufRead(1,new_blk,0);//直接从内存加载
+		new_block.buf = bufRead(1,EXT4_LBA2PBA(new_blk) ,0);//直接从内存加载
 		//rc = ext4_trans_block_get_noread(fs->bdev, &new_block, new_blk);
 		if (new_block.buf == NULL) {
 			ext4_balloc_free_blocks(inode_ref, new_blk,1);
@@ -717,7 +715,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 	 * 通过其他级别，直到找到块号或找到空引用，表示稀疏文件
 	 */
 	while (l > 0) {
-		block.buf = bufRead(1,current_block,1);
+		block.buf = bufRead(1,EXT4_LBA2PBA(current_block),1);
 		if (block.buf == NULL)
 			return -1;
 
@@ -737,7 +735,7 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 			}
 
 			/* 加载新分配的块 */
-			new_block.buf = bufRead(1,new_blk,0);//直接从内存加载
+			new_block.buf = bufRead(1, EXT4_LBA2PBA(new_blk),0);//直接从内存加载
 
 			if (rc != EOK) {
 				bufRelease(block.buf);

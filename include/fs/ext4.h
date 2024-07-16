@@ -5,6 +5,7 @@
 #include <fs/buf.h>
 #include <fs/ext4.h>
 
+
 typedef struct FileSystem FileSystem;
 typedef struct Dirent Dirent;
 
@@ -20,6 +21,7 @@ extern FileSystem *ext4Fs;
 #define EXT4_REV0_INODE_SIZE 128  /* EXT4 版本0的 inode 大小 */
 
 #define EXT4_INODE_BLOCK_SIZE 512 /* inode 块大小 */
+#define PH_BLOCK_SIZE 512/*物理扇区的大小*/
 
 #define EXT4_INODE_DIRECT_BLOCK_COUNT 12 /* inode 的直接块指针数量 */
 #define EXT4_INODE_INDIRECT_BLOCK EXT4_INODE_DIRECT_BLOCK_COUNT /* 间接块指针的索引 */
@@ -270,7 +272,6 @@ struct ext4_dir_en {
 	uint32_t inode;	/* 与目录项对应的inode号 */
 	uint16_t entry_len; /*到下一个目录条目的距离*/
 	uint8_t name_len;   /* 名称长度的低8位 */
-
 	union ext4_dir_en_internal in;
 	uint8_t name[]; /* 目录项的名字 */
 };
@@ -423,14 +424,14 @@ struct ext4_block {
 #define EXT_FINCOM_IGNORED                                 \
 	EXT4_FINCOM_RECOVER | EXT4_FINCOM_MMP
 
-/* Inode table/bitmap not in use */
+/*索引节点表/位图未使用*/
 #define EXT4_BLOCK_GROUP_INODE_UNINIT 0x0001
 /* Block bitmap not in use */
 #define EXT4_BLOCK_GROUP_BLOCK_UNINIT 0x0002
 /* On-disk itable initialized to zero */
 #define EXT4_BLOCK_GROUP_ITABLE_ZEROED 0x0004
-
-
+/*用于将逻辑块号转化为物理扇区号*/
+#define EXT4_LBA2PBA(block_idx) (block_idx* (1024 << ext4Fs->superBlock.ext4_sblock.log_block_size)/PH_BLOCK_SIZE)
 
 /*ext文件系统支持的文件类型*/
 enum 
@@ -468,6 +469,5 @@ enum
 // EXT4 inode 结构中总的块指针数量（15）。
 #define EXT4_INODE_INDIRECT_BLOCK_COUNT (EXT4_INODE_BLOCKS - EXT4_INODE_DIRECT_BLOCK_COUNT)
 // EXT4 inode 结构中间接块指针的总数量（3），包括单重、双重和三重间接块。
-
 void ext4_init(FileSystem* fs);
 #endif /* EXT4_TYPES_H_ */

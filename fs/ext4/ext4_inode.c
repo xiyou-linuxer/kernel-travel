@@ -249,7 +249,6 @@ void ext4_inode_set_uid(struct ext4_inode *inode, uint32_t uid)
 
 uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode)
 {
-	printk("ext4_inode_get_size\n");
 	uint64_t v = to_le32(inode->size_lo);
 	
 	if ((ext4_get32(sb, rev_level) > 0) &&
@@ -293,7 +292,6 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 {
 	// 计算一个数据块中可容纳的inode数量
 	uint32_t inodes_per_group = ext4_get32(&fs->superBlock.ext4_sblock, inodes_per_group);
-
 	// inode编号是从1开始的，但计算索引时使用0开始更简单
 	index -= 1;
 	uint32_t block_group = index / inodes_per_group;  // 所属块组
@@ -323,16 +321,14 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 
 	// 计算块地址
 	ext4_fsblk_t block_id =inode_table_start + (byte_offset_in_group / block_size);
-	ref->block = bufRead(1,block_id,1);
- 
+
+	ref->block = bufRead(1,EXT4_LBA2PBA(block_id),1);
+	
 	// 计算inode在数据块中的位置
 	uint32_t offset_in_block = byte_offset_in_group % block_size;
 	ref->inode = (struct ext4_inode *)(ref->block->data->data + offset_in_block);
-	if (ref->inode == NULL)
-	{
-		printk("aaa");
-	}
-	
+	printk("inode:%d\n",ref->inode->blocks[0]);
+
 	// 需要在引用中存储原始的索引值
 	ref->index = index + 1;
 	ref->fs = fs;

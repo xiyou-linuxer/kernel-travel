@@ -134,7 +134,6 @@ static struct fis_reg_host_to_device *ahci_initialize_fis_host_to_device(struct 
 
 int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
-	//printk("is:%x",SATA_ABAR_BASE|(prot_base+PORT_IS));
 	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = (uint32_t)-1; // Clear pending interrupt bits
 	
 	int spin = 0;            // Spin lock timeout counter
@@ -176,7 +175,6 @@ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth,
 		printk("Read disk error");
 		return E_TASK_FILE_ERROR;
 	}
-	//printk("buf:%s\n", buf);
 	return AHCI_SUCCESS;
 }
 
