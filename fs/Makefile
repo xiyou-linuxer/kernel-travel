@@ -5,6 +5,7 @@ obj-y	+=fd.o
 obj-y	+=syscallfs_test.o
 obj-y	+=fat32/
 obj-y	+=ramfs/
+obj-y	+=ext4/
 obj-y	+=syscall_fs.o 
 obj-y	+=path.o
 obj-y	+=mount.o

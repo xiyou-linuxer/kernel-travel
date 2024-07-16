@@ -247,19 +247,6 @@ static mode_t get_file_mode(struct Dirent *file) {
 		mode |= __S_IFREG; // 暂时置为REGULAR FILE
 	}
 
-	// 打印文件的类型
-	/*if (S_ISREG(mode)) {
-		printk("file type: regular file\n");
-	} else if (S_ISDIR(mode)) {
-		printk( "file type: directory\n");
-	} else if (S_ISCHR(mode)) {
-		printk("file type: character device\n");
-	} else if (S_ISBLK(mode)) {
-		printk( "file type: block device\n");
-	} else {
-		printk("file type: unknown\n");
-	}*/
-
 	return mode;
 }
 

@@ -32,7 +32,7 @@
     }
     //return pack;*/
 	int prot_base = port_num*PORT_OFFEST+PORT_BASE;
-	int LBA_startl = base_addr&0xffff;
+	int LBA_startl = base_addr&0xffffffff;
 	int LBA_starth = (base_addr >> 32);
 	switch (cmd)
 	{

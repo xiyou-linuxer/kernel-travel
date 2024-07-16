@@ -82,8 +82,6 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 				tmpName[11] = 0;
 			}
 
-			//printk("find: \"%s\"\n", tmpName);
-
 			// 2. 设置找出的dirent的信息（为NULL的无需设置）
 			Dirent *dirent = dirent_alloc();
 			strcpy(dirent->name, tmpName);
@@ -98,9 +96,9 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 			dirent->parent_dir_off = j; // 父亲目录内偏移
 			dirent->type = is_directory(f) ? DIRENT_DIR : DIRENT_FILE;
 			dirent->parent_dirent = dir; // 设置父级目录项
+			dirent->head = dir->head;
 			list_init(&dirent->child_list);
 			dirent->linkcnt = 1;
-
 			// 对于目录文件的大小，我们将其重置为其簇数乘以簇大小，不再是0
 			if (dirent->raw_dirent.DIR_Attr & ATTR_DIRECTORY) {
 				dirent->file_size = countClusters(dirent) * clusSize;
@@ -114,7 +112,6 @@ int dirGetDentFrom(Dirent *dir, u64 offset, struct Dirent **file, int *next_offs
 		}
 	}
 
-	//printk("no more dents in dir: %s\n", dir->name);
 	*next_offset = dir->file_size;
 
 	lock_release(&mtx_file);
