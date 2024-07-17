@@ -16,110 +16,34 @@
 #include <sync.h>
 #include <debug.h>
 #include <fs/ext4_block_group.h>
-struct ext4_extent_path {
-	ext4_fsblk_t p_block;
-	struct ext4_block block;
-	int32_t depth;
-	int32_t maxdepth;
-	struct ext4_extent_header *header;
-	struct ext4_extent_index *index;
-	struct ext4_extent *extent;
-};
+#include <fs/ext4_extent.h>
 
-struct ext4_extent {
-	uint32_t first_block; /* extent 覆盖的第一个逻辑块 */
-	uint16_t block_count; /* extent 覆盖的块数 */
-	uint16_t start_hi;    /* 物理块号的高 16 位 */
-	uint32_t start_lo;    /* 物理块号的低 32 位 */
-};
+#define EXTENT_PATH_MAX 16
 
-struct ext4_extent_header {
-    uint16_t magic;
-    uint16_t entries_count;     /* 有效条目数 */
-    uint16_t max_entries_count; /* 条目存储容量 */
-    uint16_t depth;             /* Has tree real underlying blocks? */
-    uint32_t generation;    /* generation of the tree */
-};
+struct ext4_extent_path extent_path[EXTENT_PATH_MAX];
 
-struct ext4_extent_index {
-    uint32_t first_block; /* Index covers logical blocks from 'block' */
-
-    /**
-     * Pointer to the physical block of the next
-     * level. leaf or next index could be there
-     * high 16 bits of physical block
-     */
-    uint32_t leaf_lo;
-    uint16_t leaf_hi;
-    uint16_t padding;
-};
-
-struct ext4_extent_tail
+struct ext4_extent_path *ext4_path_alloc(void)
 {
-    uint32_t et_checksum; /* crc32c(uuid+inum+extent_block) */
-};
+	for (int i = 0; i < EXTENT_PATH_MAX; i++)
+	{
+		if (extent_path[i].flag == false)
+		{
+			extent_path[i].flag = true;
+			return &extent_path[i];
+		}
+	}
+	return NULL;
+}
 
-
-#define EXT4_EXTENT_MAGIC 0xF30A
-
-#define EXT4_EXTENT_FIRST(header)                                              \
-    ((struct ext4_extent *)(((char *)(header)) +                           \
-                sizeof(struct ext4_extent_header)))
-
-#define EXT4_EXTENT_FIRST_INDEX(header)                                        \
-    ((struct ext4_extent_index *)(((char *)(header)) +                     \
-                      sizeof(struct ext4_extent_header)))
-#define EXT_INIT_MAX_LEN (1L << 15)
-#define EXT_UNWRITTEN_MAX_LEN (EXT_INIT_MAX_LEN - 1)
-
-#define EXT_EXTENT_SIZE sizeof(struct ext4_extent)
-#define EXT_INDEX_SIZE sizeof(struct ext4_extent_idx)
-
-#define EXT_FIRST_EXTENT(__hdr__)                                              \
-    ((struct ext4_extent *)(((char *)(__hdr__)) +                          \
-                sizeof(struct ext4_extent_header)))
-#define EXT_FIRST_INDEX(__hdr__)                                               \
-    ((struct ext4_extent_index *)(((char *)(__hdr__)) +                    \
-                    sizeof(struct ext4_extent_header)))
-#define EXT_HAS_FREE_INDEX(__path__)                                           \
-    (to_le16((__path__)->header->entries_count) <                                \
-                    to_le16((__path__)->header->max_entries_count))
-#define EXT_LAST_EXTENT(__hdr__)                                               \
-    (EXT_FIRST_EXTENT((__hdr__)) + to_le16((__hdr__)->entries_count) - 1)
-#define EXT_LAST_INDEX(__hdr__)                                                \
-    (EXT_FIRST_INDEX((__hdr__)) + to_le16((__hdr__)->entries_count) - 1)
-#define EXT_MAX_EXTENT(__hdr__)                                                \
-    (EXT_FIRST_EXTENT((__hdr__)) + to_le16((__hdr__)->max_entries_count) - 1)
-#define EXT_MAX_INDEX(__hdr__)                                                 \
-    (EXT_FIRST_INDEX((__hdr__)) + to_le16((__hdr__)->max_entries_count) - 1)
-
-#define EXT4_EXTENT_TAIL_OFFSET(hdr)                                           \
-    (sizeof(struct ext4_extent_header) +                                   \
-     (sizeof(struct ext4_extent) * to_le16((hdr)->max_entries_count)))
-
-#define EXT4_EXT_MARK_UNWRIT1 0x02 /* 标记第一半为未写入状态 */
-#define EXT4_EXT_MARK_UNWRIT2 0x04 /* 标记第二半为未写入状态 */
-#define EXT4_EXT_DATA_VALID1 0x08  /* 第一半包含有效数据 */
-#define EXT4_EXT_DATA_VALID2 0x10  /* 第二半包含有效数据 */
-#define EXT4_EXT_NO_COMBINE 0x20   /* 不要合并两个扩展 */
-#define EXT4_EXT_UNWRITTEN_MASK (1L << 15)
-
-#define EXT4_EXT_MAX_LEN_WRITTEN (1L << 15)
-#define EXT4_EXT_MAX_LEN_UNWRITTEN \
-    (EXT4_EXT_MAX_LEN_WRITTEN - 1)
-
-#define EXT4_EXT_GET_LEN(ex) to_le16((ex)->block_count)
-#define EXT4_EXT_GET_LEN_UNWRITTEN(ex) \
-    (EXT4_EXT_GET_LEN(ex) & ~(EXT4_EXT_UNWRITTEN_MASK))
-#define EXT4_EXT_SET_LEN(ex, count) \
-    ((ex)->block_count = to_le16(count))
-
-#define EXT4_EXT_IS_UNWRITTEN(ex) \
-    (EXT4_EXT_GET_LEN(ex) > EXT4_EXT_MAX_LEN_WRITTEN)
-#define EXT4_EXT_SET_UNWRITTEN(ex) \
-    ((ex)->block_count |= to_le16(EXT4_EXT_UNWRITTEN_MASK))
-#define EXT4_EXT_SET_WRITTEN(ex) \
-    ((ex)->block_count &= ~(to_le16(EXT4_EXT_UNWRITTEN_MASK)))
+void ext4_path_free(struct ext4_extent_path * path)
+{
+	path->flag = false;
+	path->depth = 0;
+	path->maxdepth = 0;
+	path->header = NULL;
+	path->index = NULL;
+	path->extent = NULL;
+}
 
 static ext4_fsblk_t ext4_ext_find_goal(struct ext4_inode_ref *inode_ref,struct ext4_extent_path *path,ext4_lblk_t block);
 
@@ -946,7 +870,7 @@ static int ext4_find_extent(struct ext4_inode_ref *inode_ref, ext4_lblk_t block,
 		ext4_ext_drop_refs(inode_ref, path, 0);
 		// 如果当前深度大于路径的最大深度，释放路径
 		if (depth > path[0].maxdepth) {
-			ext4_free(path);
+			ext4_path_free(path);
 			*orig_path = path = NULL;
 		}
 	}
@@ -955,8 +879,7 @@ static int ext4_find_extent(struct ext4_inode_ref *inode_ref, ext4_lblk_t block,
 	if (!path) {
 		int32_t path_depth = depth + 1;
 		// 考虑可能的深度增加
-		path = ext4_calloc(1, sizeof(struct ext4_extent_path) *
-				     (path_depth + 1));
+		path = ext4_path_alloc();
 		if (!path)
 			return -1;
 		path[0].maxdepth = path_depth;
@@ -1017,7 +940,7 @@ static int ext4_find_extent(struct ext4_inode_ref *inode_ref, ext4_lblk_t block,
 err:
 	// 出错处理，释放引用和路径
 	ext4_ext_drop_refs(inode_ref, path, 0);
-	ext4_free(path);
+	ext4_path_free(path);
 	if (orig_path)
 		*orig_path = NULL;
 	return ret;
@@ -1290,8 +1213,7 @@ again:
 		i = depth - (level - 1);
 		/* We split from leaf to the i-th node */
 		if (level > 0) {
-			npath = ext4_calloc(1, sizeof(struct ext4_extent_path) *
-					      (level));
+			npath = ext4_path_alloc();
 			if (!npath) {
 				ret = -1;
 				goto out;
@@ -1328,7 +1250,7 @@ out:
 		}
 	}
 	if (npath)
-		ext4_free(npath);
+		ext4_path_free(npath);
 
 	return ret;
 }
@@ -1528,27 +1450,27 @@ static ext4_lblk_t ext4_ext_next_allocated_block(struct ext4_extent_path *path)
 
 int ext4_extent_get_blocks(struct ext4_inode_ref *inode_ref, ext4_lblk_t iblock, uint32_t max_blocks, ext4_fsblk_t *result, bool create, uint32_t *blocks_count)
 {
-	struct ext4_extent_path *path = NULL;   // 用于存储找到的extent路径
-	struct ext4_extent newex, *ex;          // 定义一个新的extent和一个指向现有extent的指针
-	ext4_fsblk_t goal;                      // 定义目标块
+	struct ext4_extent_path *path = NULL;	// 用于存储找到的extent路径
+	struct ext4_extent newex, *ex;			// 定义一个新的extent和一个指向现有extent的指针
+	ext4_fsblk_t goal;						// 定义目标块
 	int EOK = 0;
-	int err = EOK;                          // 初始化错误码为EOK
-	int32_t depth;                          // 定义extent树的深度
-	uint32_t allocated = 0;                 // 初始化已分配的块数为0
-	ext4_lblk_t next;                       // 定义下一个逻辑块
-	ext4_fsblk_t newblock;                  // 定义新的块号
+	int err = EOK;							// 初始化错误码为EOK
+	int32_t depth;							// 定义extent树的深度
+	uint32_t allocated = 0;					// 初始化已分配的块数为0
+	ext4_lblk_t next;						// 定义下一个逻辑块
+	ext4_fsblk_t newblock;					// 定义新的块号
 
 	if (result)
-		*result = 0;                       // 如果result非空，将其初始化为0
+		*result = 0;						// 如果result非空，将其初始化为0
 
 	if (blocks_count)
-		*blocks_count = 0;                 // 如果blocks_count非空，将其初始化为0
+		*blocks_count = 0;					// 如果blocks_count非空，将其初始化为0
 
 	// 查找指定逻辑块对应的extent
 	err = ext4_find_extent(inode_ref, iblock, &path, 0);
 	if (err != EOK) {
-		path = NULL;                      // 如果查找失败，将路径置为空
-		goto out2;                        // 跳转到out2标签进行清理和返回
+		path = NULL;					 	// 如果查找失败，将路径置为空
+		goto out2;							// 跳转到out2标签进行清理和返回
 	}
 
 	depth = ext_depth(inode_ref->inode);    // 获取extent树的深度
@@ -1591,11 +1513,11 @@ int ext4_extent_get_blocks(struct ext4_inode_ref *inode_ref, ext4_lblk_t iblock,
 				goto out2;                              // 如果出错，跳转到out2标签进行清理和返回
 
 			err = ext4_ext_convert_to_initialized(
-			    inode_ref, &path, iblock, zero_range);   // 将未写入的extent转换为已初始化的extent
+			    inode_ref, &path, iblock, zero_range); 	// 将未写入的extent转换为已初始化的extent
 			if (err != EOK)
-				goto out2;                              // 如果出错，跳转到out2标签进行清理和返回
+				goto out2;								// 如果出错，跳转到out2标签进行清理和返回
 
-			goto out;                                    // 跳转到out标签进行返回
+			goto out;									// 跳转到out标签进行返回
 		}
 	}
 
@@ -1646,8 +1568,8 @@ out:
 out2:
 	if (path) {
 		ext4_ext_drop_refs(inode_ref, path, 0);           // 释放路径的引用
-		ext4_free(path);                                  // 释放路径的内存
+		ext4_path_free(path);                                  // 释放路径的内存
 	}
 
-	return err;                                             // 返回错误码
+	return err;												// 返回错误码
 }

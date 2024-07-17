@@ -369,7 +369,6 @@ int ext4_fs_get_block_group_ref(struct FileSystem *fs, uint32_t bgid,
 	// 计算描述符在块中的偏移量
 	uint32_t offset = (bgid % dsc_cnt) * ext4_sb_get_desc_size(&fs->superBlock.ext4_sblock);
 	ref->block.buf = bufRead(1,EXT4_LBA2PBA(block_id),1);
-	printk("offset %d\n",offset);
 	ref->block_group = (void *)(ref->block.buf->data->data + offset);
 	ref->fs = &fs->ext4_fs;
 	ref->index = bgid;
@@ -419,7 +418,7 @@ static int ext4_fs_get_inode_dblk_idx_internal(struct ext4_inode_ref *inode_ref,
 	    return 0;
 	}
 	uint64_t current_block;
-	/* Handle i-node using extents */
+	/* 如果使用了extent机制*/
 	if ((ext4_sb_feature_incom(&ext4Fs->superBlock.ext4_sblock, EXT4_FINCOM_EXTENTS)) &&
 	    (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
 

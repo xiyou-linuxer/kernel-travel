@@ -27,22 +27,26 @@ static void build_dirent_ext4tree(Dirent *parent)
 	int ret;
 	struct ext4_dir d;
 	d.pdirent = parent;
+	d.next_off = 0;
+	printk("parent %s:\n",parent->name);
 	while (1) {
 		//获取目录项
 		child = ext4_dir_entry_next(&d);
+		printk("%s_inode:%d ",child->name,child->ext4_dir_en.inode);
 		if (child == NULL) {
 			// 读到末尾
 			break;
 		}
 		// 跳过.和..
-		if (strncmp(child->name, ".          ", 11) == 0 ||
-		    strncmp(child->name, "..         ", 11) == 0) {
+		if (strncmp(child->name, ".", 2) == 0 ||
+		    strncmp(child->name, "..", 3) == 0) {
 			continue;
 		}
 		list_append(&parent->child_list,&child->dirent_tag);
-
+		
 		// 如果为目录，就向下一层递归
 		if (child->type == DIRENT_DIR) {
+			printk("\n");
 			build_dirent_ext4tree(child);
 		}
 	}

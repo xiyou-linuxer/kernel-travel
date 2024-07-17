@@ -36,13 +36,10 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 	struct ext4_dir_en *en;
 	// 将 en 指针设置为当前块数据的偏移位置
 	en = (void *)(it->curr_blk.buf->data->data + off_in_block);
-	printk("off_in_block:%x inode_num:%x entry_len:%x",off_in_block,en->inode,en->entry_len);
-	printk("name:%s\n",en->name);
 	// 确保整个目录项不会溢出块的边界
 	uint16_t length = ext4_dir_en_get_entry_len(en);
 	if (off_in_block + length > block_size)
 	{
-		printk("3\n");
 		return EIO;
 	}
 
@@ -55,12 +52,12 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 
 	// 一切检查通过后，设置当前目录项指针
 	it->curr = en;
-	printk("ext4_dir_iterator_set\n");
 	return 0;
 }
 
 static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 {
+	printk("1\n");
 	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock; // 超级块指针
 	struct ext4_inode *inode = it->inode_ref->inode;//获取迭代器对应目录对应的inode
 	
@@ -68,9 +65,10 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 	int r; 
 	/* 迭代器在定位到所需位置之前是无效的 */
 	it->curr = NULL;
-
+	printk("size:%d\n",size);
 	/* 检查是否已到达末尾 */
 	if (pos >= size) {
+		printk("pos :%d size:%d \n",pos,size);
 		// 如果位置超出了 i-node 的大小，则处理结束
 		if (it->curr_blk.lb_id) {
 			// 如果当前块有效，则设置块并清空当前块信息
@@ -96,6 +94,7 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 	if ((it->curr_blk.lb_id == 0) || (current_blk_idx != next_blk_idx)) {
 		// 如果当前块无效或者需要跨块移动，则获取下一个块
 		if (it->curr_blk.lb_id) {
+			printk("4\n");
 			//如果当前块无效则将块缓冲区置空
 			bufRelease(it->curr_blk.buf);
 			it->curr_blk.lb_id = 0;
@@ -105,10 +104,10 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 		}
 		uint64_t next_blk;
 		r = ext4_fs_get_inode_dblk_idx(it->inode_ref, next_blk_idx, &next_blk, false); // 获取下一个块地址
+		printk("next_blk:%d\n",next_blk);
 		if (r != 0)
 			return r;
 		it->curr_blk.buf = bufRead(1,EXT4_LBA2PBA(next_blk),1);// 获取块数据
-		printk("next_blk:%d\n",next_blk);
 		it->curr_blk.lb_id = next_blk;
 		if (it->curr_blk.buf == NULL) {
 			it->curr_blk.lb_id = 0;
@@ -127,7 +126,6 @@ int ext4_dir_iterator_init(struct ext4_dir_iter *it, struct ext4_inode_ref *inod
 	it->curr = 0;
 	it->curr_off = 0;
 	it->curr_blk.lb_id = 0;
-	printk("ext4_dir_iterator_init\n");
 	return ext4_dir_iterator_seek(it, pos);
 }
 
@@ -183,20 +181,16 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 		return 0; // 返回空指针
 	}
 	// 获取目录 i-node 的引用
-	
+	printk("dir->pdirent->ext4_dir_en.inode:%d\n",dir->pdirent->ext4_dir_en.inode);
 	r = ext4_fs_get_inode_ref(ext4Fs, dir->pdirent->ext4_dir_en.inode, &dir_inode,1);
-	for (int i = 0; i < 15; i++)
-	{
-		printk("%x ",dir_inode.inode->blocks[i]);
-	}
-	
-	
 	if (r != 0) {
 		goto Finish; // 发生错误，跳转到结束处理
 	}
 
 	// 初始化目录迭代器，从指定偏移量开始
+	printk("dir->next_off:%d\n",dir->next_off);
 	r = ext4_dir_iterator_init(&it, &dir_inode, dir->next_off);
+	printk("it.curr->name:%s\n",it.curr->name);
 	if (r != 0) {
 		ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
 		goto Finish; // 发生错误，跳转到结束处理
@@ -207,13 +201,11 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	memset(&dir->de->name, 0, sizeof(dir->de->name)); // 清空目录项的名称字段
 	name_length = ext4_dir_en_get_name_len(&ext4Fs->superBlock.ext4_sblock, it.curr); // 获取目录项名称长度
 	memcpy(&dir->de->name, it.curr->name, name_length); // 复制目录项的名称
-	printk("dir_name:%s\n",it.curr->name);
 	// 复制目录项的信息到目录项结构
 	dir->de->ext4_dir_en.inode = ext4_dir_en_get_inode(it.curr); // 获取目录项的 i-node 号
 	dir->de->ext4_dir_en.entry_len = ext4_dir_en_get_entry_len(it.curr); // 获取目录项的长度
 	dir->de->ext4_dir_en.name_len = name_length; // 设置目录项的名称长度
-	dir->de->ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&dir->pdirent->head->mnt_rootdir->file_system->superBlock.ext4_sblock, it.curr); // 获取目录项的 i-node 类型
-
+	dir->de->ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&ext4Fs->superBlock.ext4_sblock, it.curr); // 获取目录项的 i-node 类型
 	de = dir->de; // 设置目录项指针为当前目录项
 	de->file_system = ext4Fs;
 	de->type = EXT4_IS_DIR(dir_inode.inode->mode) ? DIRENT_DIR : DIRENT_FILE;
@@ -221,7 +213,6 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	list_init(&de->child_list);//初始化dirent项的子目录项
 	de->linkcnt = 1;
 	de->mode = dir_inode.inode->mode;
-	
 	ext4_dir_iterator_next(&it); // 移动到下一个目录项
 
 	// 更新下一个目录项的偏移量，如果没有下一个目录项，则设置为终止偏移量
