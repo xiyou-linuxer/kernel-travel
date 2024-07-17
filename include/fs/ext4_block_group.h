@@ -279,6 +279,9 @@ static inline void ext4_bg_clear_flag(struct ext4_bgroup *bg, uint32_t f)
 	bg->flags = to_le16(flags);
 }
 
+#define EXT4_BLOCK_ZERO() 	\
+	{.lb_id = 0, .buf = 0}
+
 /**
  * @brief 计算块组的CRC16。
  * @param crc 初始值
