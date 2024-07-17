@@ -136,5 +136,5 @@ static inline void ext4_dir_en_set_inode_type(struct ext4_sblock *sb,
 /* 定义旧版本的inode结构体大小 */
 #define EXT4_GOOD_OLD_INODE_SIZE 128        // 旧版本的inode大小（字节)
 
-const Dirent* ext4_dir_entry_next(struct ext4_dir* dir);
+struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir);
 #endif

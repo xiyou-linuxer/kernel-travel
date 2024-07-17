@@ -11,6 +11,8 @@ typedef struct Dirent Dirent;
 
 extern FileSystem *ext4Fs;
 
+#define EXT4_DIR_ENTRY_OFFSET_TERM (uint64_t)(-1)
+
 /*存放如ext4文件系统的信息*/
 #define UUID_SIZE 16
 #define EXT4_MIN_BLOCK_GROUP_DESCRIPTOR_SIZE 32

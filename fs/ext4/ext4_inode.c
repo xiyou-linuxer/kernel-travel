@@ -329,7 +329,7 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 	ref->inode = (struct ext4_inode *)(ref->block->data->data + offset_in_block);
 
 	printk("offset_in_block:%d\n",offset_in_block);
-	if (offset_in_block>512)
+	if (offset_in_block>=512)
 	{
 		int n =offset_in_block/512;
 		ref->block = bufRead(1,EXT4_LBA2PBA(block_id)+n,1);

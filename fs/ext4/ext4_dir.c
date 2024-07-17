@@ -57,7 +57,6 @@ static int ext4_dir_iterator_set(struct ext4_dir_iter *it, uint32_t block_size)
 
 static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 {
-	printk("1\n");
 	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock; // 超级块指针
 	struct ext4_inode *inode = it->inode_ref->inode;//获取迭代器对应目录对应的inode
 	
@@ -65,10 +64,10 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 	int r; 
 	/* 迭代器在定位到所需位置之前是无效的 */
 	it->curr = NULL;
-	printk("size:%d\n",size);
+	//printk("size:%d\n",size);
 	/* 检查是否已到达末尾 */
 	if (pos >= size) {
-		printk("pos :%d size:%d \n",pos,size);
+		//printk("pos :%d size:%d \n",pos,size);
 		// 如果位置超出了 i-node 的大小，则处理结束
 		if (it->curr_blk.lb_id) {
 			// 如果当前块有效，则设置块并清空当前块信息
@@ -94,7 +93,6 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 	if ((it->curr_blk.lb_id == 0) || (current_blk_idx != next_blk_idx)) {
 		// 如果当前块无效或者需要跨块移动，则获取下一个块
 		if (it->curr_blk.lb_id) {
-			printk("4\n");
 			//如果当前块无效则将块缓冲区置空
 			bufRelease(it->curr_blk.buf);
 			it->curr_blk.lb_id = 0;
@@ -168,17 +166,15 @@ int ext4_dir_iterator_next(struct ext4_dir_iter *it)
  * @param dir 指向 ext4_dir 结构的指针，表示目录对象。
  * @return const Dirent * 指向下一个目录项的指针，如果没有更多目录项可用，则返回NULL。
  */
-const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
+struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 {
-#define EXT4_DIR_ENTRY_OFFSET_TERM (uint64_t)(-1)
-
 	int r;
 	uint16_t name_length;
 	Dirent *de = 0; // 指向目录项的指针
 	struct ext4_dir_iter it; // 目录迭代器
 	struct ext4_inode_ref dir_inode; // 目录 i-node 的引用
 	if (dir->next_off == EXT4_DIR_ENTRY_OFFSET_TERM) { // 如果已经遍历到目录尾部
-		return 0; // 返回空指针
+		return NULL; // 返回空指针
 	}
 	// 获取目录 i-node 的引用
 	printk("dir->pdirent->ext4_dir_en.inode:%d\n",dir->pdirent->ext4_dir_en.inode);
@@ -208,7 +204,6 @@ const Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	dir->de->ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&ext4Fs->superBlock.ext4_sblock, it.curr); // 获取目录项的 i-node 类型
 	de = dir->de; // 设置目录项指针为当前目录项
 	de->file_system = ext4Fs;
-	de->type = EXT4_IS_DIR(dir_inode.inode->mode) ? DIRENT_DIR : DIRENT_FILE;
 	de->parent_dirent = dir->pdirent;
 	list_init(&de->child_list);//初始化dirent项的子目录项
 	de->linkcnt = 1;
