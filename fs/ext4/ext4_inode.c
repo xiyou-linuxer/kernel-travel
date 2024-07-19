@@ -323,12 +323,10 @@ int ext4_fs_get_inode_ref(FileSystem *fs, uint32_t index,struct ext4_inode_ref *
 	ext4_fsblk_t block_id =inode_table_start + (byte_offset_in_group / block_size);
 
 	ref->block = bufRead(1,EXT4_LBA2PBA(block_id),1);
-	//printk("inode:%d block_id:%d ",index,block_id);
 	// 计算inode在数据块中的位置
 	uint32_t offset_in_block = byte_offset_in_group % block_size;
 	ref->inode = (struct ext4_inode *)(ref->block->data->data + offset_in_block);
 
-	printk("offset_in_block:%d\n",offset_in_block);
 	if (offset_in_block>=512)
 	{
 		int n =offset_in_block/512;

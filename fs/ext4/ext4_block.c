@@ -24,15 +24,20 @@
  * @param cnt 连续读取的数量
  */
 
-int ext4_blocks_get_direct(const void *buf,uint64_t lba, uint32_t cnt)
+int ext4_blocks_get_direct(const void *buf,int block_size, uint64_t lba, uint32_t cnt)
 {
 	int count = 0;
 	uint8_t* p = (void*)buf;
+	int lp = block_size/BUF_SIZE;
 	while (count < cnt)
 	{
-		Buffer *buf = bufRead(1,EXT4_LBA2PBA(lba+count),1);
-		memcpy(p,buf->data->data,BUF_SIZE);
-		p+=BUF_SIZE;
+		int pba = lp*(lba+count);//计算逻辑块号
+		for (int i = 0; i < lp; i++)//将块内的扇区都读出来
+		{
+			Buffer *buf = bufRead(1,pba+i,1);
+			memcpy(p,buf->data->data,BUF_SIZE);
+			p+=BUF_SIZE;
+		}
 		count++;
 	}
 	return count;
@@ -51,10 +56,15 @@ int ext4_blocks_set_direct(const void *buf,uint64_t lba, uint32_t cnt)
 	uint8_t* p = (void*)buf;
 	while (count < cnt)
 	{
-		Buffer *buf = bufRead(1,EXT4_LBA2PBA(lba+count),0);
-		memcpy(buf->data->data,p,BUF_SIZE);
-		bufWrite(buf);
-		p+=BUF_SIZE;
+		int pba = EXT4_LBA2PBA(lba+count);
+		for (int i = 0; i < 8; i++)
+		{
+			Buffer *buf = bufRead(1,EXT4_LBA2PBA(lba+count),0);//只获取缓冲区，读取其中内容
+			memcpy(buf->data->data,p,BUF_SIZE);
+			bufWrite(buf);
+			p+=BUF_SIZE;
+		}
+		
 		count++;
 	}
 	return count;
@@ -446,8 +456,8 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 	uint8_t* p = (void*)buf;
 
 	// 计算起始块索引
-	block_idx = (off /ph_bsize);
-
+	block_idx = (off /BUF_SIZE);
+	printk("block_idx:%d\n",block_idx);
 	// 处理第一个未对齐的块
 	unalg = (off & (ph_bsize - 1));
 	if (unalg) {
@@ -456,7 +466,7 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 		uint32_t rlen = (ph_bsize - unalg) > len ? len : (ph_bsize - unalg);
 
 		// 读取整个块到临时缓冲区
-		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) , 1);
+		Buffer *buffer = bufRead(1,block_idx,1);
 		if (r != 0)
 			return r;
 
@@ -476,7 +486,7 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 		int count = 0;
 		while (count < blen)
 		{
-			Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) , 1);
+			Buffer *buffer = bufRead(1,block_idx, 1);
 			memcpy(p, buffer->data->data, ph_bsize);
 			p += ph_bsize;
 			len -= ph_bsize;
@@ -487,7 +497,7 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 	// 处理剩余的数据
 	if (len) {
 		// 读取最后一个块到临时缓冲区
-		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) , 1);
+		Buffer *buffer = bufRead(1,block_idx, 1);
 		if (r != 0)
 			return r;
 

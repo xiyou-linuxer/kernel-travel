@@ -102,7 +102,7 @@ static int ext4_dir_iterator_seek(struct ext4_dir_iter *it, uint64_t pos)
 		}
 		uint64_t next_blk;
 		r = ext4_fs_get_inode_dblk_idx(it->inode_ref, next_blk_idx, &next_blk, false); // 获取下一个块地址
-		printk("next_blk:%d\n",next_blk);
+		//printk("next_blk:%d\n",next_blk);
 		if (r != 0)
 			return r;
 		it->curr_blk.buf = bufRead(1,EXT4_LBA2PBA(next_blk),1);// 获取块数据
@@ -177,16 +177,13 @@ struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 		return NULL; // 返回空指针
 	}
 	// 获取目录 i-node 的引用
-	printk("dir->pdirent->ext4_dir_en.inode:%d\n",dir->pdirent->ext4_dir_en.inode);
 	r = ext4_fs_get_inode_ref(ext4Fs, dir->pdirent->ext4_dir_en.inode, &dir_inode,1);
 	if (r != 0) {
 		goto Finish; // 发生错误，跳转到结束处理
 	}
 
 	// 初始化目录迭代器，从指定偏移量开始
-	printk("dir->next_off:%d\n",dir->next_off);
 	r = ext4_dir_iterator_init(&it, &dir_inode, dir->next_off);
-	printk("it.curr->name:%s\n",it.curr->name);
 	if (r != 0) {
 		ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
 		goto Finish; // 发生错误，跳转到结束处理
@@ -203,6 +200,7 @@ struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	dir->de->ext4_dir_en.name_len = name_length; // 设置目录项的名称长度
 	dir->de->ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&ext4Fs->superBlock.ext4_sblock, it.curr); // 获取目录项的 i-node 类型
 	de = dir->de; // 设置目录项指针为当前目录项
+	de->file_size = ext4_inode_get_size(&ext4Fs->superBlock.ext4_sblock,dir_inode.inode);
 	de->file_system = ext4Fs;
 	de->parent_dirent = dir->pdirent;
 	list_init(&de->child_list);//初始化dirent项的子目录项
