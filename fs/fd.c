@@ -98,8 +98,10 @@ int file_open(Dirent* file, int flag, mode_t mode)
 	file_table[fd_idx].type = dev_file;
 	file_table[fd_idx].refcnt = 1;
 	lock_init(&file_table[fd_idx].lock);
-	file->file_system->op->file_init(file);//初始化文件
-	//filepnt_init(file);
+	if (file->file_system->op->file_init != NULL)
+	{
+		file->file_system->op->file_init(file);//初始化文件
+	}
 	return pcb_fd_install(fd_idx);
 }
 

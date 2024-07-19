@@ -36,16 +36,18 @@ static void build_dirent_ext4tree(Dirent *parent)
 			break;
 		}
 		child = ext4_dir_entry_next(&d);
+		child->head = parent->head;
 		// 跳过.和..
 		if (strncmp(child->name, ".", 2) == 0 || strncmp(child->name, "..", 3) == 0) {
 			continue;
 		}
-		printk("name:%s ",child->name);
+		printk("%s ",child->name);
 		list_append(&parent->child_list,&child->dirent_tag);
 		
 		// 如果为目录，就向下一层递归
 		if (child->ext4_dir_en.in.inode_type == EXT4_DE_DIR) {
 			printk("\n");
+			child->type = DIRENT_DIR;
 			build_dirent_ext4tree(child);
 		}
 	}
@@ -110,7 +112,6 @@ void ext4_init(FileSystem* fs)
 	//初始化超级块信息
 	ASSERT(fill_sb(ext4Fs) != 0);
 	//初始化根目录
-	ext4Fs->root = dirent_alloc();
 	ext4Fs->root->ext4_dir_en.inode = EXT4_ROOT_INO;//根目录对应的inode号
 	strcpy(ext4Fs->root->name,"/");
 	ext4Fs->root->file_system = ext4Fs;
@@ -122,5 +123,5 @@ void ext4_init(FileSystem* fs)
 	ext4Fs->root->linkcnt = 1;
 	//构建目录树
 	build_dirent_ext4tree(ext4Fs->root);
-	printk("build dirent tree succeed!\n");
+	printk("\nbuild dirent tree succeed!\n");
 }

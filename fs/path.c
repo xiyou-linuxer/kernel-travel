@@ -6,6 +6,7 @@
 #include <xkernel/list.h>
 #include <xkernel/thread.h>
 #include <xkernel/types.h>
+#include <xkernel/stdio.h>
 #include <debug.h>
 /*路径处理相关*/
 /*将路径转化为绝对路径，只支持 . 与 .. 开头的路径*/
@@ -156,7 +157,7 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 	/* 保证pathname至少是这样的路径/x且小于最大长度 */
 	ASSERT(pathname[0] == '/' && path_len > 1 && path_len < MAX_PATH_LEN);
 	char *sub_path = (char *)pathname;
-	Dirent *parent_dir = fatFs->root;
+	Dirent *parent_dir = mnt_root.mnt_rootdir;
 	Dirent *dir_e;
 	/* 记录路径解析出来的各级名称,如路径"/a/b/c",
 	* 数组name每次的值分别是"a","b","c" */
@@ -185,7 +186,7 @@ Dirent* search_file(const char *pathname, struct path_search_record *searched_re
 			}
 			if (dir_e->type == DIRENT_DIR )// 如果被打开的是目录
 			{ 
-				if (dir_e->head!=NULL && dir_e->head!=dir_e->parent_dirent->head && dir_e->head->mnt_rootdir!=NULL)/* 判断目录下是否有挂载的文件系统，父目录与子目录对应的head若不同则说明子目录下挂载了其他文件系统 */
+				if (dir_e->head!=NULL && dir_e->head!=dir_e->parent_dirent->head && dir_e->head->mnt_rootdir!=NULL)/* 判断目录下是否有挂载的文件系统，父目录与子目录对应的head若不同则说明子目录下挂载了其他文件系统*/
 				{
 					dir_e = dir_e->head->mnt_rootdir; //完成挂载点到被挂载文件系统的转换
 				}

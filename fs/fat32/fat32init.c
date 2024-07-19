@@ -156,12 +156,14 @@ void init_root_fs(void)
 	//allocFs(&fatFs);
 	allocFs(&ext4Fs);
 	//fatFs->deviceNumber = 0;
+	ext4Fs->root = dirent_alloc();
+	mnt_root.mnt_rootdir = ext4Fs->root;
+	ext4Fs->root->head = &mnt_root;
 	printk("ext4_init\n");
 	ext4_init(ext4Fs);
 	//fat32_init(fatFs);
 	/*将原来的rootfs目录转移到fat32下*/
 	
 	/*将fat32系统挂载到根挂载点*/
-	mnt_root.mnt_rootdir = ext4Fs->root;
-	ext4Fs->root->head = &mnt_root;
+	
 }

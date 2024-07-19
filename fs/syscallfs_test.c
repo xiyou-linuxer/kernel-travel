@@ -18,6 +18,8 @@
 #include <debug.h>
 #include <fork.h>
 #include <xkernel/wait.h>
+#include <fs/ext4_file.h>
+#include <fs/path.h>
 void test_open(void) {
     // O_RDONLY = 0, O_WRONLY = 1
     int fd = sys_open("./text.txt", O_RDWR ,660);
@@ -195,17 +197,32 @@ void test_getdents(void){
 
 void test_fs_all(void)
 {
-    /*int fd = sys_open("./open", O_RDWR ,660);
-    unsigned long v_addr[32];
-    fd_mapping(fd, 0, 3,v_addr);
-    printk("bbb");
-    test_mount();*/
-    test_open();
-    //test_close();
-    test_unlink();
-
-    //test_mapping();
-    //test_getdents();
-    while (1) {
-    };
+	/*int fd = sys_open("./open", O_RDWR ,660);
+	unsigned long v_addr[32];
+	fd_mapping(fd, 0, 3,v_addr);
+	printk("bbb");
+	test_mount();*/
+	//test_open();
+	//test_close();
+	//test_unlink();
+	printk("test_fs_all\n");
+	struct path_search_record path_search_record;
+	Dirent * d = search_file("/sdcard/busybox",&path_search_record);
+	printk("%s:\n",d->name);
+	char buf[8192];
+	//printk("%d\n",d->file_size);
+	ext4_fread(d,buf,0,8192);
+	int i =0 ;
+	while (i <8192)
+	{
+		printk("%x ",buf[i]);
+		i++;
+	}
+	
+	//printk("%s \n",buf);
+	printk("read_down\n");
+	//test_mapping();
+	//test_getdents();
+	while (1) {
+	};
 } 
