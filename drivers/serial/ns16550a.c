@@ -69,6 +69,8 @@ void serial_ns16550a_puts(char *str)
 {
 	char *ch = str;
 	while (*ch != '\0') {
+		if (*ch == '\n')
+			serial_ns16550a_putc('\r');
 		serial_ns16550a_putc(*ch);
 		ch++;
 	}

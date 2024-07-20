@@ -50,6 +50,7 @@ struct task_struct {
 	struct start_tms start_times;
 	pid_t ppid;
 	pid_t pid;
+	uint64_t clear_child_tid;
 	enum task_status status;
 	int16_t exit_status;
 	char name[TASK_NAME_LEN];

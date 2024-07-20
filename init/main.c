@@ -90,13 +90,11 @@ void __init __no_sanitize_address start_kernel(void)
 	trap_init();
 	irq_init();
 
-	local_irq_enable();
-
+	thread_init();
+	timer_init();
 	pci_init();
 	console_init();
 	disk_init();
-	thread_init();
-	timer_init();
 	console_init();
 	syscall_init();
 	char buf[512];
@@ -122,12 +120,13 @@ void __init __no_sanitize_address start_kernel(void)
 	// }
 
 	early_boot_irqs_disabled = true;
-	//int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	//if (fd == -1) {
-	//	printk("open failed");
-	//}
-	//sys_write(fd,init_code,init_code_len);
-	//bufSync();
+	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	if (fd == -1) {
+		printk("open failed");
+	}
+	sys_write(fd,init_code,init_code_len);
+	bufSync();
+	local_irq_enable();
 	
 	//printk("sys_sleep start\n");
 	//struct timespec req;
