@@ -89,10 +89,9 @@ void __init __no_sanitize_address start_kernel(void)
 	mem_init();
 	trap_init();
 	irq_init();
+
 	thread_init();
 	timer_init();
-	local_irq_enable();
-
 	pci_init();
 	console_init();
 	disk_init();
@@ -125,6 +124,7 @@ void __init __no_sanitize_address start_kernel(void)
 	}
 	sys_write(fd,init_code,init_code_len);
 	bufSync();
+	local_irq_enable();
 	
 	//printk("sys_sleep start\n");
 	//struct timespec req;

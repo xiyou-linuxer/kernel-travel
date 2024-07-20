@@ -1,15 +1,9 @@
 #ifndef __LIB_KERNEL_LIST_H
 #define __LIB_KERNEL_LIST_H
-
-#include "stdint.h"
-#ifdef __KERNEL__
-
-
 #include <xkernel/types.h>
 #include <xkernel/compiler.h>
-#if 0
 
-#ifdef __KERNEL__
+//#ifdef __KERNEL__
 #if 0
 
 /**
@@ -567,4 +561,4 @@ bool elem_find(struct list* plist,struct list_elem* obj_elem);
 #warning "don't include kernel headers in userspace"
 #endif /* __KERNEL__ */
 
-#endif
+//#endif

@@ -26,7 +26,7 @@ static int copy_pcb(struct task_struct* parent,struct task_struct* child)
 	memset(&child->time_record,0,sizeof(struct tms));
 	memset(&child->start_times,0,sizeof(struct start_tms));
 
-	uint64_t vaddr_btmp_size = DIV_ROUND_UP((USER_STACK - USER_VADDR_START)/PAGESIZE/8,PAGESIZE);
+	uint64_t vaddr_btmp_size = DIV_ROUND_UP((USER_TOP - USER_VADDR_START)/PAGESIZE/8,PAGESIZE);
 	child->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(vaddr_btmp_size+1);
 	child->usrprog_vaddr.btmp.btmp_bytes_len = parent->usrprog_vaddr.btmp.btmp_bytes_len;
 	if (child->usrprog_vaddr.btmp.bits == NULL) {
@@ -147,8 +147,6 @@ pid_t sys_fork(int (*fn)(void *arg),void *stack,unsigned long flags,void *arg)
 	make_switch_prepare(child,stack,fn);
 	pipe_table[child->pid][0] = pipe_table[child->ppid][0];
 	pipe_table[child->pid][1] = pipe_table[child->ppid][1];
-	//printk("pip0:%d pip1:%d ppip0:%d ppip1:%d\n",pipe_table[child->pid][0],pipe_table[child->pid][1],pipe_table[child->ppid][0],pipe_table[child->ppid][1]);
-	ASSERT(!elem_find(&thread_all_list,&child->all_list_tag));
 	list_append(&thread_all_list,&child->all_list_tag);
 	ASSERT(!elem_find(&thread_ready_list,&child->general_tag));
 	list_append(&thread_ready_list,&child->general_tag);

@@ -77,6 +77,12 @@ pid_t sys_getppid(void)
 	return cur->ppid;
 }
 
+pid_t sys_set_tid_address(int* tidptr)
+{
+	struct task_struct* cur = running_thread();
+	cur->clear_child_tid = (uint64_t)tidptr;
+	return sys_getpid();
+}
 
 static int checkpid(struct list_elem* pelm,void* id)
 {

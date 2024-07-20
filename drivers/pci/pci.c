@@ -228,7 +228,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 {
 	/*读取总线设备的设备id*/
 	unsigned int val;
-	printk("read config a\n");
+	//printk("read config a\n");
 	pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,(int *)&val);
 	unsigned int vendor_id = val & 0xffff;
 	unsigned int device_id = val >> 16;
@@ -243,7 +243,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/*读取设备类型*/
-	printk("read config b\n");
+	//printk("read config b\n");
 	pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,(int *)&val);
 	unsigned char header_type = ((val >> 16));
 	/*读取 command 寄存器*/
@@ -327,7 +327,7 @@ static void pci_scan_buses()
 		for (device = 0; device < PCI_MAX_DEV; device++) {//遍历总线上的每一个设备
 			for (function = 0; function < PCI_MAX_FUN; function++) {//遍历每个功能号
 				pci_scan_device(bus, device, function);
-				printk("next scan\n");
+				//printk("next scan\n");
 			}
 		}
 	}

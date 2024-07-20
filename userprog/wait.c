@@ -44,7 +44,7 @@ static int find_child(struct list_elem* elm,void* parent_pid)
 
 static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 {
-	printk("exit: release %x",pdir);
+	//printk("exit: release %x",pdir);
 	uint64_t* pgdp = pgd_ptr(pdir,0);
 	uint64_t vaddr = 0;
 	for (int pgd_idx = 0; pgd_idx < 512; pgd_idx++,pgdp++)
@@ -54,7 +54,7 @@ static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 			continue;
 		}
 
-		uint64_t* pmdp = pmd_ptr(pdir,vaddr);
+		uint64_t* pmdp = reverse_pmd_ptr(pdir,vaddr);
 		for (int pmd_idx = 0; pmd_idx < 512; pmd_idx++,pmdp++)
 		{
 			if (!*pmdp) {
@@ -62,20 +62,21 @@ static void release_usrmemory(uint64_t pdir,struct virt_addr *usrmem)
 				continue;
 			}
 
-			uint64_t* ptep = pte_ptr(pdir,vaddr);
+			uint64_t* ptep = reverse_pte_ptr(pdir,vaddr);
 			for (int pte_idx = 0; pte_idx < 512; pte_idx++,ptep++)
 			{
 				if (!*ptep) {
 					continue;
 				}
-				printk("exit: release  *ptep %x\n",*ptep&0xfffffffffffff000);
+				//printk("exit: release  *ptep 0x%llx\n",*ptep&0xfffffffffffff000);
 				free_page(*ptep&0xfffffffffffff000);
 			}
-			printk("exit: release *pmdp %x\n",*pmdp&0xfffffffffffff000);
+			//printk("exit: release *pmdp %x\n",*pmdp&0xfffffffffffff000);
 			free_page(*pmdp&0xfffffffffffff000);
 		}
-		printk("exit: release *pgdp %x\n",*pgdp&0xfffffffffffff000);
+		//printk("exit: release *pgdp %x\n",*pgdp&0xfffffffffffff000);
 		free_page(*pgdp&0xfffffffffffff000);
+		vaddr = (vaddr&0xffc0000000) + 0x40000000;
 	}
 
 	uint64_t bitmap_pg_cnt = usrmem->btmp.btmp_bytes_len/PAGESIZE;
