@@ -19,7 +19,8 @@
 
 /**
  * @brief 读取连续的扇区
- * @param 缓冲区 超级块指针。
+ * @param buf 缓冲区
+ * @param block_size 逻辑数据块的大小
  * @param lba 其实扇区号
  * @param cnt 连续读取的数量
  */
@@ -457,7 +458,6 @@ int ext4_block_readbytes(uint64_t off, void *buf, uint32_t len)
 
 	// 计算起始块索引
 	block_idx = (off /BUF_SIZE);
-	printk("block_idx:%d\n",block_idx);
 	// 处理第一个未对齐的块
 	unalg = (off & (ph_bsize - 1));
 	if (unalg) {
