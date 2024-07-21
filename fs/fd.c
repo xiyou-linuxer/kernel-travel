@@ -47,7 +47,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 	uint8_t local_fd_idx = 3; // 跨过stdin,stdout,stderr
 	while (local_fd_idx < MAX_FILES_OPEN_PER_PROC)
 	{
-		if (cur->fd_table[local_fd_idx] == -1)
+		if (cur->fd_table[local_fd_idx] == 0)
 		{ // -1表示free_slot,可用
 			cur->fd_table[local_fd_idx] = globa_fd_idx;
 			file_table[globa_fd_idx].refcnt++;
@@ -58,7 +58,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 	}
 	if (local_fd_idx == MAX_FILES_OPEN_PER_PROC)
 	{
-		//printk("exceed max open files_per_proc\n");
+		printk("exceed max open files_per_proc\n");
 		return 0;
 	}
 	return local_fd_idx;

@@ -205,13 +205,16 @@ void test_fs_all(void)
 	//test_open();
 	//test_close();
 	//test_unlink();
-	printk("test_fs_all\n");
+	/*printk("test_fs_all\n");
 	struct path_search_record path_search_record;
 	Dirent * d = search_file("/sdcard/busybox",&path_search_record);
-	printk("%s:\n",d->name);
+	printk("%s:\n",d->name);*/
+	int fd = sys_open("/sdcard/busybox",O_RDONLY,0777);
+	printk("fd:%d\n",fd);
 	char buf[8192];
+	sys_read(fd,buf,8192);
 	//printk("%d\n",d->file_size);
-	ext4_fread(d,buf,0,8192);
+	//ext4_fread(d,buf,0,8192);
 	int i =0 ;
 	while (i <8192)
 	{

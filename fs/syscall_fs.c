@@ -55,7 +55,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	{ // 若要创建的文件已存在
 		//printk("%s has already exist!\n", pathname);
 		fd = file_open(file, flags ,mode);
-		printk("fd:%d\n");
 		return fd;
 	}
 	
