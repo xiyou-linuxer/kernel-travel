@@ -272,7 +272,7 @@ int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int 
 		}
 
 		r = ext4_blocks_set_direct(u8_buf,
-					   fblock_start, fblock_count);
+					   block_size,fblock_start, fblock_count);
 		if (r != EOK)
 			break;
 

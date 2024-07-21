@@ -291,7 +291,7 @@ static inline void ext4_bg_clear_flag(struct ext4_bgroup *bg, uint32_t f)
  **/
 uint16_t ext4_bg_crc16(uint16_t crc, const uint8_t *buffer, size_t len);
 int ext4_blocks_get_direct(const void *buf,int block_size, uint64_t lba, uint32_t cnt);
-int ext4_blocks_set_direct(const void* buf, uint64_t lba, uint32_t cnt);
+int ext4_blocks_set_direct(const void *buf,int block_size,uint64_t lba, uint32_t cnt);
 int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t goal, ext4_fsblk_t *fblock);
 int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref, ext4_fsblk_t first, uint32_t count);
 uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock* s, uint32_t bgid);
