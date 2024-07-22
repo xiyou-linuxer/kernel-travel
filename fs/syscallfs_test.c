@@ -209,7 +209,7 @@ void test_fs_all(void)
 	/*struct path_search_record path_search_record;
 	Dirent * d = search_file("/sdcard/hello",&path_search_record);
 	printk("%s:\n",d->name);*/
-	int fd = sys_open("/sdcard/hello",O_RDONLY,0777);
+	int fd = sys_open("/aaa.txt",O_CREATE|O_RDWR,0777);
 	printk("fd:%d\n",fd);
 	char buf[64];
 	sys_write(fd,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",64);

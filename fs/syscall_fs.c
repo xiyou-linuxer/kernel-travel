@@ -456,7 +456,6 @@ int32_t sys_pipe(int32_t pipefd[2])
     int pip = running_thread()->pid;
     pipe_table[pip][0] = pipefd[0];
     pipe_table[pip][1] = pipefd[1];
-    //printk("0:%d,1:%d\n", pipe_table[pip][0], pipe_table[pip][1]);
     return 0;
 }
 

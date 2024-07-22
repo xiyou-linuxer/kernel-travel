@@ -539,7 +539,7 @@ int ext4_ialloc_alloc_inode(struct FileSystem *fs, uint32_t *idx, bool is_dir)
 
 			// 验证位图的校验和
 			if (!ext4_ialloc_verify_bitmap_csum(sb, bg, b.buf->data->data)) {
-				printk("Bitmap checksum failed.Group: %d \n",bg_ref.index);
+				printk("Bitmap checksum failed.Group 1: %d \n",bg_ref.index);
 			}
 
 			/* 尝试在位图中分配 inode */
@@ -640,7 +640,7 @@ int ext4_ialloc_free_inode(struct FileSystem *fs, uint32_t index, bool is_dir)
 	b.buf = bufRead(1,EXT4_LBA2PBA(bitmap_block_addr),1);
 
 	if (!ext4_ialloc_verify_bitmap_csum(sb, bg, b.buf->data->data)) {
-		printk("Bitmap checksum failed.Group: %d \n",bg_ref.index);
+		printk("Bitmap checksum failed.Group 2: %d \n",bg_ref.index);
 	}
 
 	/* Free i-node in the bitmap */
@@ -692,6 +692,7 @@ int ext4_fs_alloc_inode(struct FileSystem *fs, struct ext4_inode_ref *inode_ref,
 	/* 通过分配算法分配 inode */
 	uint32_t index;
 	int rc = ext4_ialloc_alloc_inode(fs, &index, is_dir);
+	printk("index:%d\n",index);
 	if (rc != EOK)
 		return rc;
 

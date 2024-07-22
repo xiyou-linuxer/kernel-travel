@@ -364,7 +364,6 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 	{ 
 		// 说明并没有访问到全部的路径,某个中间目录是不存在的
 		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",path, searched_record.searched_path);
-		lock_release(&mtx_file);
 		return -1;
 	}
 
@@ -374,16 +373,14 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 		if(isDir == 1 && dir->type == DIRENT_DIR)
 		{
 			printk("directory exists: %s\n", path);
-			lock_release(&mtx_file);
 
 		}else if (isDir == 0 && dir->type == DIRENT_FILE)
 		{
 			printk("file exists: %s\n", path);
-			lock_release(&mtx_file);
 		}
 		return -1;
 	}
-
+	
 	/* 获取父目录的 inode */
 	ext4_fs_get_inode_ref(fs, searched_record.parent_dir->ext4_dir_en.inode, &ref,0);
 
@@ -392,15 +389,16 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 	r = ext4_fs_alloc_inode(fs, &child_ref,isDir ? EXT4_DE_REG_FILE : EXT4_DE_DIR);
 	if (r != 0)
 		return r;
-
+	
 	/*初始化inode*/
 	ext4_fs_inode_blocks_init(fs, &child_ref);  // 初始化 inode 块
-
+	
 	/* 创建一个目录项并将其加入目录中 */
 	char *name = (strrchr(path,'/')+1);
 	struct ext4_dir_en *new_en = ext4_dir_add_entry(&ref, name, sizeof(name), &child_ref);
 	if (new_en == NULL)
 		return -1;
+	printk("1111\n");
 	f = dirent_alloc();
 
 	/* 填写目录项中的内容 */
@@ -413,6 +411,7 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 	f->file_size = ext4_inode_get_size(&ext4Fs->superBlock.ext4_sblock,child_ref.inode);
 	f->file_system = ext4Fs;
 	f->parent_dirent = searched_record.parent_dir;
+	f->head = f->parent_dirent->head;
 	list_init(&f->child_list);//初始化dirent项的子目录项
 	f->linkcnt = 1;
 	f->mode = child_ref.inode->mode;
