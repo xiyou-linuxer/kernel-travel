@@ -251,8 +251,7 @@ static int ext4_fs_init_block_bitmap(struct ext4_block_group_ref *bg_ref)
 	return 0;
 }
 
-void ext4_ialloc_set_bitmap_csum(struct ext4_sblock *sb, struct ext4_bgroup *bg,
-				 void *bitmap __attribute__ ((__unused__)))
+void ext4_ialloc_set_bitmap_csum(struct ext4_sblock *sb, struct ext4_bgroup *bg, void *bitmap __attribute__ ((__unused__)))
 {
 	int desc_size = ext4_sb_get_desc_size(sb);
 	uint32_t csum = ext4_ialloc_bitmap_csum(sb, bitmap);
@@ -633,14 +632,13 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 	struct ext4_sblock * sb = &inode_ref->fs->superBlock.ext4_sblock;
 	int EOK = 0;
 
-#if CONFIG_EXTENT_ENABLE && CONFIG_EXTENTS_ENABLE
 	/* 处理使用extent的inode */
 	if ((ext4_sb_feature_incom(sb, EXT4_FINCOM_EXTENTS)) &&
 	    (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
 		/* 不可达 */
 		return -1;
 	}
-#endif
+
 
 	/* 处理直接引用的简单情况 */
 	if (iblock < EXT4_INODE_DIRECT_BLOCK_COUNT) {
@@ -931,4 +929,26 @@ int ext4_fs_check_features(struct ext4_fs *fs)
 	}
 	printk("ext4_fs_check_features\n");
 	return 1;
+}
+
+uint32_t ext4_fs_correspond_inode_mode(int filetype)
+{
+	switch (filetype) {
+	case EXT4_DE_DIR:
+		return EXT4_INODE_MODE_DIRECTORY;
+	case EXT4_DE_REG_FILE:
+		return EXT4_INODE_MODE_FILE;
+	case EXT4_DE_SYMLINK:
+		return EXT4_INODE_MODE_SOFTLINK;
+	case EXT4_DE_CHRDEV:
+		return EXT4_INODE_MODE_CHARDEV;
+	case EXT4_DE_BLKDEV:
+		return EXT4_INODE_MODE_BLOCKDEV;
+	case EXT4_DE_FIFO:
+		return EXT4_INODE_MODE_FIFO;
+	case EXT4_DE_SOCK:
+		return EXT4_INODE_MODE_SOCKET;
+	}
+	/* FIXME: unsupported filetype */
+	return EXT4_INODE_MODE_FILE;
 }

@@ -13,6 +13,7 @@
 #include <fs/ext4_dir.h>
 #include <fs/ext4_fs.h>
 #include <fs/ext4_block_group.h>
+#include <fs/path.h>
 #include <xkernel/string.h>
 #include <sync.h>
 #include <debug.h>
@@ -333,4 +334,68 @@ Finish:
 	r = ext4_fs_put_inode_ref(&ref);
 
 	return r;
+}
+
+static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, int isDir) 
+{
+	Dirent *dir = NULL, *f = NULL;
+	int r;
+	longEntSet longSet;
+	FileSystem *fs;
+	extern FileSystem *fatFs;
+	struct ext4_inode_ref ref;  // 父目录的 inode 引用
+
+	if (baseDir) {
+		fs = baseDir->file_system;
+	} else {
+		fs = ext4Fs;
+	}
+	struct path_search_record searched_record;
+	memset(&searched_record, 0, sizeof(struct path_search_record));
+
+	/* 记录目录深度.帮助判断中间某个目录不存在的情况 */
+	unsigned int pathname_depth = path_depth_cnt((char *)path);
+
+	/* 先检查是否将全部的路径遍历 */
+	dir = search_file(path,&searched_record);
+	unsigned int path_searched_depth = path_depth_cnt(searched_record.searched_path);
+	if (pathname_depth != path_searched_depth)
+	{ 
+		// 说明并没有访问到全部的路径,某个中间目录是不存在的
+		//printk("cannot access %s: Not a directory, subpath %s is`t exist\n",path, searched_record.searched_path);
+		lock_release(&mtx_file);
+		return -1;
+	}
+	/*如果已经存在该文件则不能重复建立*/
+	if (dir != NULL)
+	{
+		if(isDir == 1 && dir->type == DIRENT_DIR)
+		{
+			printk("directory exists: %s\n", path);
+			lock_release(&mtx_file);
+
+		}else if (isDir == 0 && dir->type == DIRENT_FILE)
+		{
+			printk("file exists: %s\n", path);
+			lock_release(&mtx_file);
+		}
+		return -1;
+	}
+
+
+	ext4_fs_get_inode_ref(fs, searched_record.parent_dir->ext4_dir_en.inode, &ref,0);
+	/* 分配一个inode */
+	struct ext4_inode_ref child_ref;
+	r = ext4_fs_alloc_inode(fs, &child_ref,is_goal ? ftype : EXT4_DE_DIR);
+	if (r != 0)
+		return r;
+
+	/*初始化inode*/
+	ext4_fs_inode_blocks_init(fs, &child_ref);  // 初始化 inode 块
+
+	/*创建一个目录项并将其加入目录*/
+	char *name = (strrchr(path,'/')+1);
+	int r = ext4_dir_add_entry(&ref, name, sizeof(name), &child_ref);
+	if (r != 0)
+		return r;
 }

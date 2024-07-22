@@ -7,6 +7,7 @@
 #include <fs/buf.h>
 #include <xkernel/string.h>
 #include <xkernel/stdio.h>
+#include <fs/ext4_bitmap.h>
 
 struct ext4_extent_header * ext4_inode_get_extent_header(struct ext4_inode *inode)
 {
@@ -35,6 +36,11 @@ uint32_t ext4_inode_get_csum(struct ext4_sblock *sb, struct ext4_inode *inode)
 	if (inode_size > EXT4_GOOD_OLD_INODE_SIZE)
 		v |= ((uint32_t)to_le16(inode->checksum_hi)) << 16; // 如果 inode 大小超过旧版大小，合并高位校验和
 	return v;
+}
+
+void ext4_inode_set_links_cnt(struct ext4_inode *inode, uint16_t cnt)
+{
+	inode->links_count = to_le16(cnt);
 }
 
 uint32_t ext4_inode_get_direct_block(struct ext4_inode *inode, uint32_t idx)
@@ -247,6 +253,16 @@ void ext4_inode_set_uid(struct ext4_inode *inode, uint32_t uid)
 	inode->uid = to_le32(uid);
 }
 
+uint32_t ext4_inode_get_gid(struct ext4_inode *inode)
+{
+	return to_le32(inode->gid);
+}
+
+void ext4_inode_set_gid(struct ext4_inode *inode, uint32_t gid)
+{
+	inode->gid = to_le32(gid);
+}
+
 uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode)
 {
 	uint64_t v = to_le32(inode->size_lo);
@@ -258,10 +274,39 @@ uint64_t ext4_inode_get_size(struct ext4_sblock *sb, struct ext4_inode *inode)
 	return v;
 }
 
+static uint32_t ext4_ialloc_bgidx_to_inode(struct ext4_sblock *sb,
+					   uint32_t index, uint32_t bgid)
+{
+	uint32_t inodes_per_group = ext4_get32(sb, inodes_per_group);
+	return bgid * inodes_per_group + (index + 1);
+}
+
 void ext4_inode_set_size(struct ext4_inode *inode, uint64_t size)
 {
 	inode->size_lo = to_le32((size << 32) >> 32);
 	inode->size_hi = to_le32(size >> 32);
+}
+
+ext4_ialloc_verify_bitmap_csum(struct ext4_sblock *sb, struct ext4_bgroup *bg,
+			       void *bitmap __attribute__ ((__unused__)))
+{
+
+	int desc_size = ext4_sb_get_desc_size(sb);
+	uint32_t csum = ext4_ialloc_bitmap_csum(sb, bitmap);
+	uint16_t lo_csum = to_le16(csum & 0xFFFF),
+		 hi_csum = to_le16(csum >> 16);
+
+	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
+		return true;
+
+	if (bg->inode_bitmap_csum_lo != lo_csum)
+		return false;
+
+	if (desc_size == EXT4_MAX_BLOCK_GROUP_DESCRIPTOR_SIZE)
+		if (bg->inode_bitmap_csum_hi != hi_csum)
+			return false;
+
+	return true;
 }
 
 #if CONFIG_META_CSUM_ENABLE
@@ -388,4 +433,215 @@ void ext4_fs_inode_blocks_init(struct FileSystem *fs,
 	default:
 		return;
 	}
+}
+
+int ext4_ialloc_alloc_inode(struct ext4_fs *fs, uint32_t *idx, bool is_dir)
+{
+	int EOK = 0;  // 成功的返回值
+	struct ext4_sblock *sb = &fs->sb;
+
+	// 获取文件系统的块组信息
+	uint32_t bgid = fs->last_inode_bg_id;
+	uint32_t bg_count = ext4_block_group_cnt(sb);
+	uint32_t sb_free_inodes = ext4_get32(sb, free_inodes_count);
+	bool rewind = false;
+
+	/* 尝试在所有块组中找到空闲的 inode */
+	while (bgid <= bg_count) {
+
+		if (bgid == bg_count) {
+			if (rewind)
+				break;
+			// 如果已经遍历了所有块组，重置计数器重新遍历
+			bg_count = fs->last_inode_bg_id;
+			bgid = 0;
+			rewind = true;
+			continue;
+		}
+
+		/* 加载块组以进行检查 */
+		struct ext4_block_group_ref bg_ref;
+		int rc = ext4_fs_get_block_group_ref(fs, bgid, &bg_ref);
+		if (rc != EOK)
+			return rc;
+
+		struct ext4_bgroup *bg = bg_ref.block_group;
+
+		/* 读取算法所需的值 */
+		uint32_t free_inodes = ext4_bg_get_free_inodes_count(bg, sb);
+		uint32_t used_dirs = ext4_bg_get_used_dirs_count(bg, sb);
+
+		/* 检查该块组是否适合分配 */
+		if (free_inodes > 0) {
+			/* 加载带有位图的块 */
+			ext4_fsblk_t bmp_blk_add = ext4_bg_get_inode_bitmap(bg, sb);
+
+			struct ext4_block b;
+			rc = ext4_trans_block_get(fs->bdev, &b, bmp_blk_add);
+			if (rc != EOK) {
+				ext4_fs_put_block_group_ref(&bg_ref);
+				return rc;
+			}
+
+			// 验证位图的校验和
+			if (!ext4_ialloc_verify_bitmap_csum(sb, bg, b.data)) {
+				printk("Bitmap checksum failed.Group: %d \n",bg_ref.index);
+			}
+
+			/* 尝试在位图中分配 inode */
+			uint32_t inodes_in_bg;
+			uint32_t idx_in_bg;
+
+			inodes_in_bg = ext4_inodes_in_group_cnt(sb, bgid);
+			rc = ext4_bmap_bit_find_clr(b.data, 0, inodes_in_bg,
+						    &idx_in_bg);
+			/* 如果块组中没有空闲的 inode */
+			if (rc == ENOSPC) {
+				rc = ext4_block_set(fs->bdev, &b);
+				if (rc != EOK) {
+					ext4_fs_put_block_group_ref(&bg_ref);
+					return rc;
+				}
+
+				rc = ext4_fs_put_block_group_ref(&bg_ref);
+				if (rc != EOK)
+					return rc;
+
+				continue;
+			}
+
+			// 设置找到的空闲 inode 位
+			ext4_bmap_bit_set(b.data, idx_in_bg);
+
+			/* 找到空闲的 inode，保存位图 */
+			ext4_ialloc_set_bitmap_csum(sb, bg, b.data);
+			ext4_trans_set_block_dirty(b.buf);
+
+			// 保存修改的块
+			rc = ext4_block_set(fs->bdev, &b);
+			if (rc != EOK) {
+				ext4_fs_put_block_group_ref(&bg_ref);
+				return rc;
+			}
+
+			/* 修改文件系统计数器 */
+			free_inodes--;
+			ext4_bg_set_free_inodes_count(bg, sb, free_inodes);
+
+			/* 增加已使用目录计数器 */
+			if (is_dir) {
+				used_dirs++;
+				ext4_bg_set_used_dirs_count(bg, sb, used_dirs);
+			}
+
+			/* 减少未使用的 inode 计数 */
+			uint32_t unused = ext4_bg_get_itable_unused(bg, sb);
+			uint32_t free = inodes_in_bg - unused;
+
+			if (idx_in_bg >= free) {
+				unused = inodes_in_bg - (idx_in_bg + 1);
+				ext4_bg_set_itable_unused(bg, sb, unused);
+			}
+
+			/* 保存修改后的块组 */
+			bg_ref.dirty = true;
+
+			rc = ext4_fs_put_block_group_ref(&bg_ref);
+			if (rc != EOK)
+				return rc;
+
+			/* 更新超级块 */
+			sb_free_inodes--;
+			ext4_set32(sb, free_inodes_count, sb_free_inodes);
+
+			/* 计算绝对 inode 号 */
+			*idx = ext4_ialloc_bgidx_to_inode(sb, idx_in_bg, bgid);
+
+			fs->last_inode_bg_id = bgid;
+
+			return EOK;
+		}
+
+		/* 如果块组未被修改，释放它并跳到下一个块组 */
+		ext4_fs_put_block_group_ref(&bg_ref);
+		if (rc != EOK)
+			return rc;
+
+		++bgid;
+	}
+
+	return ENOSPC;
+}
+
+/*分配一个inode节点*/
+int ext4_fs_alloc_inode(struct ext4_fs *fs, struct ext4_inode_ref *inode_ref, int filetype)
+{
+	/* 检查新分配的 inode 是否是目录 */
+	int EOK = 0;
+	bool is_dir;
+	uint16_t inode_size = ext4_get16(&fs->sb, inode_size);
+
+	is_dir = (filetype == EXT4_DE_DIR);
+
+	/* 通过分配算法分配 inode */
+	uint32_t index;
+	int rc = ext4_ialloc_alloc_inode(fs, &index, is_dir);
+	if (rc != EOK)
+		return rc;
+
+	/* 从磁盘上的 inode 表加载 inode */
+	rc = ext4_fs_get_inode_ref(fs, index, inode_ref, false);
+	if (rc != EOK) {
+		ext4_ialloc_free_inode(fs, index, is_dir);
+		return rc;
+	}
+
+	/* 初始化 inode */
+	struct ext4_inode *inode = inode_ref->inode;
+
+	memset(inode, 0, inode_size);
+
+	uint32_t mode;
+	if (is_dir) {
+		/*
+		 * 为了与其他系统兼容，目录的默认权限为 0777 (八进制) == rwxrwxrwx
+		 */
+		mode = 0777;
+		mode |= EXT4_INODE_MODE_DIRECTORY;
+	} else if (filetype == EXT4_DE_SYMLINK) {
+		/*
+		 * 为了与其他系统兼容，符号链接的默认权限为 0777 (八进制) == rwxrwxrwx
+		 */
+		mode = 0777;
+		mode |= EXT4_INODE_MODE_SOFTLINK;
+	} else {
+		/*
+		 * 为了与其他系统兼容，文件的默认权限为 0666 (八进制) == rw-rw-rw-
+		 */
+		mode = 0666;
+		mode |= ext4_fs_corres_pond_inode_mode(filetype);
+	}
+	ext4_inode_set_mode(&fs->sb, inode, mode);
+
+	/* 初始化其他 inode 字段 */
+	ext4_inode_set_links_cnt(inode, 0);
+	ext4_inode_set_uid(inode, 0);
+	ext4_inode_set_gid(inode, 0);
+	ext4_inode_set_size(inode, 0);
+	ext4_inode_set_access_time(inode, 0);
+	ext4_inode_set_change_inode_time(inode, 0);
+	ext4_inode_set_modif_time(inode, 0);
+	ext4_inode_set_del_time(inode, 0);
+	ext4_inode_set_blocks_count(&fs->sb, inode, 0);
+	ext4_inode_set_flags(inode, 0);
+	ext4_inode_set_generation(inode, 0);
+	if (inode_size > EXT4_GOOD_OLD_INODE_SIZE) {
+		uint16_t size = ext4_get16(&fs->sb, want_extra_isize);
+		ext4_inode_set_extra_isize(&fs->sb, inode, size);
+	}
+
+	memset(inode->blocks, 0, sizeof(inode->blocks));
+	inode_ref->dirty = true;
+
+	return EOK;
 }

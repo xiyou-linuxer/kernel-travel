@@ -410,7 +410,7 @@ int makeDirAt(Dirent *baseDir, char *path, int mode)
  */
 int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
 {
-    printk("createFile");
+    //printk("createFile");
     return createItemAt(baseDir, path, file, 0);
 }
 
