@@ -160,6 +160,10 @@ struct ext4_dir_idx_node {
 /* 定义旧版本的inode结构体大小 */
 #define EXT4_GOOD_OLD_INODE_SIZE 128        // 旧版本的inode大小（字节)
 
+#define EXT4_DIRENT_TAIL(block, blocksize) \
+	((struct ext4_dir_entry_tail *)(((char *)(block)) + ((blocksize) - \
+					sizeof(struct ext4_dir_entry_tail))))
+
 struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir);
-int ext4_dir_add_entry(struct ext4_inode_ref *parent, const char *name, int32_t name_len, struct ext4_inode_ref *child);
+struct ext4_dir_en * ext4_dir_add_entry(struct ext4_inode_ref *parent, const char *name, uint32_t name_len, struct ext4_inode_ref *child);
 #endif

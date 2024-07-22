@@ -36,7 +36,6 @@ int ext4_bmap_bit_find_clr(uint8_t *bmap, uint32_t sbit, uint32_t ebit,
 {
 	uint32_t i;
 	uint32_t bcnt = ebit - sbit;
-
 	i = sbit;
 
 	while (i & 7) {

@@ -339,6 +339,7 @@ Finish:
 static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, int isDir) 
 {
 	Dirent *dir = NULL, *f = NULL;
+	int name_length;
 	int r;
 	longEntSet longSet;
 	FileSystem *fs;
@@ -366,6 +367,7 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 		lock_release(&mtx_file);
 		return -1;
 	}
+
 	/*如果已经存在该文件则不能重复建立*/
 	if (dir != NULL)
 	{
@@ -382,20 +384,65 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 		return -1;
 	}
 
-
+	/* 获取父目录的 inode */
 	ext4_fs_get_inode_ref(fs, searched_record.parent_dir->ext4_dir_en.inode, &ref,0);
+
 	/* 分配一个inode */
 	struct ext4_inode_ref child_ref;
-	r = ext4_fs_alloc_inode(fs, &child_ref,is_goal ? ftype : EXT4_DE_DIR);
+	r = ext4_fs_alloc_inode(fs, &child_ref,isDir ? EXT4_DE_REG_FILE : EXT4_DE_DIR);
 	if (r != 0)
 		return r;
 
 	/*初始化inode*/
 	ext4_fs_inode_blocks_init(fs, &child_ref);  // 初始化 inode 块
 
-	/*创建一个目录项并将其加入目录*/
+	/* 创建一个目录项并将其加入目录中 */
 	char *name = (strrchr(path,'/')+1);
-	int r = ext4_dir_add_entry(&ref, name, sizeof(name), &child_ref);
-	if (r != 0)
-		return r;
+	struct ext4_dir_en *new_en = ext4_dir_add_entry(&ref, name, sizeof(name), &child_ref);
+	if (new_en == NULL)
+		return -1;
+	f = dirent_alloc();
+
+	/* 填写目录项中的内容 */
+	name_length = ext4_dir_en_get_name_len(&ext4Fs->superBlock.ext4_sblock, new_en);
+	memcpy(&f->name, new_en->name, name_length); // 复制目录项的名称
+	f->ext4_dir_en.inode = ext4_dir_en_get_inode(new_en); // 获取目录项的 i-node 号
+	f->ext4_dir_en.name_len = name_length; // 设置目录项的名称长度
+	f->ext4_dir_en.entry_len = ext4_dir_en_get_entry_len(new_en);// 获取目录项的长度
+	f->ext4_dir_en.in.inode_type = ext4_dir_en_get_inode_type(&ext4Fs->superBlock.ext4_sblock,new_en);// 获取目录项的 i-node 类型
+	f->file_size = ext4_inode_get_size(&ext4Fs->superBlock.ext4_sblock,child_ref.inode);
+	f->file_system = ext4Fs;
+	f->parent_dirent = searched_record.parent_dir;
+	list_init(&f->child_list);//初始化dirent项的子目录项
+	f->linkcnt = 1;
+	f->mode = child_ref.inode->mode;
+	if (isDir == 1)
+	{
+		f->type = DIRENT_DIR;
+	}else
+	{
+		f->type = DIRENT_FILE;
+	}
+	//将dirent加入到上级目录的子Dirent列表
+	list_append(&searched_record.parent_dir->child_list,&f->dirent_tag);
+	if (file) {
+		*file = f;
+	}
+	return 0;
+}
+
+int ext4_dir_creat(Dirent *baseDir, char *path, int mode)
+{
+	Dirent *dir = NULL;
+	int ret = ext4_dirent_creat(baseDir, path, &dir, 1);
+	if (ret < 0) {
+		return ret;
+	} else {
+		return 0;
+	}
+}
+
+int ext4_file_creat(struct Dirent *baseDir, char *path, Dirent **file)
+{
+	return ext4_dirent_creat(baseDir, path, file, 0);
 }

@@ -18,7 +18,9 @@ FileSystem *ext4Fs;
 static const struct fs_operation ext4_op = {
  	.fs_init_ptr = ext4_init,
 	.file_read = ext4_fread,
-	.file_write = ext4_fwrite
+	.file_write = ext4_fwrite,
+	.file_create = ext4_file_creat,
+	.makedir = ext4_dir_creat
 };
 
 static void build_dirent_ext4tree(Dirent *parent)
