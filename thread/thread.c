@@ -84,6 +84,16 @@ pid_t sys_set_tid_address(int* tidptr)
 	return sys_getpid();
 }
 
+uid_t sys_getuid(void) 
+{
+	return 0;
+}
+
+u32 sys_getgid(void) 
+{
+	return 0;
+}
+
 static int checkpid(struct list_elem* pelm,void* id)
 {
 	pid_t pid = (int64_t)id;

@@ -153,6 +153,8 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_gettimeofday    169
 #define SYS_getpid          172
 #define SYS_getppid         173
+#define SYS_getuid          174
+#define SYS_getgid          176
 #define SYS_brk             214
 #define SYS_munmap          215
 #define SYS_clone           220

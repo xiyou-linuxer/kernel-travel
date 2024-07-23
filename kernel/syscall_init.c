@@ -22,6 +22,7 @@ void syscall_init(void)
 	syscall_table[SYS_write]              = sys_write;
 	syscall_table[SYS_getpid]             = sys_getpid;
 	syscall_table[SYS_getppid]            = sys_getppid;
+	syscall_table[SYS_getgid]             = sys_getgid;
 	syscall_table[SYS_gettimeofday]       = sys_gettimeofday;
 	syscall_table[SYS_nanosleep]          = sys_sleep;
 	syscall_table[SYS_exit]               = sys_exit;
@@ -47,6 +48,7 @@ void syscall_init(void)
 	syscall_table[SYS_brk]                = sys_brk;
 	syscall_table[SYS_munmap]             = sys_munmap;
 	syscall_table[SYS_set_tid_address]    = sys_set_tid_address;
+	syscall_table[SYS_getuid]             = sys_getuid;
 	syscall_table[SYS_times]              = sys_times;
 	syscall_table[SYS_uname]              = sys_uname;
 	syscall_table[SYS_statx]              = sys_statx;
