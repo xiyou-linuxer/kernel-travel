@@ -782,12 +782,34 @@ static int ext4_fs_set_inode_data_block_index(struct ext4_inode_ref *inode_ref,
 
 int ext4_fs_append_inode_dblk(struct ext4_inode_ref *inode_ref, ext4_fsblk_t *fblock, ext4_lblk_t *iblock)
 {
+	if ((ext4_sb_feature_incom(&ext4Fs->superBlock.ext4_sblock, EXT4_FINCOM_EXTENTS)) &&
+	    (ext4_inode_has_flag(inode_ref->inode, EXT4_INODE_FLAG_EXTENTS))) {
+		
+		int rc;
+		ext4_fsblk_t current_fsblk;
+		struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
+		uint64_t inode_size = ext4_inode_get_size(sb, inode_ref->inode);
+		uint32_t block_size = ext4_sb_get_block_size(sb);
+		*iblock =
+		    (uint32_t)((inode_size + block_size - 1) / block_size);
+
+		rc = ext4_extent_get_blocks(inode_ref, *iblock, 1,
+					    &current_fsblk, true, NULL);
+		if (rc != 0)
+			return rc;
+
+		*fblock = current_fsblk;
+		ASSERT(*fblock);
+		ext4_inode_set_size(inode_ref->inode, inode_size + block_size);
+		inode_ref->dirty = true;
+
+		return rc;
+	}
 	struct ext4_sblock *sb = &inode_ref->fs->superBlock.ext4_sblock;
 
 	/* 计算下一个块索引并分配数据块 */
 	uint64_t inode_size = ext4_inode_get_size(sb, inode_ref->inode);
 	uint32_t block_size = ext4_sb_get_block_size(sb);
-
 	/* 对齐inode的大小 */
 	if ((inode_size % block_size) != 0)
 		inode_size += block_size - (inode_size % block_size);
