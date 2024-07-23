@@ -51,16 +51,17 @@ int ext4_blocks_get_direct(const void *buf,int block_size, uint64_t lba, uint32_
  * @param cnt 连续读取的数量
  */
 
-int ext4_blocks_set_direct(const void *buf,uint64_t lba, uint32_t cnt)
+int ext4_blocks_set_direct(const void *buf,int block_size,uint64_t lba, uint32_t cnt)
 {
 	int count = 0;
 	uint8_t* p = (void*)buf;
+	int lp = block_size/BUF_SIZE;
 	while (count < cnt)
 	{
-		int pba = EXT4_LBA2PBA(lba+count);
+		int pba = lp*(lba+count);
 		for (int i = 0; i < 8; i++)
 		{
-			Buffer *buf = bufRead(1,EXT4_LBA2PBA(lba+count),0);//只获取缓冲区，读取其中内容
+			Buffer *buf = bufRead(1,pba+i,0);//只获取缓冲区，读取其中内容
 			memcpy(buf->data->data,p,BUF_SIZE);
 			bufWrite(buf);
 			p+=BUF_SIZE;
@@ -522,7 +523,7 @@ int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 	unalg = (off & (ph_bsize - 1));
 	if (unalg) {
 		uint32_t wlen = (ph_bsize - unalg) > len ? len : (ph_bsize - unalg);
-		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx),1);
+		Buffer *buffer = bufRead(1,block_idx,1);
 		memcpy(buffer->data->data + unalg, p, wlen);
 		bufWrite(buffer);
 		p += wlen;
@@ -536,7 +537,7 @@ int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 		int count = 0;
 		while (count < blen)
 		{
-			Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) ,1);
+			Buffer *buffer = bufRead(1,block_idx ,1);
 			memcpy(buffer->data->data,p,ph_bsize);
 			p+=ph_bsize;
 			len -= ph_bsize;
@@ -547,7 +548,7 @@ int ext4_block_writebytes(uint64_t off, const void *buf, uint32_t len)
 
 	/*Rest of the data*/
 	if (len) {
-		Buffer *buffer = bufRead(1,EXT4_LBA2PBA(block_idx) ,1);
+		Buffer *buffer = bufRead(1,block_idx ,1);
 
 		memcpy(buffer->data->data, p, len);
 

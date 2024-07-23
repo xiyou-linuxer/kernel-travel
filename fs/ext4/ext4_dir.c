@@ -6,8 +6,11 @@
 #include <fs/ext4_sb.h>
 #include <fs/mount.h>
 #include <fs/dirent.h>
+#include <fs/ext4_crc32.h>
 #include <asm-generic/errno-base.h>
 #include <xkernel/stdio.h>
+#include <xkernel/string.h>
+#include <debug.h>
 /** 
  * @brief 在返回迭代器之前进行一些检查。
  * @param it 需要检查的迭代器
@@ -215,4 +218,246 @@ struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
 Finish:
 	return de; // 返回下一个目录项的指针，如果没有更多目录项可用，则返回NULL
+}
+
+static struct ext4_dir_entry_tail *ext4_dir_get_tail(struct ext4_inode_ref *inode_ref, struct ext4_dir_en *de)
+{
+	struct ext4_dir_entry_tail *t;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
+
+	t = EXT4_DIRENT_TAIL(de, ext4_sb_get_block_size(sb));
+
+	if (t->reserved_zero1 || t->reserved_zero2)
+		return NULL;
+	if (to_le16(t->rec_len) != sizeof(struct ext4_dir_entry_tail))
+		return NULL;
+	if (t->reserved_ft != EXT4_DIRENTRY_DIR_CSUM)
+		return NULL;
+
+	return t;
+}
+
+static uint32_t ext4_dir_csum(struct ext4_inode_ref *inode_ref, struct ext4_dir_en *dirent, int size)
+{
+	uint32_t csum;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
+	uint32_t ino_index = to_le32(inode_ref->index);
+	uint32_t ino_gen = to_le32(ext4_inode_get_generation(inode_ref->inode));
+
+	/* First calculate crc32 checksum against fs uuid */
+	csum = ext4_crc32c(EXT4_CRC32_INIT, sb->uuid, sizeof(sb->uuid));
+	/* Then calculate crc32 checksum against inode number
+	 * and inode generation */
+	csum = ext4_crc32c(csum, &ino_index, sizeof(ino_index));
+	csum = ext4_crc32c(csum, &ino_gen, sizeof(ino_gen));
+	/* Finally calculate crc32 checksum against directory entries */
+	csum = ext4_crc32c(csum, dirent, size);
+	return csum;
+}
+
+void ext4_dir_set_csum(struct ext4_inode_ref *inode_ref,
+			   struct ext4_dir_en *dirent)
+{
+	struct ext4_dir_entry_tail *t;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
+
+	/* Compute the checksum only if the filesystem supports it */
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
+		t = ext4_dir_get_tail(inode_ref, dirent);
+		if (!t) {
+			/* There is no space to hold the checksum */
+			return;
+		}
+
+		int __attribute__ ((__unused__)) diff = (char *)t - (char *)dirent;
+		uint32_t csum = ext4_dir_csum(inode_ref, dirent, diff);
+		t->checksum = to_le32(csum);
+	}
+}
+
+void ext4_dir_init_entry_tail(struct ext4_dir_entry_tail *t)
+{
+	memset(t, 0, sizeof(struct ext4_dir_entry_tail));
+	t->rec_len = to_le16(sizeof(struct ext4_dir_entry_tail));
+	t->reserved_ft = EXT4_DIRENTRY_DIR_CSUM;
+}
+
+void ext4_dir_write_entry(struct ext4_sblock *sb, struct ext4_dir_en *en,
+			  uint16_t entry_len, struct ext4_inode_ref *child,
+			  const char *name, size_t name_len)
+{
+	/* Check maximum entry length */
+	ASSERT(entry_len <= ext4_sb_get_block_size(sb));
+
+	/* 设置目录项的属性 */
+	switch (ext4_inode_type(sb, child->inode)) {
+	case EXT4_INODE_MODE_DIRECTORY:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_DIR);
+		break;
+	case EXT4_INODE_MODE_FILE:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_REG_FILE);
+		break;
+	case EXT4_INODE_MODE_SOFTLINK:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_SYMLINK);
+		break;
+	case EXT4_INODE_MODE_CHARDEV:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_CHRDEV);
+		break;
+	case EXT4_INODE_MODE_BLOCKDEV:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_BLKDEV);
+		break;
+	case EXT4_INODE_MODE_FIFO:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_FIFO);
+		break;
+	case EXT4_INODE_MODE_SOCKET:
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_SOCK);
+		break;
+	default:
+		/* FIXME: unsupported filetype */
+		ext4_dir_en_set_inode_type(sb, en, EXT4_DE_UNKNOWN);
+	}
+
+	/* 设置 inode 号等 */
+	ext4_dir_en_set_inode(en, child->index);
+	ext4_dir_en_set_entry_len(en, entry_len);
+	ext4_dir_en_set_name_len(sb, en, (uint16_t)name_len);
+
+	/* 写入目录名 */
+	memcpy(en->name, name, name_len);
+}
+
+
+struct ext4_dir_en * ext4_dir_try_insert_entry(struct ext4_sblock *sb,struct ext4_inode_ref *inode_ref, int fblock, struct ext4_inode_ref *child, const char *name, uint32_t name_len)
+{
+	struct ext4_block dst_blk;
+	// 计算所需的条目长度，并将其对齐到 4 字节
+	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint16_t required_len = sizeof(struct ext4_fake_dir_entry) + name_len;
+
+	if ((required_len % 4) != 0)
+		required_len += 4 - (required_len % 4);
+
+	// 初始化指针，stop 指针指向块的上限
+	
+	char lp = block_size/BUF_SIZE;
+	for (int i = 0; i < lp; i++)
+	{
+		dst_blk.buf = bufRead(1,(lp*fblock)+i,1);
+		struct ext4_dir_en *start = (void *)dst_blk.buf->data->data;
+		struct ext4_dir_en *stop = (void *)(dst_blk.buf->data->data + BUF_SIZE);
+		/* 遍历块，检查无效条目或具有足够空间的新条目 */
+		while (start < stop) {
+			uint32_t inode = ext4_dir_en_get_inode(start);
+			uint16_t rec_len = ext4_dir_en_get_entry_len(start);
+			uint8_t itype = ext4_dir_en_get_inode_type(sb, start);
+
+			// 如果条目无效且空间足够大，使用该条目
+			if ((inode == 0) && (itype != EXT4_DIRENTRY_DIR_CSUM) && (rec_len >= required_len)) {
+				ext4_dir_write_entry(sb, start, rec_len, child, name, name_len);
+				ext4_dir_set_csum(inode_ref, (void *)dst_blk.buf->data->data);
+				bufWrite(dst_blk.buf);
+				return start;//返回当前条目
+			}
+
+			// 有效条目，尝试拆分
+			if (inode != 0) {
+				uint16_t used_len;
+				used_len = ext4_dir_en_get_name_len(sb, start);
+
+				uint16_t sz;
+				sz = sizeof(struct ext4_fake_dir_entry) + used_len;
+
+				if ((used_len % 4) != 0)
+					sz += 4 - (used_len % 4);
+
+				uint16_t free_space = rec_len - sz;
+
+			// 如果有足够的空闲空间用于新条目
+				if (free_space >= required_len) {
+				// 切割当前条目的尾部
+				/* Cut tail of current entry */
+					struct ext4_dir_en * new_entry;
+					new_entry = (void *)((uint8_t *)start + sz);
+					ext4_dir_en_set_entry_len(start, sz);
+					ext4_dir_write_entry(sb, new_entry, free_space,
+						     child, name, name_len);
+
+					ext4_dir_set_csum(inode_ref,
+						  (void *)dst_blk.buf->data->data);
+					bufRelease(dst_blk.buf);
+					return new_entry;
+				}
+			}	
+
+			// 跳转到下一个条目
+			start = (void *)((uint8_t *)start + rec_len);
+		}
+		bufRelease(dst_blk.buf);
+	}
+	// 未找到适合新条目的空闲空间
+	return NULL;
+}
+
+/*创建一个新的ext4_dir_en，并将其添加到目录文件中*/
+struct ext4_dir_en * ext4_dir_add_entry(struct ext4_inode_ref *parent, const char *name, uint32_t name_len, struct ext4_inode_ref *child)
+{
+	int r;
+	struct ext4_fs *fs = &ext4Fs->ext4_fs;
+	struct ext4_sblock *sb = &ext4Fs->superBlock.ext4_sblock;
+	//int EOK = 0;
+	// 线性算法
+	/* Linear algorithm */
+	uint32_t iblock = 0;
+	ext4_fsblk_t fblock = 0;
+	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint64_t inode_size = ext4_inode_get_size(sb, parent->inode);
+	uint32_t total_blocks = (uint32_t)(inode_size / block_size);
+
+	// 查找有空间的新目录项的块并尝试添加
+	/* Find block, where is space for new entry and try to add */
+	bool success = false;
+	for (iblock = 0; iblock < total_blocks; ++iblock) {
+		r = ext4_fs_get_inode_dblk_idx(parent, iblock, &fblock, false);
+		if (r != EOK)
+			return r;
+
+		// 如果添加成功，函数可以结束
+		struct ext4_dir_en * new_en = ext4_dir_try_insert_entry(sb, parent, fblock, child,name, name_len);
+		if (new_en!=NULL)
+		{
+			return new_en;
+		}
+	}
+	// 没有找到空闲块 - 需要分配下一个数据块
+	/* No free block found - needed to allocate next data block */
+	iblock = 0;
+	fblock = 0;
+	r = ext4_fs_append_inode_dblk(parent, &fblock, &iblock);
+	if (r != EOK)
+		return r;
+
+	// 加载新块
+	/* Load new block */
+	struct ext4_block b;
+	r = bufRead(1,EXT4_LBA2PBA(fblock),0);
+	
+	// 将块填充为零
+	memset(b.buf->data->data, 0, block_size);
+	struct ext4_dir_en *blk_en = (void *)b.buf->data->data;
+	
+	// 保存新块
+	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
+		uint16_t el = block_size - sizeof(struct ext4_dir_entry_tail);
+		ext4_dir_write_entry(sb, blk_en, el, child, name, name_len);
+		ext4_dir_init_entry_tail(EXT4_DIRENT_TAIL(b.buf->data->data, block_size));
+	} else {
+		ext4_dir_write_entry(sb, blk_en, block_size, child, name,
+				name_len);
+	}
+
+	ext4_dir_set_csum(parent, (void *)b.buf->data->data);
+	bufWrite(b.buf);
+	bufRelease(b.buf);
+	
+	return blk_en;
 }

@@ -206,21 +206,25 @@ void test_fs_all(void)
 	//test_close();
 	//test_unlink();
 	printk("test_fs_all\n");
-	struct path_search_record path_search_record;
-	Dirent * d = search_file("/sdcard/busybox",&path_search_record);
-	printk("%s:\n",d->name);
-	char buf[8192];
+	/*struct path_search_record path_search_record;
+	Dirent * d = search_file("/sdcard/hello",&path_search_record);
+	printk("%s:\n",d->name);*/
+	int fd = sys_open("/aaa.txt",O_CREATE|O_RDWR,0777);
+	printk("fd:%d\n",fd);
+	char buf[64];
+	sys_write(fd,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",64);
+	//ext4_fwrite(d,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",0,64);
 	//printk("%d\n",d->file_size);
-	ext4_fread(d,buf,0,8192);
+	//ext4_fread(d,buf,0,64);
 	int i =0 ;
-	while (i <8192)
+	/*while (i <8192)
 	{
 		printk("%x ",buf[i]);
 		i++;
-	}
-	
-	//printk("%s \n",buf);
-	printk("read_down\n");
+	}*/
+	sys_read(fd,buf,64);
+	printk("%s \n",buf);
+	//printk("read_down\n");
 	//test_mapping();
 	//test_getdents();
 	while (1) {

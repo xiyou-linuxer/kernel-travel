@@ -333,12 +333,12 @@ static int createItemAt(struct Dirent *baseDir, char *path, Dirent **file, int i
 		//printk("1111 %d\n",dir->type);
 		if(isDir == 1 && dir->type == DIRENT_DIR)
 		{
-			printk("directory exists: %s\n", path);
+			//printk("directory exists: %s\n", path);
 			lock_release(&mtx_file);
 
 		}else if (isDir == 0 && dir->type == DIRENT_FILE)
 		{
-			printk("file exists: %s\n", path);
+			//printk("file exists: %s\n", path);
 			lock_release(&mtx_file);
 		}
 		return -1;
@@ -410,7 +410,7 @@ int makeDirAt(Dirent *baseDir, char *path, int mode)
  */
 int createFile(struct Dirent *baseDir, char *path, Dirent **file) 
 {
-    printk("createFile");
+    //printk("createFile");
     return createItemAt(baseDir, path, file, 0);
 }
 

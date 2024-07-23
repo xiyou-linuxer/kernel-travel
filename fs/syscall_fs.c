@@ -55,7 +55,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	{ // 若要创建的文件已存在
 		//printk("%s has already exist!\n", pathname);
 		fd = file_open(file, flags ,mode);
-		printk("fd:%d\n");
 		return fd;
 	}
 	
@@ -459,7 +458,6 @@ int32_t sys_pipe(int32_t pipefd[2])
     int pip = running_thread()->pid;
     pipe_table[pip][0] = pipefd[0];
     pipe_table[pip][1] = pipefd[1];
-    //printk("0:%d,1:%d\n", pipe_table[pip][0], pipe_table[pip][1]);
     return 0;
 }
 

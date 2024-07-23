@@ -1,6 +1,10 @@
 # kernel-travel
 
-kernel-travel 是由 重启之我是loader 三名成员共同开发的基于 LoongArch 的架构的64位操作系统。系统采用 kbuild 编译框架，从 0 开发内核，部分头文件移植自 Linux 。
+## 项目简介
+
+kernel-travel 是由 重启之我是loader 三名成员共同开发的基于 LoongArch 的架构的64位操作系统。系统采用 kbuild 编译框架，从 0 开发内核，部分头文件移植自 Linux 。该系统目前支持 LoongArch 架构的硬件开发板（2k1000、3A5000）。
+
+kernel-travel 包含有四大模块，分别为：内存管理、进程管理、文件系统、设备驱动。
 
 ## 编译并运行该项目
 
@@ -130,6 +134,8 @@ bash quick_start.sh distclean
 * [pci总线驱动](./doc/pci总线驱动.md)
 * [磁盘驱动](./doc/磁盘驱动.md)
 * [文件系统](./doc/文件系统.md)
+* [Fat32文件系统.md](./doc/Fat32文件系统.md)
+* [适配lwext4.md](./doc/适配lwext4.md)
 * [虚拟内存管理](./doc/虚拟内存管理.md)
 * [物理内存管理](./doc/物理内存管理.md)
 

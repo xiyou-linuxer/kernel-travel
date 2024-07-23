@@ -437,16 +437,18 @@ struct ext4_block {
 
 /*ext文件系统支持的文件类型*/
 enum 
-{      EXT4_DE_UNKNOWN = 0,
-       EXT4_DE_REG_FILE,
-       EXT4_DE_DIR,
-       EXT4_DE_CHRDEV,
-       EXT4_DE_BLKDEV,
-       EXT4_DE_FIFO,
-       EXT4_DE_SOCK,
-       EXT4_DE_SYMLINK 
+{   
+	EXT4_DE_UNKNOWN = 0,	// 未知类型
+	EXT4_DE_REG_FILE,		// 常规文件
+	EXT4_DE_DIR,			// 目录
+	EXT4_DE_CHRDEV,			// 字符设备
+	EXT4_DE_BLKDEV,			// 块设备
+	EXT4_DE_FIFO,			// 有名管道（FIFO）
+	EXT4_DE_SOCK,			// 套接字
+	EXT4_DE_SYMLINK			// 符号链接（软链接）
 };
 
+#define EXT4_DIRENTRY_DIR_CSUM 0xDE
 #define EXT4_MIN_BLOCK_GROUP_DESCRIPTOR_SIZE 32
 // EXT4 文件系统中块组描述符的最小大小（32字节）。
 #define EXT4_MAX_BLOCK_GROUP_DESCRIPTOR_SIZE 64

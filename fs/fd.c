@@ -58,7 +58,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx)
 	}
 	if (local_fd_idx == MAX_FILES_OPEN_PER_PROC)
 	{
-		//printk("exceed max open files_per_proc\n");
+		printk("exceed max open files_per_proc\n");
 		return 0;
 	}
 	return local_fd_idx;
@@ -109,7 +109,7 @@ int file_create(struct Dirent *baseDir, char *path, int flag,mode_t mode)
 {
 	Dirent *file;
 	baseDir->file_system->op->file_create(baseDir, path, &file);//创建文件
-	createFile(baseDir, path, &file);
+	//createFile(baseDir, path, &file);
 	int fd_idx = get_free_slot_in_global();
 	if (fd_idx == -1)
 	{
