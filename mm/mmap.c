@@ -11,6 +11,7 @@
 #include "fs/fd.h"
 
 unsigned long sysctl_max_map_count = 1024;
+unsigned long mmap_min_addr = TASK_SIZE / 3;
 
 struct vm_area_struct * 
 find_vma(struct mm_struct * mm, unsigned long addr)
@@ -56,9 +57,15 @@ get_unmapped_area(struct file *filp, unsigned long addr,
 	struct vm_area_struct *vma;
 	unsigned long start_addr;
 
-	/*越界处理*/
-	if (len > MAX_ADDRESS_SPACE_SIZE)
-		return -1;
+	const unsigned long mmap_end = TASK_SIZE;
+	if (len > mmap_end - mmap_min_addr)
+		/* 映射区域长度超过进程虚拟内存空间 */
+		return -ENOMEM;
+
+	/* 强制映射，如果当前虚拟地址已经存在虚拟地址映射，则先释放当前映射，再进行映射 */
+	if(flags & MAP_FIXED) {
+		return addr;
+	}
 
 	/*在给定的地址处分配，如果成功返回*/
 	if (addr) {
@@ -216,12 +223,12 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 
 	len = PAGE_ALIGN(len);
 	if (!len)
-		return -1;
+		return -ENOMEM;
 	if ((pgoff + (len >> PAGE_SHIFT)) < pgoff)
-		return -1;
+		return -EOVERFLOW;
 	/*如果超过最大 map 数量*/
 	if (mm->map_count > sysctl_max_map_count)
-		return -1;
+		return -ENOMEM;
 	/*查找没被分配的虚拟地址*/
 	addr = running_thread()->mm->get_unmapped_area(file, addr + TASK_UNMAPPED_BASE, len, pgoff, flags);
 
@@ -303,11 +310,18 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	} else if (flags & VM_SHARED) {
 	
 	} else {
-
+		pgoff = addr >> PAGE_SHIFT;
 	}
 	/*建立VMA和红黑树，文件页等映射*/
  	vma_link(mm, vma, prev, rb_link, rb_parent);
-
+	/*直接给虚拟地址分配物理地址*/
+	// if (flags & MAP_POPULATE) {
+	if (true) {
+		int count = len >> PAGE_SHIFT;
+		while (count--) {
+			malloc_usrpage(running_thread()->pgdir, (unsigned long)addr + count * PAGE_SIZE);
+		}
+	}
 out:
 	/*更新 mm_struct 的统计信息*/
 	mm->total_vm += len >> PAGE_SHIFT;
