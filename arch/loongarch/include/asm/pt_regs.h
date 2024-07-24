@@ -26,4 +26,9 @@ struct pt_regs {
 	unsigned long __last[];
 } __attribute__((aligned (8)));
 
+/*
+ * Does the process account for user or for system time?
+ */
+#define user_mode(regs) (((regs)->csr_prmd & PLV_MASK) == PLV_USER)
+
 #endif /* _PT_REGS_H */

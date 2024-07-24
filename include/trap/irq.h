@@ -2,6 +2,8 @@
 #define __KERNEL_INTERRUPT_H
 
 #include <xkernel/types.h>
+#include <xkernel/memory.h>
+#include <xkernel/compiler_types.h>
 #include <asm/pt_regs.h>
 
 typedef void (*intr_handler)(struct pt_regs *regs);
@@ -28,5 +30,8 @@ enum intr_status intr_enable (void);
 enum intr_status intr_disable (void);
 void register_handler(uint8_t vector_no, intr_handler function);
 void irq_routing_set(uint8_t cpu, uint8_t IPx, uint8_t source_num);
+
+irqentry_state_t noinstr irqentry_enter(struct pt_regs *regs);
+noinstr void irqentry_exit(struct pt_regs *regs, irqentry_state_t state);
 
 #endif

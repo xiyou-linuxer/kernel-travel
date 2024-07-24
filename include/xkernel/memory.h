@@ -193,6 +193,13 @@ extern struct pool reserve_phy_pool;
 extern struct pool phy_pool;
 extern struct page *mem_map;
 
+/* 管理中断处理过程中的状态信息 */
+typedef struct irqentry_state {
+	union {
+		bool	exit_rcu;	/*是否需要退出 RCU（读-复制-更新）临界区*/
+		bool	lockdep;	/*是否启用锁依赖性检查*/
+	};
+} irqentry_state_t;
 
 extern char * const zone_names[3];
 

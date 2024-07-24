@@ -14,7 +14,7 @@ SYM_CODE_START(tlb_do_page_fault_\write)
 	move	a0, sp
 	REG_S	a2, sp, PT_BVADDR
 	li.w	a1, \write
-     // bl	do_page_fault
+	bl	do_page_fault
 	RESTORE_ALL_AND_RET
 SYM_CODE_END(tlb_do_page_fault_\write)
 .endm

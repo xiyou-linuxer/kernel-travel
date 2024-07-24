@@ -56,4 +56,7 @@
 #define __diag_ignore_all(option, comment)
 #endif
 
+#define noinline __attribute__((noinline))
+#define noinstr	noinline __attribute((__section__(".noinstr.text")))
+
 #endif /* __LINUX_COMPILER_TYPES_H */

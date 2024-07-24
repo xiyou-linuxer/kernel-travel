@@ -8,6 +8,10 @@
 #include <trap/softirq.h>
 #include <asm/timer.h>
 #include <xkernel/thread.h>
+#include <xkernel/memory.h>
+#include <xkernel/compiler.h>
+#include <xkernel/compiler_types.h>
+#include "debug.h"
 
 #define INTR_NUM 256
 
@@ -150,6 +154,46 @@ void irq_routing_set(uint8_t cpu, uint8_t IPx, uint8_t source_num) {
     }
     *(unsigned int*)(CSR_DMW0_BASE | intenset) |= (1 << source_num);
     *(unsigned char*)(CSR_DMW0_BASE | ioentry + source_num) = ((0x1 << IPx) << 4 | (1 << cpu) << 0);
+}
+
+noinstr irqentry_state_t irqentry_enter(struct pt_regs *regs)
+{
+	irqentry_state_t ret = {
+		.exit_rcu = false,
+	};
+
+	if (user_mode(regs)) {
+		/* 从用户模式进入中断 */
+		// irqentry_enter_from_user_mode(regs);
+		return ret;
+	}
+	/* 空闲任务中的中断 */
+	// if (is_idle_task(current)) {
+	if (false) {
+		arch_local_irq_disable();
+		
+		ret.exit_rcu = true;
+		return ret;
+	}
+
+	arch_local_irq_disable();
+	return ret;
+}
+
+noinstr void irqentry_exit(struct pt_regs *regs, irqentry_state_t state)
+{
+	enum intr_status status = intr_get_status();
+	// 中断已禁用
+	ASSERT(status == INTR_OFF);
+
+	// 检查是否返回到用户模式
+	if (user_mode(regs)) {
+		// irqentry_exit_to_user_mode(regs);
+		return;
+	}
+
+	// 如果中断标志未禁用，启用中断
+	arch_local_irq_enable();
 }
 
 void irq_init(void) {
