@@ -766,6 +766,7 @@ void __init mem_init(void)
 
 void mm_struct_init(struct mm_struct *mm)
 {
+	sema_init(&mm->map_lock, MAX_MAP_LOCK_NUM);
 	mm->mmap = NULL;
 	mm->mm_rb = RB_ROOT;
 	mm->mmap_cache = INVAILD_MMAP_CACHE;
@@ -779,7 +780,6 @@ void mm_struct_init(struct mm_struct *mm)
 	mm->env_start = mm->env_start = 0;
 	mm->start_brk = mm->brk = mm->start_stack = 0;
 	mm->total_vm = 0;
-	
 	/* 后面可以给不同架构做适配*/
 	mm->get_unmapped_area = get_unmapped_area;
 	

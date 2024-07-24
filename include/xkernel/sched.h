@@ -5,7 +5,6 @@
 #include <xkernel/list.h>
 #include <xkernel/memory.h>
 #include <asm/thread_info.h>
-#include <xkernel/memory.h>
 #include <fs/fs.h>
 #include <stdint.h>
 

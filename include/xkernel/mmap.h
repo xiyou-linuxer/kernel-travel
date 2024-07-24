@@ -38,6 +38,8 @@
 
 #endif
 
+extern unsigned long mmap_min_addr;
+
 extern unsigned long do_mmap_pgoff(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot,
 	unsigned long flag, unsigned long pgoff);
@@ -60,6 +62,9 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 struct anon_vma {
 
 };
+
+struct vm_area_struct * 
+find_vma(struct mm_struct * mm, unsigned long addr);
 
 void *sys_mmap(void* addr, size_t len,
 			int prot, int flags,

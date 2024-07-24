@@ -3,6 +3,7 @@
 #include <xkernel/memory.h>
 #include <xkernel/thread.h>
 #include <xkernel/rbtree.h>
+#include <xkernel/mmap.h>
 #include <xkernel/stdio.h>
 #include <asm-generic/errno.h>
 #include <asm/page.h>

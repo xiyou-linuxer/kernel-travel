@@ -1614,4 +1614,11 @@ do {	\
 /* CPUCFG */
 #define read_cpucfg(reg) __builtin_loongarch_cpucfg(reg)
 
+/*
+ *如果 address 低于 0x9000000000000000，则认为它是用户空间地址。
+ *如果 address 高于 0x9000000000000000，则认为它是内核空间地址。
+ */
+
+#define __UA_LIMIT 0x9000000000000000
+
 #endif

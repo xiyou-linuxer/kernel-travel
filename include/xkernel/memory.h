@@ -9,6 +9,7 @@
 #include <xkernel/compiler.h>
 #include <xkernel/rbtree.h>
 #include <asm/page.h>
+#include <sync.h>
 
 #define MAX_ADDRESS_SPACE_SIZE 0xffffffffffffffff
 
@@ -168,8 +169,10 @@ struct vm_area_struct {
 	// void * vm_opts;
 };
 
+#define MAX_MAP_LOCK_NUM 4
 // 进程虚拟内存空间描述符
 struct mm_struct {
+	struct semaphore map_lock;	/* 保护与内存映射相关的数据结构 */
 	// 串联组织进程空间中所有的 VMA  的双向链表 
 	unsigned long mmap_base;
 	struct vm_area_struct *mmap;  /* list of VMAs */
@@ -200,6 +203,23 @@ typedef struct irqentry_state {
 		bool	lockdep;	/*是否启用锁依赖性检查*/
 	};
 } irqentry_state_t;
+
+enum fault_flag {
+	FAULT_FLAG_WRITE =		1 << 0,
+	FAULT_FLAG_MKWRITE =		1 << 1,
+	FAULT_FLAG_ALLOW_RETRY =	1 << 2,
+	FAULT_FLAG_RETRY_NOWAIT = 	1 << 3,
+	FAULT_FLAG_KILLABLE =		1 << 4,
+	FAULT_FLAG_TRIED = 		1 << 5,
+	FAULT_FLAG_USER =		1 << 6,
+	FAULT_FLAG_REMOTE =		1 << 7,
+	FAULT_FLAG_INSTRUCTION =	1 << 8,
+	FAULT_FLAG_INTERRUPTIBLE =	1 << 9,
+	FAULT_FLAG_UNSHARE =		1 << 10,
+	FAULT_FLAG_ORIG_PTE_VALID =	1 << 11,
+};
+
+typedef __bitwise unsigned int vm_fault_t;
 
 extern char * const zone_names[3];
 
