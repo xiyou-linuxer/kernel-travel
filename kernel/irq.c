@@ -156,6 +156,9 @@ void irq_routing_set(uint8_t cpu, uint8_t IPx, uint8_t source_num) {
     *(unsigned char*)(CSR_DMW0_BASE | ioentry + source_num) = ((0x1 << IPx) << 4 | (1 << cpu) << 0);
 }
 
+noinstr void irqentry_enter_from_user_mode(struct pt_regs *regs) { }
+noinstr void irqentry_exit_to_user_mode(struct pt_regs *regs) { }
+
 noinstr irqentry_state_t irqentry_enter(struct pt_regs *regs)
 {
 	irqentry_state_t ret = {
@@ -163,15 +166,15 @@ noinstr irqentry_state_t irqentry_enter(struct pt_regs *regs)
 	};
 
 	if (user_mode(regs)) {
-		/* 从用户模式进入中断 */
-		// irqentry_enter_from_user_mode(regs);
+		/* 将系统状态正确地从用户态转移到内核态 */
+		irqentry_enter_from_user_mode(regs);
 		return ret;
 	}
+
 	/* 空闲任务中的中断 */
 	// if (is_idle_task(current)) {
 	if (false) {
 		arch_local_irq_disable();
-		
 		ret.exit_rcu = true;
 		return ret;
 	}
@@ -188,7 +191,7 @@ noinstr void irqentry_exit(struct pt_regs *regs, irqentry_state_t state)
 
 	// 检查是否返回到用户模式
 	if (user_mode(regs)) {
-		// irqentry_exit_to_user_mode(regs);
+		irqentry_exit_to_user_mode(regs);
 		return;
 	}
 

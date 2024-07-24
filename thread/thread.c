@@ -115,7 +115,7 @@ static void idle(void* arg)
 	}
 }
 
-struct task_struct* running_thread()
+struct task_struct* running_thread(void)
 {
 	register uint64_t sp asm("sp");
 	//printk("now sp at:%x\n",sp);
