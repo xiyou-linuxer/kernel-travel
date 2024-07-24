@@ -242,7 +242,6 @@ int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int 
 	fblock_start = 0;
 	fblock_count = 0;
 	while (n >= block_size) {
-
 		while (iblk_idx < iblock_last) {
 			if (iblk_idx < ifile_blocks) {
 				r = ext4_fs_init_inode_dblk_idx(&ref, iblk_idx,
@@ -265,10 +264,10 @@ int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int 
 			if (!fblock_start) {
 				fblock_start = fblk;
 			}
-
+			
 			if ((fblock_start + fblock_count) != fblk)
 				break;
-
+			
 			fblock_count++;
 		}
 
@@ -301,7 +300,8 @@ int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int 
 
 	if (n) {
 		uint64_t off;
-		if (iblk_idx < ifile_blocks) {
+		if (iblk_idx < ifile_blocks){
+			
 			r = ext4_fs_init_inode_dblk_idx(&ref, iblk_idx, &fblk);
 			if (r != EOK)
 				goto Finish;

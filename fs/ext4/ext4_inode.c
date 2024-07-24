@@ -4,6 +4,7 @@
 #include <fs/ext4_fs.h>
 #include <fs/ext4_sb.h>
 #include <fs/ext4_block_group.h>
+#include <fs/ext4_extent.h>
 #include <fs/buf.h>
 #include <xkernel/string.h>
 #include <xkernel/stdio.h>
@@ -486,6 +487,13 @@ void ext4_fs_inode_blocks_init(struct FileSystem *fs,
 	default:
 		return;
 	}
+	if (ext4_sb_feature_incom(&fs->superBlock.ext4_sblock, EXT4_FINCOM_EXTENTS)) {
+		ext4_inode_set_flag(inode, EXT4_INODE_FLAG_EXTENTS);
+
+		/* Initialize extent root header */
+		ext4_extent_tree_init(inode_ref);
+	}
+	inode_ref->dirty = true;
 }
 
 int ext4_ialloc_alloc_inode(struct FileSystem *fs, uint32_t *idx, bool is_dir)
