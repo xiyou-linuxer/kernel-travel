@@ -381,10 +381,10 @@ struct ext4_dir_en * ext4_dir_try_insert_entry(struct ext4_sblock *sb,struct ext
 					ext4_dir_en_set_entry_len(start, sz);
 					ext4_dir_write_entry(sb, new_entry, free_space,
 						     child, name, name_len);
-
+					printk("num:%d\n",(lp*fblock)+i);
 					ext4_dir_set_csum(inode_ref,
 						  (void *)dst_blk.buf->data->data);
-					bufRelease(dst_blk.buf);
+					bufWrite(dst_blk.buf);
 					return new_entry;
 				}
 			}	
