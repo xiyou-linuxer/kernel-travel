@@ -308,6 +308,12 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	/*建立VMA和红黑树，文件页等映射*/
  	vma_link(mm, vma, prev, rb_link, rb_parent);
 
+	if (true) {
+		int count = len >> PAGE_SHIFT;
+		for (int i = 0; i < len >> PAGE_SHIFT; ++i)
+			malloc_usrpage(running_thread()->pgdir,(unsigned long)addr+i*PAGE_SIZE);
+	}
+
 out:
 	/*更新 mm_struct 的统计信息*/
 	mm->total_vm += len >> PAGE_SHIFT;

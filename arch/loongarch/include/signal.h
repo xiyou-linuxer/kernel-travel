@@ -58,7 +58,7 @@ typedef struct {
     struct k_sigaction action[SIGMAX];
 } sighand_t;
 
-int group_sendsig(); //future work
+int group_sendsig(void); //future work
 int specific_sendsig(int sig,struct task_struct* t);
 
 
