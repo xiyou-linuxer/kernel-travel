@@ -138,6 +138,8 @@ int64_t load(const char *path)
 
 	Elf_Phdr phdr;
 	uint64_t phoff = ehdr.e_phoff;
+	struct mm_struct * mm = running_thread()->mm;
+
 	for (uint64_t ph = 0 ; ph < ehdr.e_phnum ; ph++)
 	{
 		int elf_prot = 0, elf_flags = 0;
@@ -157,10 +159,30 @@ int64_t load(const char *path)
 			printk("range:%llx - %llx\n",phdr.p_vaddr,phdr.p_vaddr+phdr.p_filesz);
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
-			elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
+			unsigned long addr = 
+				elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
+			/* 代码段和数据段的 mm_struct 数据维护*/
+			if (addr && elf_prot) {
+				if (elf_prot & (PROT_EXEC|PROT_READ)) {
+					mm->start_code = addr;
+					mm->end_code = addr + phdr.p_filesz + ELF_PAGEOFFSET(phdr.p_vaddr);
+				} else if (elf_prot & (PROT_READ|PROT_WRITE)) {
+					mm->start_data = addr;
+					mm->end_data = addr + phdr.p_filesz + ELF_PAGEOFFSET(phdr.p_vaddr);
+				}
+			}
 		}
 		phoff += ehdr.e_phentsize;
 	}
+	/* 进程的 stack 默认 */
+	/*实现一个 ramdom 函数用来增强安全性
+		目前思路：龙芯cpu有个倒计时时钟，准备写一个读取计时器数值
+			   并且限制取值范围的函数用于随机化
+	*/
+	mm->start_stack = TASK_SIZE;	
+	mm->start_brk = USER_HEAP_START;
+	mm->brk = mm->start_brk;
+	
 
 	ret = ehdr.e_entry;
 done:
