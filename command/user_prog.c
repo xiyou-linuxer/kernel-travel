@@ -2,59 +2,24 @@
 #include <asm/syscall.h>
 
 
-char* sysname[NR_SYSCALLS] = {
-	[SYS_getpid]       = "getpid",
-	[SYS_getppid]      = "getppid",
-	[SYS_gettimeofday] = "gettimeofday",
-	[SYS_nanosleep]    = "sleep",
-	[SYS_wait4]        = "wait",
-	[SYS_clone]        = "fork",
-	[SYS_write]        = "write",
-	[SYS_getcwd]       = "getcwd",
-	[SYS_chdir]        = "chdir",
-	[SYS_dup2]         = "dup2",
-	[SYS_dup]          = "dup",
-	[SYS_fstat]        = "fstat",
-	[SYS_close]        = "close",
-	[SYS_openat]       = "open",
-	[SYS_read]         = "read",
-	[SYS_mkdirat]      = "mkdir_",
-	[SYS_mount]        = "mount",
-	[SYS_umount2]      = "umount",
-	[SYS_sched_yield]  = "yield",
-	[1]                = "openat",
-	[2]                = "waitpid",
-	[3]                = "clone",
-	[SYS_unlinkat]     = "unlink",
-	[SYS_exit]         = "exit",
-	[SYS_times]        = "times",
-	[SYS_execve]       = "execve",
-	[SYS_uname]        = "uname",
-	[SYS_mmap]         = "mmap",
-	[SYS_brk]          = "brk",
-	[SYS_munmap]       = "munmap",
-	[SYS_pipe2]        = "pipe",
-	[SYS_getdents64]   = "getdents"
-};
-
 struct tms mytimes;
 int main(void)
 {
-	char filename[33][14];
-	umemset(filename,0,sizeof(filename));
+	//char filename[33][14];
+	//umemset(filename,0,sizeof(filename));
 	int count = 0 ;
+	char filepath[30];
+	umemset(filepath,0,sizeof(filepath));
+	ustrcpy(filepath,"/sdcard/busybox");
+	char* argv[10];
+	ustrcpy(argv[0],"/sdcard/busybox");
+	ustrcpy(argv[1],"sh");
 
 	for (int i = 0; i < NR_SYSCALLS; i++)
 	{
-		if (sysname[i] == NULL)
-			continue;
-		ustrcpy(filename[count],"/");
-		ustrcat(filename[count],sysname[i]);
-
-		//myprintf("next:%s \n",filename[count]);
 		int pid = fork();
 		if (pid == 0){
-			execve(filename[count],NULL,NULL);
+			execve(filepath,argv,NULL);
 		}
 
 		int status;

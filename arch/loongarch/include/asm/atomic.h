@@ -4,6 +4,7 @@
 #include <xkernel/types.h>
 #include <asm-generic/rwonce.h>
 #include <asm/barrier.h>
+#include <asm/cmpxchg.h>
 
 #if __SIZEOF_LONG__ == 4
 #define __LL		"ll.w	"
@@ -175,5 +176,15 @@ static inline int arch_atomic_sub_if_positive(int i, atomic_t *v)
  * @v: pointer of type atomic_t
  */
 #define arch_atomic_dec_if_positive(v)	arch_atomic_sub_if_positive(1, v)
+
+static inline int __atomic_add_unless(atomic_t *v, int a, int u)
+{
+	int c, old;
+
+	c = arch_atomic_read(v);
+	while (c != u && (old = arch_atomic_cmpxchg((v), c, c + a)) != c)
+		c = old;
+	return c;
+}
 
 #endif /* _ASM_ATOMIC_H */

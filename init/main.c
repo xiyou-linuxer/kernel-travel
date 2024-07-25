@@ -13,6 +13,7 @@
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
 #include <xkernel/mmap.h>
+#include <xkernel/bitops.h>
 #include <asm-generic/bitsperlong.h>
 #include <trap/irq.h>
 #include <asm/pci.h>
@@ -75,26 +76,38 @@ int sysnums = 3;
 
 char init_program[70000];
 char filename[50][64] = {0};
+
 void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-	// serial_ns16550a_init(9600);
+	
+	local_irq_disable();
+
 	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
 	mem_init();
 	trap_init();
 	irq_init();
-	local_irq_enable();
+
+	thread_init();
+	timer_init();
 	pci_init();
 	console_init();
 	disk_init();
-	thread_init();
-	timer_init();
 	console_init();
 	syscall_init();
+	char buf[512];
 	vfs_init();
 	fs_init();
+	//ext4_fwrite(d,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",0,64);
+	//printk("%d\n",d->file_size);
+	//ext4_fread(d,buf,0,64);
+	/*while (i <8192)
+	{
+		printk("%x ",buf[i]);
+		i++;
+	}*/
 	// thread_start("thread_a",10,thread_a,NULL);
 	//
 	// test_mmap();
@@ -114,12 +127,13 @@ void __init __no_sanitize_address start_kernel(void)
 	// }
 
 	early_boot_irqs_disabled = true;
-	//int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	//if (fd == -1) {
-	//	printk("open failed");
-	//}
-	//sys_write(fd,init_code,init_code_len);
-	//bufSync();
+	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	if (fd == -1) {
+		printk("open failed");
+	}
+	sys_write(fd,init_code,init_code_len);
+	bufSync();
+	local_irq_enable();
 	
 	//printk("sys_sleep start\n");
 	//struct timespec req;

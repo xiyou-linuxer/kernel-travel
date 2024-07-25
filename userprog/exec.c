@@ -30,7 +30,7 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 {
 	uint64_t page_cnt;
 	int64_t remain_size;
-	remain_size = phdr->p_filesz - (PAGESIZE - (phdr->p_vaddr&0xfff));
+	remain_size = phdr->p_memsz - (PAGESIZE - (phdr->p_vaddr&0xfff));
 	if (remain_size > 0) {
 		page_cnt = DIV_ROUND_UP(remain_size,PAGESIZE) + 1;
 	} else {
@@ -143,6 +143,8 @@ int64_t load(const char *path)
 			if (phdr.p_flags & PF_X) elf_prot |= PROT_EXEC;
 			elf_flags = MAP_PRIVATE|MAP_DENYWRITE|MAP_EXECUTABLE;
 			v_addr = phdr.p_vaddr;
+			//printk("vaddr=%llx:p_offset=%llx\n:filesz=%llx\n",phdr.p_vaddr,phdr.p_offset,phdr.p_filesz);
+			printk("range:%llx - %llx\n",phdr.p_vaddr,phdr.p_vaddr+phdr.p_filesz);
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
 			// elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
@@ -156,7 +158,7 @@ done:
 }
 
 
-int sys_exeload(const char *path)
+int64_t sys_exeload(const char *path)
 {
 	int64_t entry_point = load(path);
 	if (entry_point == -1) {
@@ -184,17 +186,24 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = USER_STACK;
+	regs->regs[3]  = USER_STACK - (argc-1)*(sizeof(unsigned long));
 	regs->regs[22] = regs->regs[3];
 
+	char** uargs = (char**)USER_STACK;
 	regs->regs[4] = argc;
-	regs->regs[5] = (unsigned long)argv;
+	regs->regs[5] = (unsigned long)uargs;
 	regs->regs[6] = (unsigned long)envp;
 	int64_t entry = sys_exeload(path);
 	regs->csr_era = (unsigned long)entry;
 
+	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
+	for (int i = 0; i < argc; i++) {
+		strcpy(uargs[i],argv[i]);
+		*((uint64_t*)(USER_STACK - (argc-1-i)*sizeof(uint64_t))) = (uint64_t)argv[i];
+	}
+
 	//intr_enable();
-	//printk("jump to proc... at %d\n",entry);
+	printk("jump to proc... at %llx\n",entry);
 	utimes_begin(cur);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 	return -1;

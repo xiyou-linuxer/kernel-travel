@@ -55,7 +55,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 	{ // 若要创建的文件已存在
 		//printk("%s has already exist!\n", pathname);
 		fd = file_open(file, flags ,mode);
-		printk("fd:%d\n");
 		return fd;
 	}
 	
@@ -421,7 +420,7 @@ void fd_mapping(int fd, int start_page, int end_page,unsigned long* v_addr)
 }
 int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, struct statx *buf)
 {
-	int fd;
+	int fd = -1;
 	if (pathname[0] == '/' || dirfd == AT_FDCWD)//如果是open系统调用或者文件路径为绝对路径则直接打开
 	{
 		fd = sys_open(pathname, O_CREATE | O_RDWR, 066);
@@ -434,6 +433,8 @@ int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, str
 		strcat(buf,pathname);
 		fd = sys_open(buf,flags,660);
 	}
+	if (fd == -1)
+		return -1;
 	int ret = 0;
 	struct kstat stat;
 	uint32_t global_fd = fd_local2global(fd);
@@ -457,7 +458,6 @@ int32_t sys_pipe(int32_t pipefd[2])
     int pip = running_thread()->pid;
     pipe_table[pip][0] = pipefd[0];
     pipe_table[pip][1] = pipefd[1];
-    //printk("0:%d,1:%d\n", pipe_table[pip][0], pipe_table[pip][1]);
     return 0;
 }
 

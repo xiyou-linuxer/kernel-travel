@@ -12,7 +12,7 @@ int bit_scan_test(struct bitmap* btmp,uint32_t bit_idx)
 {
     uint32_t byte_idx = bit_idx / 8;
     uint32_t bit_odd  = bit_idx % 8;
-    return btmp->bits[byte_idx] & (BIT_MASK << bit_odd);
+    return btmp->bits[byte_idx] & (BIT_MASK_TEMP << bit_odd);
 }
 
 int bit_scan(struct bitmap* btmp,uint32_t bit_cnt)
@@ -53,8 +53,8 @@ void bitmap_set(struct bitmap* btmp,uint32_t bit_idx,uint8_t value)
 	uint32_t bit_byte = bit_idx / 8;
 	uint32_t bit_odd  = bit_idx % 8;
 	if (value) {
-		btmp->bits[bit_byte] |= (BIT_MASK << bit_odd);
+		btmp->bits[bit_byte] |= (BIT_MASK_TEMP << bit_odd);
 	} else {
-		btmp->bits[bit_byte] &= ~(BIT_MASK << bit_odd);
+		btmp->bits[bit_byte] &= ~(BIT_MASK_TEMP << bit_odd);
 	}
 }

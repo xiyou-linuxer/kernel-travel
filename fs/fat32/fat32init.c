@@ -45,6 +45,7 @@ static void build_dirent_tree(Dirent *parent) {
 		    strncmp(child->name, "..         ", 11) == 0) {
 			continue;
 		}
+
 		list_append(&parent->child_list,&child->dirent_tag);
 
 		// 如果为目录，就向下一层递归
@@ -100,12 +101,9 @@ int partition_format(FileSystem *fs) {
 		return -E_DEV_ERROR;
 	}
 
-	//printk("cluster ok!\n");
-
 	// 释放缓冲区
 	bufRelease(buf);
 
-	//printk("buf release!\n");
 	return 0;
 }
 
@@ -155,15 +153,17 @@ void init_root_fs(void)
 {
 	//extern FileSystem *fatFs;
 	lock_init(&mtx_file);
-	allocFs(&fatFs);
-
-	fatFs->deviceNumber = 0;
-
-	fat32_init(fatFs);
-	//printk("fat32 init finished!\n");
+	//allocFs(&fatFs);
+	allocFs(&ext4Fs);
+	//fatFs->deviceNumber = 0;
+	ext4Fs->root = dirent_alloc();
+	mnt_root.mnt_rootdir = ext4Fs->root;
+	ext4Fs->root->head = &mnt_root;
+	printk("ext4_init\n");
+	ext4_init(ext4Fs);
+	//fat32_init(fatFs);
 	/*将原来的rootfs目录转移到fat32下*/
 	
 	/*将fat32系统挂载到根挂载点*/
-	mnt_root.mnt_rootdir = fatFs->root;
-	fatFs->root->head = &mnt_root;
+	
 }

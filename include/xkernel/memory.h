@@ -42,7 +42,7 @@
 #define MAX_PAGE_ORDER 10
 #define MAX_ORDER_NR_PAGES (1 << MAX_PAGE_ORDER)
 
-static inline int __ffs(unsigned int x)
+static inline int mem_ffs(unsigned int x)
 {
     return __builtin_ffs(x);
 }
@@ -286,6 +286,8 @@ set_page_private(struct page *page, unsigned long private)
 u64 *pgd_ptr(u64 pd,u64 vaddr);
 u64 *pmd_ptr(u64 pd,u64 vaddr);
 u64 *pte_ptr(u64 pd,u64 vaddr);
+u64 *reverse_pmd_ptr(u64 pd, u64 vaddr);
+u64 *reverse_pte_ptr(u64 pd, u64 vaddr);
 u64 get_page(void);
 u64 get_pages(u64 count);
 void free_page(u64 vaddr);

@@ -7,9 +7,7 @@ if [ -z $ARCH ]; then
 fi
 
 if [ $ARCH == "loongarch" ]; then
-	# TOOLCHAINS=../toolchains/cross-tools/bin/loongarch64-unknown-linux-gnu-
-	# TOOLCHAINS=./cross-tools/bin/loongarch64-unknown-linux-gnu-
-	TOOLCHAINS=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
+	TOOLCHAINS=../toolchains/cross-tools/bin/loongarch64-unknown-linux-gnu-
 elif [ $ARCH == "arm64" ]; then
 	TOOLCHAINS=../toolchains/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 fi
@@ -17,6 +15,11 @@ fi
 function distclean()
 {
 	make -f Makefile_back ARCH=$ARCH distclean
+}
+
+function defconfig_ls3a5000()
+{
+	make -f Makefile_back ARCH=$ARCH CROSS_COMPILE=$TOOLCHAINS loongson3_defconfig
 }
 
 function defconfig()

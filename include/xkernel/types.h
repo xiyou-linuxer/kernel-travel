@@ -4,7 +4,10 @@
 #ifndef __ASSEMBLY__
 
 #include <asm-generic/bitsperlong.h>
+#include <asm-generic/int-ll64.h>
 
+#define DECLARE_BITMAP(name, bits)	\
+	unsigned long name[BITS_TO_LONGS(bits)]
 
 #undef offsetof
 #define offsetof(t,m) ((size_t)&((t *)0)->m)
@@ -61,6 +64,12 @@ typedef struct {
 typedef struct {
 	int counter;
 } atomic_t;
+
+#ifdef CONFIG_64BIT
+typedef struct {
+	s64 counter;
+} atomic64_t;
+#endif
 
 #define _ULCAST_ (unsigned long)
 #define _U64CAST_ (u64)

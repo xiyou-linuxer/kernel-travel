@@ -3,11 +3,10 @@
 
 #include <xkernel/list.h>
 #include <xkernel/types.h>
-#include <asm-generic/int-ll64.h>
 #include <asm/page.h>
 #include <fs/fat32.h>
-#include <fs/ext4_types.h>
 #include <fs/file_time.h>
+#include <fs/ext4.h>
 
 #define MAX_FS_COUNT 16 //最多可挂载的文件系统数量
 #define MAX_NAME_LEN 128 //文件名的最大字数限制
@@ -18,6 +17,7 @@
 typedef struct FileSystem FileSystem;
 typedef struct Dirent Dirent;
 typedef struct SuperBlock SuperBlock;
+typedef struct ext4_sblock ext4_sblock;
 
 // 对应目录、文件、设备
 typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
@@ -49,6 +49,19 @@ typedef struct SuperBlock {
 	};
 }SuperBlock;
 
+struct ext4_fs {
+	bool read_only;
+
+	uint64_t inode_block_limits[4];
+	uint64_t inode_blocks_per_level[4];
+
+	uint32_t last_inode_bg_id;
+
+	struct jbd_fs *jbd_fs;
+	struct jbd_journal *jbd_journal;
+	struct jbd_trans *curr_trans;
+};
+
 typedef struct FileSystem {
 	bool valid; // 是否有效
 	char name[8];
@@ -59,6 +72,10 @@ typedef struct FileSystem {
 	struct Buffer *(*get)(struct FileSystem *fs, u64 blockNum, bool is_read); // 获取fs超级快的方式
 	struct FileSystem* next;
 	struct fs_operation* op;//文件系统的操作函数
+	union 
+	{
+		struct ext4_fs ext4_fs;
+	};
 	// 强制规定：传入的fs即为本身的fs
 	// 稍后用read返回的这个Buffer指针进行写入和释放动作
 	// 我们默认所有文件系统（不管是挂载的，还是从virtio读取的），都需要经过缓存层
@@ -87,7 +104,8 @@ typedef struct DirentPointer {
 typedef struct Dirent {
 	union 
 	{
-		FAT32Directory raw_dirent; // 原生的dirent项
+		FAT32Directory raw_dirent; 	// fat32原生的dirent项
+		struct ext4_dir_en ext4_dir_en;	// ext4文件系统原生的dirent项
 	};
 	char name[MAX_NAME_LEN];
 	// 文件系统相关属性
@@ -95,7 +113,7 @@ typedef struct Dirent {
 	unsigned int first_clus;	// 第一个簇的簇号（如果为0，表示文件尚未分配簇）
 	unsigned int file_size;		// 文件大小
 	/* for OS */
-	struct vfsmount *head;		//挂载在当前目录下的
+	struct vfsmount *head;		//挂载在当前目录下的mount结构体,如果未挂载则默认与父目录的head一致
 	DirentPointer pointer;
 	// 在上一个目录项中的内容偏移，用于写回
 	unsigned int parent_dir_off;

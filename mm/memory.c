@@ -175,12 +175,15 @@ u64 get_kernel_pages(u64 count)
 	unsigned long page;
 	u64 bit_off = bit_scan(&reserve_phy_pool.btmp,count);
 	if (bit_off == -1){
+		printk("bit_off=-1");
 		return 0;
 	}
 	for (u64 i = 0,b = bit_off ; i < count ; i++,b++)
 		bitmap_set(&reserve_phy_pool.btmp,b,1);
 
+	printk("bit_off=%d\n",bit_off);
 	page = (((bit_off << 12) + reserve_phy_pool.paddr_start) | CSR_DMW1_BASE);
+	printk("page:%llx\n",page);
 	memset((void *)page,0,(int)(PAGE_SIZE)*count);
 	return page;
 }
@@ -263,6 +266,7 @@ struct page * __init memmap_init(unsigned long size)
 	if(size == 0)
 		return NULL;
 
+	printk("???");
 	return (struct page * )get_kernel_pages(CEIL_DIV(size,PAGE_SIZE));
 }
 
@@ -444,7 +448,7 @@ static void __init free_area_init_node(int nid)
 	free_area_init_core(pg_data);
 }
 
-void __init  free_area_init(unsigned long *max_zone_pfn)
+void __init free_area_init(unsigned long *max_zone_pfn)
 {
 	unsigned long start_pfn = PHYS_PFN(memblock_start_of_DRAM());
 	int nid;

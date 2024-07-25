@@ -1,5 +1,0 @@
- CompileFlags:
-  Add:
-    - -I../../../../include
-    - -I../../../../arch/loongarch/include
-    - xc
