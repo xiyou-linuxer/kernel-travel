@@ -31,7 +31,10 @@ bool isignored_signals(int sig,struct task_struct *t)
 
 int specific_sendsig(int sig,struct task_struct *t)
 {
-
+	/* 如果信号是被忽略的，则不产生 */
+	if (isignored_signals(sig,t))
+		return 0;
+	sigaddset(t->pending,sig);
 }
 
 
