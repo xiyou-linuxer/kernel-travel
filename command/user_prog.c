@@ -1,4 +1,5 @@
 #include "printf.h"
+#include "xkernel/types.h"
 #include <asm/syscall.h>
 
 
@@ -19,7 +20,10 @@ int main(void)
 	{
 		int pid = fork();
 		if (pid == 0){
-			execve(filepath,argv,NULL);
+			char * map = (char *)mmap(NULL, 4096, 0, 50, -1, 0);
+			map = "Hello, world!";
+			myprintf("%s\n",map);
+			// execve(filepath,argv,NULL);
 		}
 
 		int status;

@@ -10,6 +10,7 @@
 #include <sync.h>
 #include <fs/file.h>
 #include "fs/fd.h"
+#include "xkernel/sched.h"
 
 unsigned long sysctl_max_map_count = 1024;
 unsigned long mmap_min_addr = TASK_SIZE / 3;
@@ -216,7 +217,8 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 			unsigned long len, unsigned long prot,
 			unsigned long flags, unsigned long pgoff)
 {
-	struct mm_struct *mm = running_thread()->mm;	/* 获取该进程的memory descriptor*/
+	struct task_struct * curr = running_thread();
+	struct mm_struct *mm = curr->mm;	/* 获取该进程的memory descriptor*/
 	struct vm_area_struct *vma, *prev;
 	struct rb_node ** rb_link, * rb_parent;
 	unsigned long *v_addr = (unsigned long *)VADDR_FOR_FD_MAPP;
@@ -319,10 +321,10 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	// if (flags & MAP_POPULATE) {
 	if (true) {
 		int count = len >> PAGE_SHIFT;
-		while (count--) {
-			malloc_usrpage(running_thread()->pgdir, (unsigned long)addr + count * PAGE_SIZE);
-		}
+		for(int i = 0; i < len >> PAGE_SHIFT; ++i)
+			malloc_usrpage(running_thread()->pgdir, (unsigned long)addr + i * PAGE_SIZE);
 	}
+
 out:
 	/*更新 mm_struct 的统计信息*/
 	mm->total_vm += len >> PAGE_SHIFT;
