@@ -700,7 +700,6 @@ int ext4_fs_alloc_inode(struct FileSystem *fs, struct ext4_inode_ref *inode_ref,
 	/* 通过分配算法分配 inode */
 	uint32_t index;
 	int rc = ext4_ialloc_alloc_inode(fs, &index, is_dir);
-	printk("index:%d\n",index);
 	if (rc != EOK)
 		return rc;
 

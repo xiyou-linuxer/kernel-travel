@@ -152,7 +152,6 @@ int ext4_fread(Dirent *file, unsigned long dst, unsigned int off, unsigned int n
 		r = ext4_fs_get_inode_dblk_idx(&ref, iblock_idx, &fblock, true);
 		if (r != 0)
 		goto Finish;
-
 		off = fblock * block_size;
 		r = ext4_block_readbytes(off, u8_buf, n);
 		if (r != 0)
@@ -264,7 +263,6 @@ int ext4_fwrite(Dirent *file, unsigned long src, unsigned int off, unsigned int 
 			if (!fblock_start) {
 				fblock_start = fblk;
 			}
-			
 			if ((fblock_start + fblock_count) != fblk)
 				break;
 			
@@ -386,7 +384,7 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 
 	/* 分配一个inode */
 	struct ext4_inode_ref child_ref;
-	r = ext4_fs_alloc_inode(fs, &child_ref,isDir ? EXT4_DE_REG_FILE : EXT4_DE_DIR);
+	r = ext4_fs_alloc_inode(fs, &child_ref,isDir ? EXT4_DE_DIR : EXT4_DE_REG_FILE);
 	if (r != 0)
 		return r;
 	
@@ -398,7 +396,7 @@ static int ext4_dirent_creat(struct Dirent *baseDir, char *path, Dirent **file, 
 	struct ext4_dir_en *new_en = ext4_dir_add_entry(&ref, name, sizeof(name), &child_ref);
 	if (new_en == NULL)
 		return -1;
-	printk("1111\n");
+
 	f = dirent_alloc();
 
 	/* 填写目录项中的内容 */

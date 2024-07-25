@@ -56,7 +56,6 @@ int ext4_blocks_set_direct(const void *buf,int block_size,uint64_t lba, uint32_t
 	int count = 0;
 	uint8_t* p = (void*)buf;
 	int lp = block_size/BUF_SIZE;
-	printk("ext4_blocks_set_direct");
 	while (count < cnt)
 	{
 		int pba = lp*(lba+count);

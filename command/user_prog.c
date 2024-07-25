@@ -10,9 +10,9 @@ int main(void)
 	int count = 0 ;
 	char filepath[30];
 	umemset(filepath,0,sizeof(filepath));
-	ustrcpy(filepath,"/bin/busybox");
+	ustrcpy(filepath,"/sdcard/busybox");
 	char* argv[10];
-	ustrcpy(argv[0],"/bin/busybox");
+	ustrcpy(argv[0],"/sdcard/busybox");
 	ustrcpy(argv[1],"sh");
 
 	for (int i = 0; i < NR_SYSCALLS; i++)
