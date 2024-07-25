@@ -12,6 +12,7 @@
 #include <allocator.h>
 #include <trap/irq.h>
 #include <asm/timer.h>
+#include "sync.h"
 
 void* program_begin;
 
@@ -26,6 +27,7 @@ void pro_read(void *program,void *buf,uint64_t count)
 	memcpy(buf,program,count);
 }
 
+/* 给定的程序头将一个可执行文件的段加载到虚拟内存中 */
 static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 {
 	uint64_t page_cnt;
@@ -59,13 +61,19 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 
 static unsigned long elf_map(struct file *filep, unsigned long addr,Elf_Phdr *eppnt, int prot, int type)
 {
+
 	unsigned long map_addr;
 
-	// down_write(&current->mm->mmap_sem);
+	sema_down(&running_thread()->mm->map_lock);
+
 	map_addr = do_mmap(filep, ELF_PAGESTART(addr),
 			   eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr), prot, type,
 			   eppnt->p_offset - ELF_PAGEOFFSET(eppnt->p_vaddr));
-	// up_write(&current->mm->mmap_sem);
+
+	printk("%u\n",map_addr);
+
+	sema_up(&running_thread()->mm->map_lock);
+
 	return(map_addr);
 }
 
@@ -113,12 +121,12 @@ int64_t load(const char *path)
 		goto done;
 	}
 	/* mm_strct 初始化*/
-	// running_thread()->mm->start_data = 0;
-	// running_thread()->mm->end_data = 0;
+	running_thread()->mm->start_data = 0;
+	running_thread()->mm->end_data = 0;
 	
-	// running_thread()->mm->end_code = 0;
-	// running_thread()->mm->mmap = NULL;
-	// running_thread()->mm->rss = 0;
+	running_thread()->mm->end_code = 0;
+	running_thread()->mm->mmap = NULL;
+	running_thread()->mm->rss = 0;
 
 	/*获取当前内存布局*/
 	arch_pick_mmap_layout(running_thread()->mm);
@@ -141,13 +149,14 @@ int64_t load(const char *path)
 			if (phdr.p_flags & PF_R) elf_prot |= PROT_READ;
 			if (phdr.p_flags & PF_W) elf_prot |= PROT_WRITE;
 			if (phdr.p_flags & PF_X) elf_prot |= PROT_EXEC;
-			elf_flags = MAP_PRIVATE|MAP_DENYWRITE|MAP_EXECUTABLE;
+			elf_flags = MAP_PRIVATE|MAP_DENYWRITE|
+					MAP_EXECUTABLE|MAP_FOR_INIT_FILE;
 			v_addr = phdr.p_vaddr;
 			//printk("vaddr=%llx:p_offset=%llx\n:filesz=%llx\n",phdr.p_vaddr,phdr.p_offset,phdr.p_filesz);
 			printk("range:%llx - %llx\n",phdr.p_vaddr,phdr.p_vaddr+phdr.p_filesz);
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
-			// elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
+			elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
 		}
 		phoff += ehdr.e_phentsize;
 	}
@@ -193,10 +202,12 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	regs->regs[4] = argc;
 	regs->regs[5] = (unsigned long)uargs;
 	regs->regs[6] = (unsigned long)envp;
+	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
+	struct mm_struct* mm = (struct mm_struct *)get_page();
+	mm_struct_init(cur->mm);
 	int64_t entry = sys_exeload(path);
 	regs->csr_era = (unsigned long)entry;
 
-	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	for (int i = 0; i < argc; i++) {
 		strcpy(uargs[i],argv[i]);
 		*((uint64_t*)(USER_STACK - (argc-1-i)*sizeof(uint64_t))) = (uint64_t)argv[i];

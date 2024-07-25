@@ -225,15 +225,21 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	u64 offset = 0;
 
 	len = PAGE_ALIGN(len);
+
 	if (!len)
 		return -ENOMEM;
+
 	if ((pgoff + (len >> PAGE_SHIFT)) < pgoff)
 		return -EOVERFLOW;
+
 	/*如果超过最大 map 数量*/
 	if (mm->map_count > sysctl_max_map_count)
 		return -ENOMEM;
-	/*查找没被分配的虚拟地址*/
-	addr = running_thread()->mm->get_unmapped_area(file, addr + TASK_UNMAPPED_BASE, len, pgoff, flags);
+
+	if(!(MAP_FOR_INIT_FILE & flags)) {
+		/*查找没被分配的虚拟地址*/
+		addr = running_thread()->mm->get_unmapped_area(file, addr + TASK_UNMAPPED_BASE, len, pgoff, flags);
+	}
 
 	/*根据 file 和 flages 设置最终的 vm_flags*/
 
@@ -248,20 +254,28 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 
 		switch (flags & MAP_TYPE) {
 		case MAP_SHARED:
+			printk("MAP_SHARED\n");
 			break;
 		case MAP_PRIVATE:
+			printk("MAP_PRIVATE\n");
 			break;
 		default:
-			return -EINVAL;
+			printk("default\n");
+			break;
+			// return -EINVAL;
 		}
 	} else {
 		switch (flags & MAP_TYPE) {
 		case MAP_SHARED:
+			printk("2MAP_SHARED\n");
 			break;
 		case MAP_PRIVATE:
+			printk("2MAP_PRIVATE\n");
 			break;
 		default:
-			return -EINVAL;
+			printk("2default\n");
+			break;
+			// return -EINVAL;
 		}
 	}
 
@@ -317,13 +331,6 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	}
 	/*建立VMA和红黑树，文件页等映射*/
  	vma_link(mm, vma, prev, rb_link, rb_parent);
-	/*直接给虚拟地址分配物理地址*/
-	// if (flags & MAP_POPULATE) {
-	if (true) {
-		int count = len >> PAGE_SHIFT;
-		for(int i = 0; i < len >> PAGE_SHIFT; ++i)
-			malloc_usrpage(running_thread()->pgdir, (unsigned long)addr + i * PAGE_SIZE);
-	}
 
 out:
 	/*更新 mm_struct 的统计信息*/
