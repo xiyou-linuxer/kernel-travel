@@ -290,8 +290,7 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 
 	/*获取 addr 对应 VMA*/
 	vma = find_vma_prepare(mm, addr, &prev, &rb_link, &rb_parent);
-
-
+	printk("vma : 0x%p\n", vma);
 	/*尝试与相邻的VMA进行合并
 	* 可以合并：返回*/
 	// vma = vma_merge(mm, prev, addr, addr + len, flags,

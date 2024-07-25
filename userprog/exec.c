@@ -70,7 +70,8 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,Elf_Phdr *ep
 			   eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr), prot, type,
 			   eppnt->p_offset - ELF_PAGEOFFSET(eppnt->p_vaddr));
 
-	printk("%u\n",map_addr);
+	printk("map_addr: 0x%lx\n",map_addr);
+	printk("map_prot : %x\n",prot);
 
 	sema_up(&running_thread()->mm->map_lock);
 
@@ -204,6 +205,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	regs->regs[6] = (unsigned long)envp;
 	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	struct mm_struct* mm = (struct mm_struct *)get_page();
+	cur->mm = mm;
 	mm_struct_init(cur->mm);
 	int64_t entry = sys_exeload(path);
 	regs->csr_era = (unsigned long)entry;
