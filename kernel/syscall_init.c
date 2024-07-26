@@ -20,6 +20,7 @@ void syscall_init(void)
 {
 	printk("syscall init start\n");
 	syscall_table[SYS_write]              = sys_write;
+	syscall_table[SYS_writev]			  = sys_writev;
 	syscall_table[SYS_getpid]             = sys_getpid;
 	syscall_table[SYS_getppid]            = sys_getppid;
 	syscall_table[SYS_gettimeofday]       = sys_gettimeofday;

@@ -24,4 +24,5 @@ int sys_umount(const char* special);
 int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, struct statx *buf);
 int32_t sys_pipe(int32_t pipefd[2]);
 int sys_getdents(int fd, struct linux_dirent64* buf, size_t len);
+int sys_writev(int fd, const struct iovec* iov, int iovcnt);
 #endif

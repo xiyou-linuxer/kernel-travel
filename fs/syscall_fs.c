@@ -469,3 +469,14 @@ int sys_getdents(int fd, struct linux_dirent64 * buf, size_t len)
 	buf->d_off = file_table[global_fd].offset;
 	return len;
 }
+
+int sys_writev (int fd, const struct iovec *iov, int iovcnt)
+{
+	printk("sys_writev\n");
+	struct iovec *p = iov;
+	for (int i = 0; i < iovcnt; i++)
+	{
+		sys_write(fd,iov[i].iov_base,iov[i].iov_len);
+	}
+	return 0;
+}

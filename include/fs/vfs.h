@@ -12,6 +12,11 @@ struct kstat; // 前向声明
 extern struct vfsmount mnt_root;	/*根挂载点*/
 	/*当前路径对应的文件系统*/
 
+struct iovec {
+    void  *iov_base;   /* Starting address */
+    size_t iov_len;    /* Number of bytes to transfer */
+};
+
 int get_entry_count_by_name(char* name);
 int countClusters(struct Dirent* file);
 int get_file_raw(struct Dirent *baseDir, char *path, Dirent **file);

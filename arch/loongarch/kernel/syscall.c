@@ -42,7 +42,7 @@ void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
 
 	nr = regs->regs[11];
 	regs->csr_era += 4;  //加上syscall 0 的大小
-	//printk("\n!!! do_syscall:%d !!!\n",nr);
+	printk("\n!!!pid:%d do_syscall:%d !!!\n",sys_getpid(),nr);
 
 	regs->orig_a0 = regs->regs[4];
 	regs->regs[4] = -ENOSYS;
@@ -52,6 +52,6 @@ void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
 	sys_fn = syscall_table[nr];
 	regs->regs[4] = sys_fn(regs->orig_a0,regs->regs[5],regs->regs[6], \
 						   regs->regs[7],regs->regs[8],regs->regs[9]);
-	//printk("\n!!! do_syscall:%d done !!!\n",nr);
+	printk("\n!!!pid:%d do_syscall:%d done !!!\n",sys_getpid(),nr);
 }
 

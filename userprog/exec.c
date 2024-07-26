@@ -111,7 +111,7 @@ int64_t load(const char *path)
 	int fd = sys_open(path, O_RDWR ,660);
 	sys_lseek(fd,0,SEEK_SET);
 	int size = sys_read(fd, &ehdr, sizeof(ehdr));
-
+	printk("name %s\n",path);
 	int64_t ret;
 	if (memcmp(ehdr.e_ident,"\177ELF",4) || \
 		ehdr.e_ident[4] != 2 || \

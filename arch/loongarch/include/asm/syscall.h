@@ -143,6 +143,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_getdents64       61
 #define SYS_read             63
 #define SYS_write            64
+#define SYS_writev			 66
 #define SYS_fstat            80
 #define SYS_exit             93
 #define SYS_set_tid_address  96
@@ -164,6 +165,10 @@ void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {
 	return syscall(SYS_write,fd,buf,count);
+}
+
+static inline int64_t writev(int fd,struct iovec *iov,size_t count) {
+	return syscall(SYS_write,fd,iov,count);
 }
 
 static inline pid_t getpid(void) {
