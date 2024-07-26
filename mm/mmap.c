@@ -9,7 +9,9 @@
 #include <asm/page.h>
 #include <sync.h>
 #include <fs/file.h>
+#include "asm-generic/int-ll64.h"
 #include "fs/fd.h"
+#include "xkernel/compiler.h"
 #include "xkernel/sched.h"
 
 unsigned long sysctl_max_map_count = 1024;
@@ -330,6 +332,11 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	}
 	/*建立VMA和红黑树，文件页等映射*/
  	vma_link(mm, vma, prev, rb_link, rb_parent);
+	if (unlikely(!(flags & MAP_FOR_INIT_FILE))) {
+		for (int i = 0; i < len >> PAGE_SHIFT; i++) {
+			malloc_usrpage(running_thread()->pgdir, addr + i * PAGE_SIZE);
+		}
+	}
 
 out:
 	/*更新 mm_struct 的统计信息*/

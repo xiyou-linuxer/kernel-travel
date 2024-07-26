@@ -11,17 +11,42 @@
 #include <sync.h>
 
 vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
-			   unsigned int flags, struct pt_regs *regs)
+                           unsigned int flags, struct pt_regs *regs)
 {
-	vm_fault_t ret;
-	struct task_struct * curr = running_thread();
-	struct mm_struct * mm = vma->vm_mm;
-	u64* pgd = pgd_ptr(curr->pgdir, address);
+	vm_fault_t ret = 0;
+	struct task_struct *curr = running_thread();
+	struct mm_struct *mm = vma->vm_mm;
+	u64 *pgd;
+	u64 *pmd;
+	u64 *pte;
 
-	/*更新统计信息*/
+	// 获取 PGD
+	pgd = pgd_ptr(curr->pgdir, address);
+	if (unlikely(!pgd)) {
+		return VM_FAULT_OOM;
+	}
+
+    // 获取 PMD
+	pmd = pmd_ptr(curr->pgdir, address);
+	if (unlikely(!pmd)) {
+		return VM_FAULT_OOM;
+	}
+
+	// 获取 PTE
+	pte = pte_ptr(curr->pgdir, address);
+	if (unlikely(!pte)) {
+		return VM_FAULT_OOM;
+	}
+
+	// 更新统计信息 (假设有相应的实现)
 	// mm_account_fault(regs, address, flags, ret);
-	return ret;
+
+	// 调用页表项故障处理函数 (需要实现)
+	// ret = handle_pte_fault(mm, vma, address, pte, pmd, flags);
+
+    return ret;
 }
+
 
 static void __do_page_fault(struct pt_regs *regs,
 			unsigned long write, unsigned long address)
