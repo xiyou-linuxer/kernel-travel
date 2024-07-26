@@ -39,8 +39,8 @@ nvim scripts/kconfig/lxdialog/check-lxdialog.sh
 main ==> int main()
 
 make menuconfig 设置静态编译
-make CC=musl-gcc CROSS_COMPILE=loongarch64-linux-gnu- -j 16
-make CC=musl-gcc  CROSS_COMPILE=loongarch64-linux-gnu- install -j 16
+make  CROSS_COMPILE=musl- -j 16
+make  CROSS_COMPILE=musl- install -j 16
 ```
 
 ### 制作包含busybox的fat32镜像
