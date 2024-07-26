@@ -15,7 +15,8 @@
 
 #define DIV_ROUND_UP(divd,divs) ((divd+divs-1)/divs)
 #define TASK_SIZE 0x00007fffffffffff
-#define USER_HEAP_START  0x00000007f0000000
+#define HEAP_START  0x00000007f0000000
+#define HEAP_LENGTH 0x40000
 
 #define PAGESIZE 4096
 #define ENTRY_SIZE 8

@@ -240,7 +240,8 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 
 	if(!(MAP_FOR_INIT_FILE & flags)) {
 		/*查找没被分配的虚拟地址*/
-		addr = running_thread()->mm->get_unmapped_area(file, addr + TASK_UNMAPPED_BASE, len, pgoff, flags);
+		addr = running_thread()->mm->
+			get_unmapped_area(file, addr + TASK_UNMAPPED_BASE, len, pgoff, flags);
 	}
 
 	/*根据 file 和 flages 设置最终的 vm_flags*/
@@ -337,6 +338,7 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 			malloc_usrpage(running_thread()->pgdir, addr + i * PAGE_SIZE);
 		}
 	}
+
 
 out:
 	/*更新 mm_struct 的统计信息*/

@@ -12,6 +12,7 @@
 #include <allocator.h>
 #include <trap/irq.h>
 #include <asm/timer.h>
+#include "asm/page.h"
 #include "sync.h"
 
 void* program_begin;
@@ -162,11 +163,13 @@ int64_t load(const char *path)
 			unsigned long addr = 
 				elf_map(NULL, v_addr, &phdr,elf_prot, elf_flags);
 			/* 代码段和数据段的 mm_struct 数据维护*/
-			if (addr && elf_prot) {
+			if ((addr | (elf_flags & MAP_FOR_INIT_FILE)) && elf_prot) {
 				if (elf_prot & (PROT_EXEC|PROT_READ)) {
 					mm->start_code = addr;
 					mm->end_code = addr + phdr.p_filesz + ELF_PAGEOFFSET(phdr.p_vaddr);
-				} else if (elf_prot & (PROT_READ|PROT_WRITE)) {
+				}
+				/*init进程的code和data在一个程序头，因此分开使用两个if*/
+				if (elf_prot & (PROT_READ|PROT_WRITE)) {
 					mm->start_data = addr;
 					mm->end_data = addr + phdr.p_filesz + ELF_PAGEOFFSET(phdr.p_vaddr);
 				}
@@ -179,9 +182,23 @@ int64_t load(const char *path)
 		目前思路：龙芯cpu有个倒计时时钟，准备写一个读取计时器数值
 			   并且限制取值范围的函数用于随机化
 	*/
-	mm->start_stack = TASK_SIZE;	
-	mm->start_brk = USER_HEAP_START;
+	mm->start_stack = USER_STACK;
+	mm->start_brk = HEAP_START;
 	mm->brk = mm->start_brk;
+	mm->arg_start = USER_TOP - 0x2000;
+	mm->arg_end = USER_TOP;
+
+	sema_down(&mm->map_lock);
+
+	do_mmap(NULL, mm->start_stack - PAGE_SIZE, PAGE_SIZE, 
+		VM_READ | VM_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_FOR_INIT_FILE, 0);
+	do_mmap(NULL, mm->start_brk, HEAP_LENGTH, VM_READ | VM_WRITE | VM_EXEC,
+ 		MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_FOR_INIT_FILE, 0);
+
+	do_mmap(NULL, mm->arg_start,mm->arg_end - mm->arg_start, 
+		VM_READ | VM_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_FOR_INIT_FILE, 0);
+
+	sema_down(&mm->map_lock);
 	
 
 	ret = ehdr.e_entry;
