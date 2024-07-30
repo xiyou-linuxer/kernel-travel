@@ -307,14 +307,15 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	/*VMA 分配物理内存并初始化*/
 	// printk("0x%llx\n",running_thread());
 	// malloc_usrpage(running_thread()->pgdir, (unsigned long)vma);
-	vma = (struct vm_area_struct *)get_page();
-	memset(vma, 0, sizeof(*vma));
-	vma->vm_mm = mm;
-	vma->vm_start = addr;
-	vma->vm_end = addr + len;
-	vma->vm_flags = flags;
-	vma->vm_pgoff = pgoff;
-
+	if(!vma) {
+		vma = (struct vm_area_struct *)get_page();
+		memset(vma, 0, sizeof(*vma));
+		vma->vm_mm = mm;
+		vma->vm_start = addr;
+		vma->vm_end = addr + len;
+		vma->vm_flags = flags;
+		vma->vm_pgoff = pgoff;
+	}
 
 	if(file) {
 		// call_mmap();	FAT32 的处理函数...
