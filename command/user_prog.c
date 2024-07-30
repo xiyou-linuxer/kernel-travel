@@ -12,9 +12,9 @@ int main(void)
 	char filepath[30];
 
 	umemset(filepath,0,sizeof(filepath));
-	ustrcpy(filepath,"/sdcard/hello");
+	ustrcpy(filepath,"/sdcard/busybox");
 	char* argv[10];
-	ustrcpy(argv[0],"/sdcard/hello");
+	ustrcpy(argv[0],"/sdcard/busybox");
 	ustrcpy(argv[1],"sh");
 	int pid = fork();
 		if (pid == 0){

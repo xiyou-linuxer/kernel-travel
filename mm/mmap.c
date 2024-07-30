@@ -350,6 +350,7 @@ out:
 void *sys_mmap(void* addr, size_t len, int prot,
 		int flags, int fd, off_t offset)
 {
+	printk("addr:%x,len:%x,prot:%x,flags:%x,fd:%x,off:%x\n",addr,len,prot,flags,fd,offset);
 	/*fd 获取 struct file*/
 	struct file * file = NULL;
 	if (fd > 2) {
