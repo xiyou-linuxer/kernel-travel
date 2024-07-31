@@ -41,7 +41,8 @@ cd /tmp/qemu/2k1000
 ./create_qemu_img.sh
 ```
 
-传入[sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz)：
+下载 fat32 格式的磁盘镜像[sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz)
+或者 ext4 格式的磁盘镜像[la-sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/releases/tag/2024-final-la) 解压后传入 docker镜像中
 
 ```sh
 sudo docker cp 你存放sdcard-loongarch.img的路径 os-contest:/sdcard-loongarch.img

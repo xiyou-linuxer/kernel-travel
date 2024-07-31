@@ -54,9 +54,22 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 
 		page += PAGESIZE;
 	}
-
 	sys_lseek(fd,phdr->p_offset,SEEK_SET);
+	printk("load_phdr phdr->p_filesz:%d\n",phdr->p_filesz);
 	sys_read(fd,(void*)phdr->p_vaddr,phdr->p_filesz);
+	unsigned char *addr = (unsigned char *)phdr->p_vaddr;
+	int i;
+	/*if (phdr->p_filesz == 2896492)
+	{
+		for (i = 2895872; i < phdr->p_filesz; i++)
+		{
+			printk("%x ",addr[i]);
+		//printk("i:%x in %x",i,phdr->p_filesz);
+		}
+	
+	}*/
+	
+	
 	return true;
 }
 

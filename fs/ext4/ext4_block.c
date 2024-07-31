@@ -35,12 +35,13 @@ int ext4_blocks_get_direct(const void *buf,int block_size, uint64_t lba, uint32_
 		int pba = lp*(lba+count);//计算逻辑块号
 		for (int i = 0; i < lp; i++)//将块内的扇区都读出来
 		{
-			Buffer *buf = bufRead(1,pba+i,1);
-			memcpy(p,buf->data->data,BUF_SIZE);
+			Buffer *buffer = bufRead(1,pba+i,1);
+			memcpy(p,buffer->data->data,BUF_SIZE);
 			p+=BUF_SIZE;
 		}
 		count++;
 	}
+	printk("count:%d\n",count);
 	return count;
 }
 
