@@ -143,7 +143,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_getdents64       61
 #define SYS_read             63
 #define SYS_write            64
-#define SYS_writev			 66
+#define SYS_writev           66
 #define SYS_fstat            80
 #define SYS_exit             93
 #define SYS_set_tid_address  96
@@ -154,14 +154,17 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_gettimeofday    169
 #define SYS_getpid          172
 #define SYS_getppid         173
+#define SYS_getgid          176
 #define SYS_brk             214
 #define SYS_munmap          215
 #define SYS_clone           220
 #define SYS_execve          221
 #define SYS_mmap            222
+#define SYS_mprotect        226
 #define SYS_wait4           260
 #define SYS_statx           291
 #define SYS_PP              299
+
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 
 static inline int64_t write(int fd,const void* buf,size_t count) {

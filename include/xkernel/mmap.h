@@ -77,5 +77,5 @@ int sys_brk(void *addr);
 unsigned long
 get_unmapped_area(struct file *filp, unsigned long addr,
 		unsigned long len, unsigned long pgoff, unsigned long flags);
-
+int sys_mprotect(void *addr, size_t len, int prot);
 #endif

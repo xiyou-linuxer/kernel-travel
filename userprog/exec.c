@@ -283,12 +283,14 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 		*((uint64_t*)(argtop - (envs+1-i)*sizeof(uint64_t))) = (uint64_t)uargs[argc+i];
 	}
 	*((uint64_t*)(argtop - sizeof(uint64_t))) = 0;
+
 	/* argv */
 	for (int i = 0; i < argc; i++) {
 		strcpy(uargs[i],argv[i]);
 		*((uint64_t*)(argtop - (envs+argc+2-i)*sizeof(uint64_t))) = (uint64_t)uargs[i];
 	}
 	*((uint64_t*)(argtop - (envs+2)*sizeof(uint64_t))) = 0;
+
 	/* argc */
 	*((uint64_t*)(argtop - (envs+argc+3)*sizeof(uint64_t))) = argc;
 

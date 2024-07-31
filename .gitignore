@@ -22,3 +22,5 @@ quick_start.sh
 command/user_prog
 kernel.bin
 *.order
+include/xkernel/initcode.h
+

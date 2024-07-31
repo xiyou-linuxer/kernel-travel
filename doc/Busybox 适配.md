@@ -408,3 +408,25 @@ this information is dynamic in nature and is only known after kernel has finishe
 发现内存数据到0x120000ffc戛然而止，跳到的函数opcode为0导致了这场错误
 加载时read错误，更改后成功运行
 
+
+在这里卡死
+```c
+	INIT_G_var();
+```
+
+错误信息：
+```
+Error: unkown opcode. 90000000901d1174: 0x0
+Error: unkown opcode. 90000000901d0d74: 0x0
+Warning: page_size is 0
+Error: unkown opcode. 90000000901cfb74: 0x0
+Error: unkown opcode. 90000000901cf774: 0x0
+```
+1.sys_mmap返回的参数不对，导致去一个奇怪的地址吗
+查看几次mmap返回的地址，对照着函数看看
+第一次：0x800000000
+第二次：0x800002000
+第三次：0x800003000
+
+
+

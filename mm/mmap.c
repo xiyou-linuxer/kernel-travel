@@ -335,6 +335,7 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	if (unlikely(!(flags & MAP_FOR_INIT_FILE))) {
 		for (int i = 0; i < len >> PAGE_SHIFT; i++) {
 			malloc_usrpage(running_thread()->pgdir, addr + i * PAGE_SIZE);
+			invalidate();
 		}
 	}
 
@@ -460,4 +461,10 @@ set_brk:
 out:
 	ret = mm->brk;
 	return ret;
+}
+
+
+int sys_mprotect(void *addr, size_t len, int prot)
+{
+	return 0;
 }
