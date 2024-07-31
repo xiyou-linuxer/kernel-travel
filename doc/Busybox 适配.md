@@ -39,8 +39,8 @@ nvim scripts/kconfig/lxdialog/check-lxdialog.sh
 main ==> int main()
 
 make menuconfig 设置静态编译
-make CC=musl-gcc CROSS_COMPILE=loongarch64-linux-gnu- -j 16
-make CC=musl-gcc  CROSS_COMPILE=loongarch64-linux-gnu- install -j 16
+make  CROSS_COMPILE=musl- -j 16
+make  CROSS_COMPILE=musl- install -j 16
 ```
 
 ### 制作包含busybox的fat32镜像
@@ -178,15 +178,55 @@ ldptr t0 0
 这里既然是赋值给a1，意味着原来直接给a1赋值传参的思路是错的，这边用栈转参
 
 2.在内存空间内专门留一块存放argv
-改变一下内存格局，最上面放argv，下面是栈。
-
+查看_start
+```c
+	int argc = p[0];
+	char **argv = (void *)(p+1);
 ```
+
+改变一下内存格局，最上面放argv，下面是栈。
+```
+argv[argc-1]的内容
+......
+argv[1]的内容
+argv[0]的内容
 ---------- stack
 argv[argc-1]
 ......
 argv[1]
-argv[0]
+argv[0]  <======[argv]
+argc     <======[p]
 ```
+结果运行时
+```
+Error: unkown opcode. 90000000901cf500: 0x0
+Error: unkown opcode. 90000000901d0d00: 0x0
+```
+检查是不是内核栈出了些问题
+1.超出内核栈的范围
+2.压栈破坏了pcb
+没发现以上问题
+发现是原来的用户栈中的存path，经改动后访问不了了
+```c
+malloc_usrpage(cur->pgdir,(uint64_t)uargs);
+```
+检查下`path=0x7fffffdfc0`相关的页表是否被改变
+这是初始信息：
+```
+(gdb) x/gx 0x90000000a2015000+0xff8
+0x90000000a2015ff8:     0x90000000a201b000
+(gdb) x/gx 0x90000000a201b000+0xff8
+0x90000000a201bff8:     0x90000000a201c000
+(gdb) x/gx 0x90000000a201c000+0xfe8
+0x90000000a201cfe8:     0x90000000a201a00f
+```
+深入调研后发现不是这个问题，只不过是page_table_add后暂时把tlb里的东西刷新了罢了。至少页表没被破坏
+实际是运行到了用户态
+```
+0x0000000120000310
+```
+
+
 
 增加了，但是没什么用，看来很可能不是这个原因
 在busybox的init_main中增添了printf，但并没打印出任何东西就死了，那时还没有用到argv。难道是init_main之前还有一段程序？
@@ -266,4 +306,105 @@ uint64_t* ptep = reverse_pte_ptr(pdir,vaddr);
 1.reverse_pte_ptr这个函数写的不对
 2.页表本身数据不对
 
+
+寻找进入init_main前的代码：
+查找_start
+怪事：
+1.hello打印语句执行了，但是我前面设置的syscall没有
+难道是我写的不对？看看printf的syscall是怎样的
+2.运行hello打印和syscall都没有，它到_start了吗？
+
+似乎是我的编译未对busybox生效。
+解决： LDFLAGS添加
+```
+LDFLAGS		:= $(LDFLAGS) -L/opt/loongarch-muslc/lib
+```
+还有，把之前的musl的删干净再重新编译
+
+
+
+
+调试比赛官方的busybox
+```
+0x0000000120194020 in ?? ()
+0x90000000901c1004 in exception_handlers ()
+0x90000000901c1008 in exception_handlers ()
+0x90000000901c100c in exception_handlers ()
+0x90000000901c1010 in exception_handlers ()
+0x90000000901d0348 in memblock_memory_init_regions ()
+```
+给出的EXCCODE表明为地址错误
+
+```
+ 0x12019403c     st.d            $t0, $s2, 1112(0x458)
+```
+
+
+sys_mmap起始 $s0
+```
+r25            0x2f64726163006873  3414980180052043891
+```
+
+起因是这么一句：加载地址为0处的东西
+```
+0x120193f28     ldptr.d         $s2, $t0, 0
+
+```
+有两种可能
+1.t0正常，加载的地址本应有有意义的数据
+2.t0不正常，在之前的赋值错误
+
+查找busybox是否真有这个段
+没有这个段，说明应该是t0错误，查找哪里有为t0赋值
+
+获知 `argv[0]` 刚好是这个值，回过头改一下`argc`与`argv`
+
+`__libc_start_main` 中使用到了argv
+```c
+	char **envp = argv+argc+1;
+```
+由此调整args的布局
+```
+envp[argc-1]的内容
+......
+envp[1]的内容
+envp[0]的内容
+argv[argc-1]的内容
+......
+argv[1]的内容
+argv[0]的内容
+---------- stack
+envp[envs]
+envp[envs-1]
+......
+envp[1]
+envp[0]
+argv[argc]
+argv[argc-1]
+......
+argv[1]
+argv[0]  <======[argv]
+argc     <======[p]
+```
+
+顺便看下后续它是如何使用args的
+
+```c
+	for (i=0; envp[i]; i++);
+	libc.auxv = auxv = (void *)(envp+i+1);
+```
+还有个这！辅助数组auxv 在env数组的后面，以`[键:值]`的方式排布
+> ELF auxiliary vectors are a mechanism to transfer certain kernel level information to the user processes. 
+An example of such an information is the pointer to the system call entry point in the memory (AT_SYSINFO);
+this information is dynamic in nature and is only known after kernel has finished loading.
+
+```c
+	for (i=0; auxv[i]; i+=2) if (auxv[i]<AUX_CNT) aux[auxv[i]] = auxv[i+1];
+```
+
+疑似在`__init_libc` 处停止(奇怪的是，加个printf竟然好了...)。
+检查下auxv的数值是否与预想的一致
+是的
+发现内存数据到0x120000ffc戛然而止，跳到的函数opcode为0导致了这场错误
+加载时read错误，更改后成功运行
 

@@ -16,9 +16,15 @@ void sys_pstr(char *str)
 	print_str(str);
 }
 
+void sys_person(void)
+{
+	printk("person\n");
+}
+
 void syscall_init(void)
 {
 	printk("syscall init start\n");
+	syscall_table[SYS_PP]              = sys_person;
 	syscall_table[SYS_write]              = sys_write;
 	syscall_table[SYS_writev]			  = sys_writev;
 	syscall_table[SYS_getpid]             = sys_getpid;

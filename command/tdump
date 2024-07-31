@@ -1,0 +1,802 @@
+
+user_prog:     file format elf64-loongarch
+
+
+Disassembly of section .text:
+
+0000000000000000 <pgdat_end_pfn>:
+                arg_str = va_arg(ap,char*);
+                ustrcpy(bufp,arg_str);
+                bufp += ustrlen(arg_str);
+                ++fmtp;
+                break;
+        }
+   0:	02ff8063 	addi.d      	$sp, $sp, -32
+   4:	29c06076 	st.d        	$fp, $sp, 24
+   8:	02c08076 	addi.d      	$fp, $sp, 32
+   c:	29ffa2c4 	st.d        	$a0, $fp, -24
+    }
+  10:	28ffa2cc 	ld.d        	$t0, $fp, -24
+  14:	2608c98d 	ldptr.d     	$t1, $t0, 2248
+  18:	28ffa2cc 	ld.d        	$t0, $fp, -24
+  1c:	2608d98c 	ldptr.d     	$t0, $t0, 2264
+  20:	0010b1ac 	add.d       	$t0, $t1, $t0
+
+  24:	00150184 	move        	$a0, $t0
+  28:	28c06076 	ld.d        	$fp, $sp, 24
+  2c:	02c08063 	addi.d      	$sp, $sp, 32
+  30:	4c000020 	ret         
+
+0000000000000034 <__syscall1>:
+	return retval;
+}
+
+
+static inline long __syscall1(long n,long ag0)
+{
+  34:	02ff8063 	addi.d      	$sp, $sp, -32
+  38:	29c06076 	st.d        	$fp, $sp, 24
+  3c:	02c08076 	addi.d      	$fp, $sp, 32
+  40:	29ffa2c4 	st.d        	$a0, $fp, -24
+  44:	29ff82c5 	st.d        	$a1, $fp, -32
+	register long nr asm("a7") = n;
+  48:	28ffa2cb 	ld.d        	$a7, $fp, -24
+	register long arg0 asm("a0") = ag0;
+  4c:	28ff82c4 	ld.d        	$a0, $fp, -32
+	register long retval asm("a0");
+	asm volatile(
+  50:	002b0000 	syscall     	0x0
+	"syscall 0"
+	: "+r"(retval)
+	: "r"(nr),"r"(arg0)
+	: "$t0","$t1","$t2","$t3","$t4","$t5","$t6",
+	  "$t7","$t8","memory");
+	return retval;
+  54:	0015008c 	move        	$t0, $a0
+}
+  58:	00150184 	move        	$a0, $t0
+  5c:	28c06076 	ld.d        	$fp, $sp, 24
+  60:	02c08063 	addi.d      	$sp, $sp, 32
+  64:	4c000020 	ret         
+
+0000000000000068 <pstr>:
+
+static inline int execve(const char *path, char *const argv[], char *const envp[]) {
+	return syscall(SYS_execve,path,argv,envp);
+}
+
+static inline void pstr(char *str) {
+  68:	02ff8063 	addi.d      	$sp, $sp, -32
+  6c:	29c06061 	st.d        	$ra, $sp, 24
+  70:	29c04076 	st.d        	$fp, $sp, 16
+  74:	02c08076 	addi.d      	$fp, $sp, 32
+  78:	29ffa2c4 	st.d        	$a0, $fp, -24
+	syscall(SYS_PSTR,str);
+  7c:	28ffa2cc 	ld.d        	$t0, $fp, -24
+  80:	00150185 	move        	$a1, $t0
+  84:	02837804 	li.w        	$a0, 222
+  88:	57ffafff 	bl          	-84	# 34 <__syscall1>
+}
+  8c:	03400000 	nop         
+  90:	28c06061 	ld.d        	$ra, $sp, 24
+  94:	28c04076 	ld.d        	$fp, $sp, 16
+  98:	02c08063 	addi.d      	$sp, $sp, 32
+  9c:	4c000020 	ret         
+
+00000000000000a0 <umemset>:
+void umemset(void* dst_, uint8_t value, uint32_t size) {
+  a0:	02ff4063 	addi.d      	$sp, $sp, -48
+  a4:	29c0a076 	st.d        	$fp, $sp, 40
+  a8:	02c0c076 	addi.d      	$fp, $sp, 48
+  ac:	29ff62c4 	st.d        	$a0, $fp, -40
+  b0:	001500ac 	move        	$t0, $a1
+  b4:	001500cd 	move        	$t1, $a2
+  b8:	293f5ecc 	st.b        	$t0, $fp, -41
+  bc:	001501ac 	move        	$t0, $t1
+  c0:	29bf42cc 	st.w        	$t0, $fp, -48
+	uint8_t* dst = (uint8_t*)dst_;
+  c4:	28ff62cc 	ld.d        	$t0, $fp, -40
+  c8:	29ffa2cc 	st.d        	$t0, $fp, -24
+	while (size-- > 0){
+  cc:	50001800 	b           	24	# e4 <umemset+0x44>
+		*dst++ = value;
+  d0:	28ffa2cc 	ld.d        	$t0, $fp, -24
+  d4:	02c0058d 	addi.d      	$t1, $t0, 1
+  d8:	29ffa2cd 	st.d        	$t1, $fp, -24
+  dc:	2a3f5ecd 	ld.bu       	$t1, $fp, -41
+  e0:	2900018d 	st.b        	$t1, $t0, 0
+	while (size-- > 0){
+  e4:	24ffd2cc 	ldptr.w     	$t0, $fp, -48
+  e8:	02bffd8d 	addi.w      	$t1, $t0, -1
+  ec:	29bf42cd 	st.w        	$t1, $fp, -48
+  f0:	47ffe19f 	bnez        	$t0, -32	# d0 <umemset+0x30>
+}
+  f4:	03400000 	nop         
+  f8:	03400000 	nop         
+  fc:	28c0a076 	ld.d        	$fp, $sp, 40
+ 100:	02c0c063 	addi.d      	$sp, $sp, 48
+ 104:	4c000020 	ret         
+
+0000000000000108 <ustrcpy>:
+{
+ 108:	02ff4063 	addi.d      	$sp, $sp, -48
+ 10c:	29c0a076 	st.d        	$fp, $sp, 40
+ 110:	02c0c076 	addi.d      	$fp, $sp, 48
+ 114:	29ff62c4 	st.d        	$a0, $fp, -40
+ 118:	29ff42c5 	st.d        	$a1, $fp, -48
+	char *tmp = dest;
+ 11c:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 120:	29ffa2cc 	st.d        	$t0, $fp, -24
+	while ((*dest++ = *src++) != '\0')
+ 124:	03400000 	nop         
+ 128:	28ff42cd 	ld.d        	$t1, $fp, -48
+ 12c:	02c005ac 	addi.d      	$t0, $t1, 1
+ 130:	29ff42cc 	st.d        	$t0, $fp, -48
+ 134:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 138:	02c0058e 	addi.d      	$t2, $t0, 1
+ 13c:	29ff62ce 	st.d        	$t2, $fp, -40
+ 140:	280001ad 	ld.b        	$t1, $t1, 0
+ 144:	2900018d 	st.b        	$t1, $t0, 0
+ 148:	2800018c 	ld.b        	$t0, $t0, 0
+ 14c:	47ffdd9f 	bnez        	$t0, -36	# 128 <ustrcpy+0x20>
+	return tmp;
+ 150:	28ffa2cc 	ld.d        	$t0, $fp, -24
+}
+ 154:	00150184 	move        	$a0, $t0
+ 158:	28c0a076 	ld.d        	$fp, $sp, 40
+ 15c:	02c0c063 	addi.d      	$sp, $sp, 48
+ 160:	4c000020 	ret         
+
+0000000000000164 <ustrcat>:
+{
+ 164:	02ff4063 	addi.d      	$sp, $sp, -48
+ 168:	29c0a076 	st.d        	$fp, $sp, 40
+ 16c:	02c0c076 	addi.d      	$fp, $sp, 48
+ 170:	29ff62c4 	st.d        	$a0, $fp, -40
+ 174:	29ff42c5 	st.d        	$a1, $fp, -48
+	char* str = dst_;
+ 178:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 17c:	29ffa2cc 	st.d        	$t0, $fp, -24
+	while (*str++);
+ 180:	03400000 	nop         
+ 184:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 188:	02c0058d 	addi.d      	$t1, $t0, 1
+ 18c:	29ffa2cd 	st.d        	$t1, $fp, -24
+ 190:	2800018c 	ld.b        	$t0, $t0, 0
+ 194:	47fff19f 	bnez        	$t0, -16	# 184 <ustrcat+0x20>
+	--str;
+ 198:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 19c:	02fffd8c 	addi.d      	$t0, $t0, -1
+ 1a0:	29ffa2cc 	st.d        	$t0, $fp, -24
+	while((*str++ = *src_++));
+ 1a4:	03400000 	nop         
+ 1a8:	28ff42cd 	ld.d        	$t1, $fp, -48
+ 1ac:	02c005ac 	addi.d      	$t0, $t1, 1
+ 1b0:	29ff42cc 	st.d        	$t0, $fp, -48
+ 1b4:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 1b8:	02c0058e 	addi.d      	$t2, $t0, 1
+ 1bc:	29ffa2ce 	st.d        	$t2, $fp, -24
+ 1c0:	280001ad 	ld.b        	$t1, $t1, 0
+ 1c4:	2900018d 	st.b        	$t1, $t0, 0
+ 1c8:	2800018c 	ld.b        	$t0, $t0, 0
+ 1cc:	47ffdd9f 	bnez        	$t0, -36	# 1a8 <ustrcat+0x44>
+	return dst_;
+ 1d0:	28ff62cc 	ld.d        	$t0, $fp, -40
+}
+ 1d4:	00150184 	move        	$a0, $t0
+ 1d8:	28c0a076 	ld.d        	$fp, $sp, 40
+ 1dc:	02c0c063 	addi.d      	$sp, $sp, 48
+ 1e0:	4c000020 	ret         
+
+00000000000001e4 <ustrlen>:
+{
+ 1e4:	02ff4063 	addi.d      	$sp, $sp, -48
+ 1e8:	29c0a076 	st.d        	$fp, $sp, 40
+ 1ec:	02c0c076 	addi.d      	$fp, $sp, 48
+ 1f0:	29ff62c4 	st.d        	$a0, $fp, -40
+	const char* p = str;
+ 1f4:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 1f8:	29ffa2cc 	st.d        	$t0, $fp, -24
+	if(str == NULL) {
+ 1fc:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 200:	44000980 	bnez        	$t0, 8	# 208 <ustrlen+0x24>
+		while(1);
+ 204:	50000000 	b           	0	# 204 <ustrlen+0x20>
+	while(*p++);
+ 208:	03400000 	nop         
+ 20c:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 210:	02c0058d 	addi.d      	$t1, $t0, 1
+ 214:	29ffa2cd 	st.d        	$t1, $fp, -24
+ 218:	2800018c 	ld.b        	$t0, $t0, 0
+ 21c:	47fff19f 	bnez        	$t0, -16	# 20c <ustrlen+0x28>
+	return (p - str - 1);
+ 220:	28ffa2cd 	ld.d        	$t1, $fp, -24
+ 224:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 228:	0011b1ac 	sub.d       	$t0, $t1, $t0
+ 22c:	0040818c 	slli.w      	$t0, $t0, 0x0
+ 230:	02bffd8c 	addi.w      	$t0, $t0, -1
+ 234:	0040818c 	slli.w      	$t0, $t0, 0x0
+}
+ 238:	00150184 	move        	$a0, $t0
+ 23c:	28c0a076 	ld.d        	$fp, $sp, 40
+ 240:	02c0c063 	addi.d      	$sp, $sp, 48
+ 244:	4c000020 	ret         
+
+0000000000000248 <itoa>:
+{
+ 248:	02fec063 	addi.d      	$sp, $sp, -80
+ 24c:	29c12061 	st.d        	$ra, $sp, 72
+ 250:	29c10076 	st.d        	$fp, $sp, 64
+ 254:	02c14076 	addi.d      	$fp, $sp, 80
+ 258:	29ff22c4 	st.d        	$a0, $fp, -56
+ 25c:	29ff02c5 	st.d        	$a1, $fp, -64
+ 260:	001500cc 	move        	$t0, $a2
+ 264:	293efecc 	st.b        	$t0, $fp, -65
+    uint64_t m = val % base;
+ 268:	2a3efecd 	ld.bu       	$t1, $fp, -65
+ 26c:	28ff22cc 	ld.d        	$t0, $fp, -56
+ 270:	0023b58c 	mod.du      	$t0, $t0, $t1
+ 274:	5c0009a0 	bne         	$t1, $zero, 8	# 27c <itoa+0x34>
+ 278:	002a0007 	break       	0x7
+ 27c:	29ff82cc 	st.d        	$t0, $fp, -32
+    uint64_t q = val / base;
+ 280:	2a3efecd 	ld.bu       	$t1, $fp, -65
+ 284:	28ff22cc 	ld.d        	$t0, $fp, -56
+ 288:	0023358c 	div.du      	$t0, $t0, $t1
+ 28c:	5c0009a0 	bne         	$t1, $zero, 8	# 294 <itoa+0x4c>
+ 290:	002a0007 	break       	0x7
+ 294:	29ff62cc 	st.d        	$t0, $fp, -40
+    if (q) {
+ 298:	28ff62cc 	ld.d        	$t0, $fp, -40
+ 29c:	40001980 	beqz        	$t0, 24	# 2b4 <itoa+0x6c>
+        itoa(q,buf_ptr,base);
+ 2a0:	2a3efecc 	ld.bu       	$t0, $fp, -65
+ 2a4:	00150186 	move        	$a2, $t0
+ 2a8:	28ff02c5 	ld.d        	$a1, $fp, -64
+ 2ac:	28ff62c4 	ld.d        	$a0, $fp, -40
+ 2b0:	57ff9bff 	bl          	-104	# 248 <itoa>
+    if (m>=0 && m<=9) {
+ 2b4:	28ff82cd 	ld.d        	$t1, $fp, -32
+ 2b8:	0280240c 	li.w        	$t0, 9
+ 2bc:	68001d8d 	bltu        	$t0, $t1, 28	# 2d8 <itoa+0x90>
+        c = m + '0';
+ 2c0:	28ff82cc 	ld.d        	$t0, $fp, -32
+ 2c4:	0067818c 	bstrpick.w  	$t0, $t0, 0x7, 0x0
+ 2c8:	0280c18c 	addi.w      	$t0, $t0, 48
+ 2cc:	0067818c 	bstrpick.w  	$t0, $t0, 0x7, 0x0
+ 2d0:	293fbecc 	st.b        	$t0, $fp, -17
+ 2d4:	50003000 	b           	48	# 304 <itoa+0xbc>
+    } else if (m>=10 && m<=15) {
+ 2d8:	28ff82cd 	ld.d        	$t1, $fp, -32
+ 2dc:	0280240c 	li.w        	$t0, 9
+ 2e0:	6c00258d 	bgeu        	$t0, $t1, 36	# 304 <itoa+0xbc>
+ 2e4:	28ff82cd 	ld.d        	$t1, $fp, -32
+ 2e8:	02803c0c 	li.w        	$t0, 15
+ 2ec:	6800198d 	bltu        	$t0, $t1, 24	# 304 <itoa+0xbc>
+        c = m-10 + 'a';
+ 2f0:	28ff82cc 	ld.d        	$t0, $fp, -32
+ 2f4:	0067818c 	bstrpick.w  	$t0, $t0, 0x7, 0x0
+ 2f8:	02815d8c 	addi.w      	$t0, $t0, 87
+ 2fc:	0067818c 	bstrpick.w  	$t0, $t0, 0x7, 0x0
+ 300:	293fbecc 	st.b        	$t0, $fp, -17
+    *((*buf_ptr)++) = c;
+ 304:	28ff02cc 	ld.d        	$t0, $fp, -64
+ 308:	2600018c 	ldptr.d     	$t0, $t0, 0
+ 30c:	02c0058e 	addi.d      	$t2, $t0, 1
+ 310:	28ff02cd 	ld.d        	$t1, $fp, -64
+ 314:	270001ae 	stptr.d     	$t2, $t1, 0
+ 318:	2a3fbecd 	ld.bu       	$t1, $fp, -17
+ 31c:	2900018d 	st.b        	$t1, $t0, 0
+}
+ 320:	03400000 	nop         
+ 324:	28c12061 	ld.d        	$ra, $sp, 72
+ 328:	28c10076 	ld.d        	$fp, $sp, 64
+ 32c:	02c14063 	addi.d      	$sp, $sp, 80
+ 330:	4c000020 	ret         
+
+0000000000000334 <my_vsprintf>:
+{
+ 334:	02fe8063 	addi.d      	$sp, $sp, -96
+ 338:	29c16061 	st.d        	$ra, $sp, 88
+ 33c:	29c14076 	st.d        	$fp, $sp, 80
+ 340:	02c18076 	addi.d      	$fp, $sp, 96
+ 344:	29fee2c4 	st.d        	$a0, $fp, -72
+ 348:	29fec2c5 	st.d        	$a1, $fp, -80
+ 34c:	29fea2c6 	st.d        	$a2, $fp, -88
+    const char* fmtp = format;
+ 350:	28fec2cc 	ld.d        	$t0, $fp, -80
+ 354:	29ffa2cc 	st.d        	$t0, $fp, -24
+    char* bufp = buf;
+ 358:	28fee2cc 	ld.d        	$t0, $fp, -72
+ 35c:	29ff22cc 	st.d        	$t0, $fp, -56
+    while(*fmtp)
+ 360:	50017400 	b           	372	# 4d4 <my_vsprintf+0x1a0>
+        if (*fmtp != '%'){
+ 364:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 368:	2800018c 	ld.b        	$t0, $t0, 0
+ 36c:	0015018d 	move        	$t1, $t0
+ 370:	0280940c 	li.w        	$t0, 37
+ 374:	58002dac 	beq         	$t1, $t0, 44	# 3a0 <my_vsprintf+0x6c>
+            *bufp = *(fmtp++);
+ 378:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 37c:	02c0058d 	addi.d      	$t1, $t0, 1
+ 380:	29ffa2cd 	st.d        	$t1, $fp, -24
+ 384:	28ff22cd 	ld.d        	$t1, $fp, -56
+ 388:	2800018c 	ld.b        	$t0, $t0, 0
+ 38c:	290001ac 	st.b        	$t0, $t1, 0
+            ++bufp;
+ 390:	28ff22cc 	ld.d        	$t0, $fp, -56
+ 394:	02c0058c 	addi.d      	$t0, $t0, 1
+ 398:	29ff22cc 	st.d        	$t0, $fp, -56
+            continue;
+ 39c:	50013800 	b           	312	# 4d4 <my_vsprintf+0x1a0>
+        char next_char = *(++fmtp);
+ 3a0:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 3a4:	02c0058c 	addi.d      	$t0, $t0, 1
+ 3a8:	29ffa2cc 	st.d        	$t0, $fp, -24
+ 3ac:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 3b0:	2a00018c 	ld.bu       	$t0, $t0, 0
+ 3b4:	293f9ecc 	st.b        	$t0, $fp, -25
+        switch(next_char)
+ 3b8:	283f9ecc 	ld.b        	$t0, $fp, -25
+ 3bc:	0040818c 	slli.w      	$t0, $t0, 0x0
+ 3c0:	0015018e 	move        	$t2, $t0
+ 3c4:	0281e00d 	li.w        	$t1, 120
+ 3c8:	580045cd 	beq         	$t2, $t1, 68	# 40c <my_vsprintf+0xd8>
+ 3cc:	0015018e 	move        	$t2, $t0
+ 3d0:	0281e00d 	li.w        	$t1, 120
+ 3d4:	600101ae 	blt         	$t1, $t2, 256	# 4d4 <my_vsprintf+0x1a0>
+ 3d8:	0015018e 	move        	$t2, $t0
+ 3dc:	0281cc0d 	li.w        	$t1, 115
+ 3e0:	5800a1cd 	beq         	$t2, $t1, 160	# 480 <my_vsprintf+0x14c>
+ 3e4:	0015018e 	move        	$t2, $t0
+ 3e8:	0281cc0d 	li.w        	$t1, 115
+ 3ec:	6000e9ae 	blt         	$t1, $t2, 232	# 4d4 <my_vsprintf+0x1a0>
+ 3f0:	0015018e 	move        	$t2, $t0
+ 3f4:	02818c0d 	li.w        	$t1, 99
+ 3f8:	580085cd 	beq         	$t2, $t1, 132	# 47c <my_vsprintf+0x148>
+ 3fc:	0015018d 	move        	$t1, $t0
+ 400:	0281900c 	li.w        	$t0, 100
+ 404:	580041ac 	beq         	$t1, $t0, 64	# 444 <my_vsprintf+0x110>
+ 408:	5000cc00 	b           	204	# 4d4 <my_vsprintf+0x1a0>
+                val = va_arg(ap,int);
+ 40c:	28fea2cc 	ld.d        	$t0, $fp, -88
+ 410:	02c0218d 	addi.d      	$t1, $t0, 8
+ 414:	29fea2cd 	st.d        	$t1, $fp, -88
+ 418:	2400018c 	ldptr.w     	$t0, $t0, 0
+ 41c:	29ff62cc 	st.d        	$t0, $fp, -40
+                itoa(val,&bufp,16);
+ 420:	02ff22cc 	addi.d      	$t0, $fp, -56
+ 424:	02804006 	li.w        	$a2, 16
+ 428:	00150185 	move        	$a1, $t0
+ 42c:	28ff62c4 	ld.d        	$a0, $fp, -40
+ 430:	57fe1bff 	bl          	-488	# 248 <itoa>
+                ++fmtp;
+ 434:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 438:	02c0058c 	addi.d      	$t0, $t0, 1
+ 43c:	29ffa2cc 	st.d        	$t0, $fp, -24
+                break;
+ 440:	50009400 	b           	148	# 4d4 <my_vsprintf+0x1a0>
+                val = va_arg(ap,int);
+ 444:	28fea2cc 	ld.d        	$t0, $fp, -88
+ 448:	02c0218d 	addi.d      	$t1, $t0, 8
+ 44c:	29fea2cd 	st.d        	$t1, $fp, -88
+ 450:	2400018c 	ldptr.w     	$t0, $t0, 0
+ 454:	29ff62cc 	st.d        	$t0, $fp, -40
+                itoa(val,&bufp,10);
+ 458:	02ff22cc 	addi.d      	$t0, $fp, -56
+ 45c:	02802806 	li.w        	$a2, 10
+ 460:	00150185 	move        	$a1, $t0
+ 464:	28ff62c4 	ld.d        	$a0, $fp, -40
+ 468:	57fde3ff 	bl          	-544	# 248 <itoa>
+                ++fmtp;
+ 46c:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 470:	02c0058c 	addi.d      	$t0, $t0, 1
+ 474:	29ffa2cc 	st.d        	$t0, $fp, -24
+                break;
+ 478:	50005c00 	b           	92	# 4d4 <my_vsprintf+0x1a0>
+                *(bufp++) = va_arg(ap,char);
+ 47c:	002a0000 	break       	0x0
+                arg_str = va_arg(ap,char*);
+ 480:	28fea2cc 	ld.d        	$t0, $fp, -88
+ 484:	02c0218d 	addi.d      	$t1, $t0, 8
+ 488:	29fea2cd 	st.d        	$t1, $fp, -88
+ 48c:	2600018c 	ldptr.d     	$t0, $t0, 0
+ 490:	29ff42cc 	st.d        	$t0, $fp, -48
+                ustrcpy(bufp,arg_str);
+ 494:	28ff22cc 	ld.d        	$t0, $fp, -56
+ 498:	28ff42c5 	ld.d        	$a1, $fp, -48
+ 49c:	00150184 	move        	$a0, $t0
+ 4a0:	57fc6bff 	bl          	-920	# 108 <ustrcpy>
+                bufp += ustrlen(arg_str);
+ 4a4:	28ff42c4 	ld.d        	$a0, $fp, -48
+ 4a8:	57fd3fff 	bl          	-708	# 1e4 <ustrlen>
+ 4ac:	0015008c 	move        	$t0, $a0
+ 4b0:	0040818c 	slli.w      	$t0, $t0, 0x0
+ 4b4:	28ff22cd 	ld.d        	$t1, $fp, -56
+ 4b8:	00df018c 	bstrpick.d  	$t0, $t0, 0x1f, 0x0
+ 4bc:	0010b1ac 	add.d       	$t0, $t1, $t0
+ 4c0:	29ff22cc 	st.d        	$t0, $fp, -56
+                ++fmtp;
+ 4c4:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 4c8:	02c0058c 	addi.d      	$t0, $t0, 1
+ 4cc:	29ffa2cc 	st.d        	$t0, $fp, -24
+                break;
+ 4d0:	03400000 	nop         
+    while(*fmtp)
+ 4d4:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 4d8:	2800018c 	ld.b        	$t0, $t0, 0
+ 4dc:	47fe899f 	bnez        	$t0, -376	# 364 <my_vsprintf+0x30>
+    return ustrlen(buf);
+ 4e0:	28fee2c4 	ld.d        	$a0, $fp, -72
+ 4e4:	57fd03ff 	bl          	-768	# 1e4 <ustrlen>
+ 4e8:	0015008c 	move        	$t0, $a0
+ 4ec:	0040818c 	slli.w      	$t0, $t0, 0x0
+ 4f0:	00df018c 	bstrpick.d  	$t0, $t0, 0x1f, 0x0
+}
+ 4f4:	00150184 	move        	$a0, $t0
+ 4f8:	28c16061 	ld.d        	$ra, $sp, 88
+ 4fc:	28c14076 	ld.d        	$fp, $sp, 80
+ 500:	02c18063 	addi.d      	$sp, $sp, 96
+ 504:	4c000020 	ret         
+
+0000000000000508 <myprintf>:
+
+
+int myprintf(const char *fmt, ...)
+{
+ 508:	02fa4063 	addi.d      	$sp, $sp, -368
+ 50c:	29c4a061 	st.d        	$ra, $sp, 296
+ 510:	29c48076 	st.d        	$fp, $sp, 288
+ 514:	02c4c076 	addi.d      	$fp, $sp, 304
+ 518:	29fb62c4 	st.d        	$a0, $fp, -296
+ 51c:	29c022c5 	st.d        	$a1, $fp, 8
+ 520:	29c042c6 	st.d        	$a2, $fp, 16
+ 524:	29c062c7 	st.d        	$a3, $fp, 24
+ 528:	29c082c8 	st.d        	$a4, $fp, 32
+ 52c:	29c0a2c9 	st.d        	$a5, $fp, 40
+ 530:	29c0c2ca 	st.d        	$a6, $fp, 48
+ 534:	29c0e2cb 	st.d        	$a7, $fp, 56
+	char printf_buf[256];
+	va_list args;
+	int printed;
+
+	va_start(args, fmt);
+ 538:	02c102cc 	addi.d      	$t0, $fp, 64
+ 53c:	29fb42cc 	st.d        	$t0, $fp, -304
+ 540:	28fb42cc 	ld.d        	$t0, $fp, -304
+ 544:	02ff218c 	addi.d      	$t0, $t0, -56
+ 548:	29fb82cc 	st.d        	$t0, $fp, -288
+	printed = my_vsprintf(printf_buf,fmt,args);
+ 54c:	28fb82cc 	ld.d        	$t0, $fp, -288
+ 550:	02fba2cd 	addi.d      	$t1, $fp, -280
+ 554:	00150186 	move        	$a2, $t0
+ 558:	28fb62c5 	ld.d        	$a1, $fp, -296
+ 55c:	001501a4 	move        	$a0, $t1
+ 560:	57fdd7ff 	bl          	-556	# 334 <my_vsprintf>
+ 564:	0015008c 	move        	$t0, $a0
+ 568:	29bfb2cc 	st.w        	$t0, $fp, -20
+	va_end(args);
+
+	pstr(printf_buf);
+ 56c:	02fba2cc 	addi.d      	$t0, $fp, -280
+ 570:	00150184 	move        	$a0, $t0
+ 574:	57faf7ff 	bl          	-1292	# 68 <pstr>
+	if (printed >= sizeof(printf_buf)) {
+ 578:	24ffeecc 	ldptr.w     	$t0, $fp, -20
+ 57c:	0015018d 	move        	$t1, $t0
+ 580:	0283fc0c 	li.w        	$t0, 255
+ 584:	6c00198d 	bgeu        	$t0, $t1, 24	# 59c <myprintf+0x94>
+		pstr("[Message truncated]\n");
+ 588:	1a00002c 	pcalau12i   	$t0, 1
+ 58c:	02eda184 	addi.d      	$a0, $t0, -1176
+ 590:	57fadbff 	bl          	-1320	# 68 <pstr>
+		return -1;
+ 594:	02bffc0c 	li.w        	$t0, -1
+ 598:	50000800 	b           	8	# 5a0 <myprintf+0x98>
+	}
+
+	return printed;
+ 59c:	24ffeecc 	ldptr.w     	$t0, $fp, -20
+}
+ 5a0:	00150184 	move        	$a0, $t0
+ 5a4:	28c4a061 	ld.d        	$ra, $sp, 296
+ 5a8:	28c48076 	ld.d        	$fp, $sp, 288
+ 5ac:	02c5c063 	addi.d      	$sp, $sp, 368
+ 5b0:	4c000020 	ret         
+
+00000000000005b4 <pgdat_end_pfn>:
+ 5b4:	02ff8063 	addi.d      	$sp, $sp, -32
+ 5b8:	29c06076 	st.d        	$fp, $sp, 24
+ 5bc:	02c08076 	addi.d      	$fp, $sp, 32
+ 5c0:	29ffa2c4 	st.d        	$a0, $fp, -24
+ 5c4:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 5c8:	2608c98d 	ldptr.d     	$t1, $t0, 2248
+ 5cc:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 5d0:	2608d98c 	ldptr.d     	$t0, $t0, 2264
+ 5d4:	0010b1ac 	add.d       	$t0, $t1, $t0
+ 5d8:	00150184 	move        	$a0, $t0
+ 5dc:	28c06076 	ld.d        	$fp, $sp, 24
+ 5e0:	02c08063 	addi.d      	$sp, $sp, 32
+ 5e4:	4c000020 	ret         
+
+00000000000005e8 <__syscall2>:
+{
+ 5e8:	02ff4063 	addi.d      	$sp, $sp, -48
+ 5ec:	29c0a076 	st.d        	$fp, $sp, 40
+ 5f0:	02c0c076 	addi.d      	$fp, $sp, 48
+ 5f4:	29ffa2c4 	st.d        	$a0, $fp, -24
+ 5f8:	29ff82c5 	st.d        	$a1, $fp, -32
+ 5fc:	29ff62c6 	st.d        	$a2, $fp, -40
+	register long nr asm("a7") = n;
+ 600:	28ffa2cb 	ld.d        	$a7, $fp, -24
+	register long arg0 asm("a0") = ag0;
+ 604:	28ff82c4 	ld.d        	$a0, $fp, -32
+	register long arg1 asm("a1") = ag1;
+ 608:	28ff62c5 	ld.d        	$a1, $fp, -40
+	asm volatile(
+ 60c:	002b0000 	syscall     	0x0
+	return retval;
+ 610:	0015008c 	move        	$t0, $a0
+}
+ 614:	00150184 	move        	$a0, $t0
+ 618:	28c0a076 	ld.d        	$fp, $sp, 40
+ 61c:	02c0c063 	addi.d      	$sp, $sp, 48
+ 620:	4c000020 	ret         
+
+0000000000000624 <__syscall3>:
+{
+ 624:	02ff4063 	addi.d      	$sp, $sp, -48
+ 628:	29c0a076 	st.d        	$fp, $sp, 40
+ 62c:	02c0c076 	addi.d      	$fp, $sp, 48
+ 630:	29ffa2c4 	st.d        	$a0, $fp, -24
+ 634:	29ff82c5 	st.d        	$a1, $fp, -32
+ 638:	29ff62c6 	st.d        	$a2, $fp, -40
+ 63c:	29ff42c7 	st.d        	$a3, $fp, -48
+	register long nr asm("a7") = n;
+ 640:	28ffa2cb 	ld.d        	$a7, $fp, -24
+	register long arg0 asm("a0") = ag0;
+ 644:	28ff82c4 	ld.d        	$a0, $fp, -32
+	register long arg1 asm("a1") = ag1;
+ 648:	28ff62c5 	ld.d        	$a1, $fp, -40
+	register long arg2 asm("a2") = ag2;
+ 64c:	28ff42c6 	ld.d        	$a2, $fp, -48
+	asm volatile(
+ 650:	002b0000 	syscall     	0x0
+	return retval;
+ 654:	0015008c 	move        	$t0, $a0
+}
+ 658:	00150184 	move        	$a0, $t0
+ 65c:	28c0a076 	ld.d        	$fp, $sp, 40
+ 660:	02c0c063 	addi.d      	$sp, $sp, 48
+ 664:	4c000020 	ret         
+
+0000000000000668 <write>:
+static inline int64_t write(int fd,const void* buf,size_t count) {
+ 668:	02ff4063 	addi.d      	$sp, $sp, -48
+ 66c:	29c0a061 	st.d        	$ra, $sp, 40
+ 670:	29c08076 	st.d        	$fp, $sp, 32
+ 674:	02c0c076 	addi.d      	$fp, $sp, 48
+ 678:	0015008c 	move        	$t0, $a0
+ 67c:	29ff82c5 	st.d        	$a1, $fp, -32
+ 680:	29ff62c6 	st.d        	$a2, $fp, -40
+ 684:	29bfb2cc 	st.w        	$t0, $fp, -20
+	return syscall(SYS_write,fd,buf,count);
+ 688:	24ffeecc 	ldptr.w     	$t0, $fp, -20
+ 68c:	28ff82cd 	ld.d        	$t1, $fp, -32
+ 690:	28ff62ce 	ld.d        	$t2, $fp, -40
+ 694:	001501c7 	move        	$a3, $t2
+ 698:	001501a6 	move        	$a2, $t1
+ 69c:	00150185 	move        	$a1, $t0
+ 6a0:	02810004 	li.w        	$a0, 64
+ 6a4:	57ff83ff 	bl          	-128	# 624 <__syscall3>
+ 6a8:	0015008c 	move        	$t0, $a0
+}
+ 6ac:	00150184 	move        	$a0, $t0
+ 6b0:	28c0a061 	ld.d        	$ra, $sp, 40
+ 6b4:	28c08076 	ld.d        	$fp, $sp, 32
+ 6b8:	02c0c063 	addi.d      	$sp, $sp, 48
+ 6bc:	4c000020 	ret         
+
+00000000000006c0 <wait>:
+static inline pid_t wait(int* status) {
+ 6c0:	02ff8063 	addi.d      	$sp, $sp, -32
+ 6c4:	29c06061 	st.d        	$ra, $sp, 24
+ 6c8:	29c04076 	st.d        	$fp, $sp, 16
+ 6cc:	02c08076 	addi.d      	$fp, $sp, 32
+ 6d0:	29ffa2c4 	st.d        	$a0, $fp, -24
+	return syscall(SYS_wait4,-1,status,0);
+ 6d4:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 6d8:	00150007 	move        	$a3, $zero
+ 6dc:	00150186 	move        	$a2, $t0
+ 6e0:	02bffc05 	li.w        	$a1, -1
+ 6e4:	02841004 	li.w        	$a0, 260
+ 6e8:	57ff3fff 	bl          	-196	# 624 <__syscall3>
+ 6ec:	0015008c 	move        	$t0, $a0
+ 6f0:	0000598c 	ext.w.h     	$t0, $t0
+}
+ 6f4:	00150184 	move        	$a0, $t0
+ 6f8:	28c06061 	ld.d        	$ra, $sp, 24
+ 6fc:	28c04076 	ld.d        	$fp, $sp, 16
+ 700:	02c08063 	addi.d      	$sp, $sp, 32
+ 704:	4c000020 	ret         
+
+0000000000000708 <execve>:
+static inline int execve(const char *path, char *const argv[], char *const envp[]) {
+ 708:	02ff4063 	addi.d      	$sp, $sp, -48
+ 70c:	29c0a061 	st.d        	$ra, $sp, 40
+ 710:	29c08076 	st.d        	$fp, $sp, 32
+ 714:	02c0c076 	addi.d      	$fp, $sp, 48
+ 718:	29ffa2c4 	st.d        	$a0, $fp, -24
+ 71c:	29ff82c5 	st.d        	$a1, $fp, -32
+ 720:	29ff62c6 	st.d        	$a2, $fp, -40
+	return syscall(SYS_execve,path,argv,envp);
+ 724:	28ffa2cc 	ld.d        	$t0, $fp, -24
+ 728:	28ff82cd 	ld.d        	$t1, $fp, -32
+ 72c:	28ff62ce 	ld.d        	$t2, $fp, -40
+ 730:	001501c7 	move        	$a3, $t2
+ 734:	001501a6 	move        	$a2, $t1
+ 738:	00150185 	move        	$a1, $t0
+ 73c:	02837404 	li.w        	$a0, 221
+ 740:	57fee7ff 	bl          	-284	# 624 <__syscall3>
+ 744:	0015008c 	move        	$t0, $a0
+ 748:	0040818c 	slli.w      	$t0, $t0, 0x0
+}
+ 74c:	00150184 	move        	$a0, $t0
+ 750:	28c0a061 	ld.d        	$ra, $sp, 40
+ 754:	28c08076 	ld.d        	$fp, $sp, 32
+ 758:	02c0c063 	addi.d      	$sp, $sp, 48
+ 75c:	4c000020 	ret         
+
+0000000000000760 <fork>:
+
+static inline int fork(void) {
+ 760:	02ffc063 	addi.d      	$sp, $sp, -16
+ 764:	29c02061 	st.d        	$ra, $sp, 8
+ 768:	27000076 	stptr.d     	$fp, $sp, 0
+ 76c:	02c04076 	addi.d      	$fp, $sp, 16
+	return syscall(SYS_clone,0,0);
+ 770:	00150006 	move        	$a2, $zero
+ 774:	00150005 	move        	$a1, $zero
+ 778:	02837004 	li.w        	$a0, 220
+ 77c:	57fe6fff 	bl          	-404	# 5e8 <__syscall2>
+ 780:	0015008c 	move        	$t0, $a0
+ 784:	0040818c 	slli.w      	$t0, $t0, 0x0
+}
+ 788:	00150184 	move        	$a0, $t0
+ 78c:	28c02061 	ld.d        	$ra, $sp, 8
+ 790:	26000076 	ldptr.d     	$fp, $sp, 0
+ 794:	02c04063 	addi.d      	$sp, $sp, 16
+ 798:	4c000020 	ret         
+
+000000000000079c <main>:
+{
+ 79c:	02fd8063 	addi.d      	$sp, $sp, -160
+ 7a0:	29c26061 	st.d        	$ra, $sp, 152
+ 7a4:	29c24076 	st.d        	$fp, $sp, 144
+ 7a8:	02c28076 	addi.d      	$fp, $sp, 160
+	int count = 0 ;
+ 7ac:	29bfb2c0 	st.w        	$zero, $fp, -20
+	umemset(filepath,0,sizeof(filepath));
+ 7b0:	02ff42cc 	addi.d      	$t0, $fp, -48
+ 7b4:	02805006 	li.w        	$a2, 20
+ 7b8:	00150005 	move        	$a1, $zero
+ 7bc:	00150184 	move        	$a0, $t0
+ 7c0:	57f8e3ff 	bl          	-1824	# a0 <umemset>
+	ustrcpy(filepath,"/sdcard/hello");
+ 7c4:	02ff42cd 	addi.d      	$t1, $fp, -48
+ 7c8:	1a00002c 	pcalau12i   	$t0, 1
+ 7cc:	02ee0185 	addi.d      	$a1, $t0, -1152
+ 7d0:	001501a4 	move        	$a0, $t1
+ 7d4:	57f937ff 	bl          	-1740	# 108 <ustrcpy>
+	ustrcpy(argv[0],"/sdcard/hello");
+ 7d8:	02fda2cd 	addi.d      	$t1, $fp, -152
+ 7dc:	1a00002c 	pcalau12i   	$t0, 1
+ 7e0:	02ee0185 	addi.d      	$a1, $t0, -1152
+ 7e4:	001501a4 	move        	$a0, $t1
+ 7e8:	57f923ff 	bl          	-1760	# 108 <ustrcpy>
+	myprintf("argv[0]:%s\n",argv[0]);
+ 7ec:	02fda2cc 	addi.d      	$t0, $fp, -152
+ 7f0:	00150185 	move        	$a1, $t0
+ 7f4:	1a00002c 	pcalau12i   	$t0, 1
+ 7f8:	02ee4184 	addi.d      	$a0, $t0, -1136
+ 7fc:	57fd0fff 	bl          	-756	# 508 <myprintf>
+	int pid = fork();
+ 800:	57ff63ff 	bl          	-160	# 760 <fork>
+ 804:	0015008c 	move        	$t0, $a0
+ 808:	29bfa2cc 	st.w        	$t0, $fp, -24
+	if (pid == 0){
+ 80c:	28bfa2cc 	ld.w        	$t0, $fp, -24
+ 810:	0040818c 	slli.w      	$t0, $t0, 0x0
+ 814:	44001d80 	bnez        	$t0, 28	# 830 <main+0x94>
+		execve(filepath,(char**)argv,NULL);
+ 818:	02fda2cd 	addi.d      	$t1, $fp, -152
+ 81c:	02ff42cc 	addi.d      	$t0, $fp, -48
+ 820:	00150006 	move        	$a2, $zero
+ 824:	001501a5 	move        	$a1, $t1
+ 828:	00150184 	move        	$a0, $t0
+ 82c:	57fedfff 	bl          	-292	# 708 <execve>
+	int childpid = wait(&status);
+ 830:	02fd92cc 	addi.d      	$t0, $fp, -156
+ 834:	00150184 	move        	$a0, $t0
+ 838:	57fe8bff 	bl          	-376	# 6c0 <wait>
+ 83c:	0015008c 	move        	$t0, $a0
+ 840:	29bf92cc 	st.w        	$t0, $fp, -28
+	write(1,"aaaaaaaaaaaaaaaaaaa\n",64);
+ 844:	02810006 	li.w        	$a2, 64
+ 848:	1a00002c 	pcalau12i   	$t0, 1
+ 84c:	02ee8185 	addi.d      	$a1, $t0, -1120
+ 850:	02800404 	li.w        	$a0, 1
+ 854:	57fe17ff 	bl          	-492	# 668 <write>
+	while(1) {
+ 858:	50000000 	b           	0	# 858 <main+0xbc>
+
+000000000000085c <sys_ni_syscall>:
+#include <xkernel/types.h>
+#include <xkernel/stdio.h>
+
+asmlinkage long sys_ni_syscall(void) {
+	return -ENOSYS;
+}
+ 85c:	02bf6804 	li.w        	$a0, -38
+ 860:	4c000020 	ret         
+
+0000000000000864 <do_syscall>:
+//	[SYS_umount2]      = "umount",
+//	[1]                = "openat",
+//};
+
+void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
+{
+ 864:	02ffc063 	addi.d      	$sp, $sp, -16
+ 868:	27000077 	stptr.d     	$s0, $sp, 0
+ 86c:	29c02061 	st.d        	$ra, $sp, 8
+	unsigned long nr;
+	syscall_fn sys_fn;
+
+	nr = regs->regs[11];
+	regs->csr_era += 4;  //加上syscall 0 的大小
+ 870:	28c4408d 	ld.d        	$t1, $a0, 272
+	nr = regs->regs[11];
+ 874:	28c1808c 	ld.d        	$t0, $a0, 96
+{
+ 878:	00150097 	move        	$s0, $a0
+	regs->csr_era += 4;  //加上syscall 0 的大小
+ 87c:	02c011ad 	addi.d      	$t1, $t1, 4
+ 880:	29c4408d 	st.d        	$t1, $a0, 272
+	//printk("\n!!!pid:%d do_syscall:%d !!!\n",sys_getpid(),nr);
+
+	regs->orig_a0 = regs->regs[4];
+ 884:	28c0a084 	ld.d        	$a0, $a0, 40
+	regs->regs[4] = -ENOSYS;
+ 888:	02bf680d 	li.w        	$t1, -38
+ 88c:	29c0a2ed 	st.d        	$t1, $s0, 40
+	regs->orig_a0 = regs->regs[4];
+ 890:	29c422e4 	st.d        	$a0, $s0, 264
+	if (nr > NR_SYSCALLS) {
+ 894:	0284b00d 	li.w        	$t1, 300
+ 898:	680031ac 	bltu        	$t1, $t0, 48	# 8c8 <do_syscall+0x64>
+		return ;
+	}
+	sys_fn = syscall_table[nr];
+ 89c:	1a00002d 	pcalau12i   	$t1, 1
+	regs->regs[4] = sys_fn(regs->orig_a0,regs->regs[5],regs->regs[6], \
+ 8a0:	02eee1ad 	addi.d      	$t1, $t1, -1096
+	sys_fn = syscall_table[nr];
+ 8a4:	00410d8c 	slli.d      	$t0, $t0, 0x3
+	regs->regs[4] = sys_fn(regs->orig_a0,regs->regs[5],regs->regs[6], \
+ 8a8:	380c31ac 	ldx.d       	$t0, $t1, $t0
+ 8ac:	28c142e9 	ld.d        	$a5, $s0, 80
+ 8b0:	28c122e8 	ld.d        	$a4, $s0, 72
+ 8b4:	28c102e7 	ld.d        	$a3, $s0, 64
+ 8b8:	28c0e2e6 	ld.d        	$a2, $s0, 56
+ 8bc:	28c0c2e5 	ld.d        	$a1, $s0, 48
+ 8c0:	4c000181 	jirl        	$ra, $t0, 0
+ 8c4:	29c0a2e4 	st.d        	$a0, $s0, 40
+						   regs->regs[7],regs->regs[8],regs->regs[9]);
+	//printk("\n!!!pid:%d do_syscall:%d done !!!\n",sys_getpid(),nr);
+}
+ 8c8:	28c02061 	ld.d        	$ra, $sp, 8
+ 8cc:	26000077 	ldptr.d     	$s0, $sp, 0
+ 8d0:	02c04063 	addi.d      	$sp, $sp, 16
+ 8d4:	4c000020 	ret         
