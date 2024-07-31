@@ -54,7 +54,50 @@ sudo docker cp fat32.img os-contest:/tmp/qemu/fat32.img
 >>runqemu.sh:
 -hdb fat32.img
 ```
+# 适配 muslc
 
+由于 busybox 是一个复杂的用户程序，为了验证muslc的适配情况并方便后续调试，我们先对 printf 函数进行了支持。
+
+在此基础上编写了一个小 demo.
+
+```c
+//user_prog.c
+int main(void)
+{
+	int count = 0 ;
+	char filepath[20];
+
+	umemset(filepath,0,sizeof(filepath));
+	ustrcpy(filepath,"/sdcard/hello");
+	char *argv[] = {"/sdcard/hello", NULL};
+	char *envp[] = {NULL};
+	//ustrcpy(argv[1],"sh");
+
+	int pid = fork();
+	if (pid == 0){
+		execve(filepath,(char**)argv,NULL);
+	}
+
+	int status;
+	int childpid = wait(&status);
+	write(1,"\nhello exit\n",64);
+	while(1) {
+	}
+}
+```
+用户程序 hello.c
+```c
+#include <stdio.h>
+int main()
+{
+    printf("hello-world...\n")
+}
+```
+
+运行结果：
+
+
+![Alt text](./img/2024-07-31_20-30.png)
 
 ## 适配日记
 
