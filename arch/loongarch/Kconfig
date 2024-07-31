@@ -146,11 +146,14 @@ config LOONGARCH
 	select USER_STACKTRACE_SUPPORT
 	select ZONE_DMA32
 
-menu "Machine choice"
+choice
+	prompt "Machine choice"
+	default 2K1000LA
+	help
+	  Machine choice
 
 config 2K1000LA
 	bool "2k1000la machine"
-	default y
 	help
 	  2k100la machine
 	 
@@ -159,7 +162,7 @@ config 3A5000
 	help
 	  3A5000 machine
 
-endmenu
+endchoice
 
 config 32BIT
 	bool

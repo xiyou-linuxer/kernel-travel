@@ -27,7 +27,7 @@ GZFLAGS		:=-9
 LDFLAGS		+= -m elf64loongarch -G0 -n -nostdlib
 KBUILD_AFLAGS	+= -nostdinc -D__ASSEMBLY__ -fno-PIE -mabi=lp64s -G0 -pipe -msoft-float -ffreestanding -mno-check-zero-division
 
-KBUILD_DEFCONFIG := loongson3_defconfig
+KBUILD_DEFCONFIG := 2k1000la_defconfig
 
 KBUILD_CFLAGS	+= -fno-pic
 KBUILD_CFLAGS	+= -nostdinc -I./arch/loongarch/include -I./include -I./arch/loongarch/include/uapi -I./include/uapi\
