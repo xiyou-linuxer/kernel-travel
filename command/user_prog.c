@@ -6,19 +6,18 @@
 struct tms mytimes;
 int main(void)
 {
-	//char filename[33][14];
-	//umemset(filename,0,sizeof(filename));
 	int count = 0 ;
-	char filepath[30];
+	char filepath[20];
 
 	umemset(filepath,0,sizeof(filepath));
-	ustrcpy(filepath,"/sdcard/hello");
-	char* argv[10];
-	ustrcpy(argv[0],"/sdcard/hello");
+	ustrcpy(filepath,"/sdcard/busybox");
+	char *argv[] = {"/sdcard/busybox", NULL};
+	char *envp[] = {NULL};
 	//ustrcpy(argv[1],"sh");
+	
 	int pid = fork();
 	if (pid == 0){
-		execve(filepath,argv,NULL);
+		execve(filepath,(char**)argv,NULL);
 	}
 
 	int status;
