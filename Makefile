@@ -374,8 +374,8 @@ endif # $(dot-config)
 # 默认的构建目标，在体系特定的Makefile中，一般还会添加其他目标到all中
 all: vmlinux
 	mv arch/loongarch/boot/Image kernel.bin
-	docker cp vmlinux os-contest:/vmlinux
-	docker cp kernel.bin os-contest:/srv/tftp/kernel.bin
+	sudo docker cp vmlinux os-contest:/vmlinux
+	sudo docker cp kernel.bin os-contest:/srv/tftp/kernel.bin
 	cp kernel.bin /tmp/kernel.bin
 
 #CONFIG_CC_OPTIMIZE_FOR_SIZE在auto.conf中被添加进来了
