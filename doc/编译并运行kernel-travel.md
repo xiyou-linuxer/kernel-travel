@@ -41,7 +41,8 @@ cd /tmp/qemu/2k1000
 ./create_qemu_img.sh
 ```
 
-传入[sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz)：
+下载 fat32 格式的磁盘镜像[sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz)
+或者 ext4 格式的磁盘镜像[la-sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/releases/tag/2024-final-la) 解压后传入 docker镜像中
 
 ```sh
 sudo docker cp 你存放sdcard-loongarch.img的路径 os-contest:/sdcard-loongarch.img
@@ -74,34 +75,58 @@ service tftpd-hpa start
 
 1. 下载
 
-```bash
-git clone https://github.com/xiyou-linuxer/kernel-travel.git
-```
+   ```bash
+   git clone https://github.com/xiyou-linuxer/kernel-travel.git
+   ```
 
 2. 配置交叉工具链
 
-点击下载交叉工具链：
-[loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz)
+   点击下载交叉工具链：
+   [loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz)
 
-将交叉工具链包解压到 kernel-travel 目录下（交叉编译工具较大，预留足够存储空间）。
+   将交叉工具链包解压到 kernel-travel 目录下（交叉编译工具较大，预留足够存储空间）。
 
-```bash
-tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
-```
+   ```bash
+   tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
+   ```
 
 3. 编译并将内核镜像传入 Docker 容器
 
-```bash
-cd kernel-travel 
-bash quick_start.sh defconfig
-bash quick_start.sh image
-```
+   ```bash
+   cd kernel-travel 
+   make all
+   ```
 
-提醒：QEMU_EFI.fd路径和交叉工具链包路径可以自定义，修改`quick_start.sh`中`run()`以及TOOLCHAINS路径即可。
+   提醒：QEMU_EFI.fd路径和交叉工具链包路径可以自定义，修改`quick_start.sh`中`run()`以及TOOLCHAINS路径即可。
+
+4. 将内核与 init 进程的编译(可选项)
+
+   kernel-travel 中的 init 进程代码位于 /command 之下，若要使用该 init 进程的代码
+
+   ```bash
+    cd kernel-tarvel/command
+    bash compile.sh 
+    cd ..
+    bash makeinit.sh
+   ```
 
 ## 4 通过 tftp 服务启动内核
 
-进入执行 ./runqemu 后进入 uboot 界面，执行如下命令：
+向 docker 内传入 qemu 的启动脚本
+
+```sh
+docker cp kernel-travel/runqemu.sh os-contest:/tmp/qemu/runqemu
+```
+
+并在docker中修改权限后运行
+
+```sh
+cd /tmp/qemu/runqemu
+chmod +x runqemu
+./runqemu
+```
+
+执行 ./runqemu 后进入 uboot 界面，执行如下命令：
 
 ```bash
 setenv ipaddr 10.0.0.2                      #设置本机的 IP 地址为 10.0.0.2
