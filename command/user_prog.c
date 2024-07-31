@@ -6,23 +6,22 @@
 struct tms mytimes;
 int main(void)
 {
-	//char filename[33][14];
-	//umemset(filename,0,sizeof(filename));
 	int count = 0 ;
-	char filepath[30];
+	char filepath[20];
 
 	umemset(filepath,0,sizeof(filepath));
 	ustrcpy(filepath,"/sdcard/busybox");
-	char* argv[10];
-	ustrcpy(argv[0],"/sdcard/busybox");
-	ustrcpy(argv[1],"sh");
+	char *argv[] = {"/sdcard/busybox", NULL};
+	char *envp[] = {NULL};
+	//ustrcpy(argv[1],"sh");
+	
 	int pid = fork();
-		if (pid == 0){
-			execve(filepath,argv,NULL);
-		}
+	if (pid == 0){
+		execve(filepath,(char**)argv,NULL);
+	}
 
-		int status;
-		int childpid = wait(&status);
+	int status;
+	int childpid = wait(&status);
 	/*for (int i = 0; i < NR_SYSCALLS; i++)
 	{
 		

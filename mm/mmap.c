@@ -315,7 +315,6 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 	vma->vm_flags = flags;
 	vma->vm_pgoff = pgoff;
 
-
 	if(file) {
 		// call_mmap();	FAT32 的处理函数...
 		fd_mapping(file->fd, pgoff, pgoff + (len >> 12), v_addr);

@@ -17,6 +17,12 @@
 
 void* program_begin;
 
+void append_to_auxv(Elf_auxv_t *auxv,uint64_t arg_vec[])
+{
+	auxv->a_type = arg_vec[0];
+	auxv->a_val  = arg_vec[1];
+}
+
 void pro_seek(void **program,int offset)
 {
 	char** p = (char**)program;
@@ -233,8 +239,10 @@ int64_t sys_exeload(const char *path)
 
 int sys_execve(const char *path, char *const argv[], char *const envp[])
 {
-	uint64_t argc = 0;
+	uint64_t argc = 0, envs = 0, auxs = 3;
 	while (argv[argc]) argc++;
+	if (envp != NULL)
+		while (envp[envs]) envs++;
 
 	unsigned long crmd;
 	unsigned long prmd;
@@ -248,13 +256,13 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = USER_STACK - (argc-1)*(sizeof(unsigned long));
+	regs->regs[3]  = USER_STACK - (argc+envs+3)*(sizeof(uint64_t)) - auxs*sizeof(Elf_auxv_t);
 	regs->regs[22] = regs->regs[3];
 
-	char** uargs = (char**)USER_STACK;
-	regs->regs[4] = argc;
-	regs->regs[5] = (unsigned long)uargs;
-	regs->regs[6] = (unsigned long)envp;
+	char (*uargs) [20] = (char (*)[20])USER_STACK;
+	regs->regs[4] = regs->regs[3];
+	//regs->regs[5] = (unsigned long)uargs;
+	//regs->regs[6] = (unsigned long)envp;
 	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	struct mm_struct* mm = (struct mm_struct *)get_page();
 	cur->mm = mm;
@@ -262,10 +270,27 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	int64_t entry = sys_exeload(path);
 	regs->csr_era = (unsigned long)entry;
 
+	/* auxv */
+	Elf_auxv_t *auxv = (Elf_auxv_t *)(USER_STACK - auxs*sizeof(Elf_auxv_t));
+	append_to_auxv(auxv+auxs-1,(uint64_t[2]){AT_NULL,AT_NULL});
+	append_to_auxv(auxv+auxs-2,(uint64_t[2]){AT_HWCAP,0});
+	append_to_auxv(auxv+auxs-3,(uint64_t[2]){AT_PAGESZ,PAGESIZE});
+
+	/* envp */
+	uint64_t argtop = (uint64_t)auxv;
+	for (int i = 0; i < envs; i++) {
+		strcpy(uargs[argc+i],envp[i]);
+		*((uint64_t*)(argtop - (envs+1-i)*sizeof(uint64_t))) = (uint64_t)uargs[argc+i];
+	}
+	*((uint64_t*)(argtop - sizeof(uint64_t))) = 0;
+	/* argv */
 	for (int i = 0; i < argc; i++) {
 		strcpy(uargs[i],argv[i]);
-		*((uint64_t*)(USER_STACK - (argc-1-i)*sizeof(uint64_t))) = (uint64_t)argv[i];
+		*((uint64_t*)(argtop - (envs+argc+2-i)*sizeof(uint64_t))) = (uint64_t)uargs[i];
 	}
+	*((uint64_t*)(argtop - (envs+2)*sizeof(uint64_t))) = 0;
+	/* argc */
+	*((uint64_t*)(argtop - (envs+argc+3)*sizeof(uint64_t))) = argc;
 
 	//intr_enable();
 	printk("jump to proc... at %llx\n",entry);
