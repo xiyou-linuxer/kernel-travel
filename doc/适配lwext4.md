@@ -50,7 +50,7 @@ struct ext4_dir_en {
 };
 ```
 
-一种为`ext4_dir`，该结构主要在读取目录项时用于记录目录项在目录内的偏移。
+一种为`ext4_dir`，该结构主要在读取目录项时用于记录目录项在目录内的偏移，该结构体只用于 ext4 文件系统内部。
 
 ```c
 /* 目录结构 */
@@ -70,9 +70,11 @@ struct ext4_dir {
 
 ```c
 static const struct fs_operation ext4_op = {
-    .fs_init_ptr = ext4_init,
-    .file_read = ext4_fread,
-    .file_write = ext4_fwrite
+ 	.fs_init_ptr = ext4_init,
+	.file_read = ext4_fread,
+	.file_write = ext4_fwrite,
+	.file_create = ext4_file_creat,
+	.makedir = ext4_dir_creat
 };
 ```
 

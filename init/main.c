@@ -100,32 +100,6 @@ void __init __no_sanitize_address start_kernel(void)
 	char buf[512];
 	vfs_init();
 	fs_init();
-	//ext4_fwrite(d,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",0,64);
-	//printk("%d\n",d->file_size);
-	//ext4_fread(d,buf,0,64);
-	/*while (i <8192)
-	{
-		printk("%x ",buf[i]);
-		i++;
-	}*/
-	// thread_start("thread_a",10,thread_a,NULL);
-	//
-	// test_mmap();
-	// int count=0;
-	// char filename[9][128] = {0};
-	// for (int i = 0; i < NR_SYSCALLS; i++)
-	// {
-	// 	if (sysname[i] == NULL)
-	// 		continue;
-	// 	Dirent *file;
-	// 	struct path_search_record searched_record;
-	// 	int pri=5;
-	// 	strcpy(filename[count],"/");
-	// 	strcat(filename[count],sysname[i]);
-	// 	process_execute(filename[count],filename[count],pri);
-	// 	count++;
-	// }
-
 	early_boot_irqs_disabled = true;
 	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
 	if (fd == -1) {
@@ -135,18 +109,7 @@ void __init __no_sanitize_address start_kernel(void)
 	bufSync();
 	local_irq_enable();
 	
-	//printk("sys_sleep start\n");
-	//struct timespec req;
-	//req.tv_sec=7;req.tv_nsec=0;
-	//sys_sleep(&req,&req);
-	//printk("sys_sleep end\n");
-
 	while (1) {
-		// sys_gettimeofday(&ts);
-		// printk("now %ds:%dns\n",ts.tv_sec,ts.tv_nsec);
-		// sys_sleep(&req,&req);
-		// unsigned long time = csr_read64(LOONGARCH_CSR_TVAL);
-		// printk("%llx  ",time);
-		// printk("main pid=%d\n ",sys_getpid());
+
 	}
 }
