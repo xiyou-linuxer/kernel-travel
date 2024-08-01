@@ -77,6 +77,11 @@ pid_t sys_getppid(void)
 	return cur->ppid;
 }
 
+unsigned int sys_getgid(void)
+{
+	return 0;
+}
+
 pid_t sys_set_tid_address(int* tidptr)
 {
 	struct task_struct* cur = running_thread();

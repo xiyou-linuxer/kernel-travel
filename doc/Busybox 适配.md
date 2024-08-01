@@ -54,7 +54,50 @@ sudo docker cp fat32.img os-contest:/tmp/qemu/fat32.img
 >>runqemu.sh:
 -hdb fat32.img
 ```
+# 适配 muslc
 
+由于 busybox 是一个复杂的用户程序，为了验证muslc的适配情况并方便后续调试，我们先对 printf 函数进行了支持。
+
+在此基础上编写了一个小 demo.
+
+```c
+//user_prog.c
+int main(void)
+{
+	int count = 0 ;
+	char filepath[20];
+
+	umemset(filepath,0,sizeof(filepath));
+	ustrcpy(filepath,"/sdcard/hello");
+	char *argv[] = {"/sdcard/hello", NULL};
+	char *envp[] = {NULL};
+	//ustrcpy(argv[1],"sh");
+
+	int pid = fork();
+	if (pid == 0){
+		execve(filepath,(char**)argv,NULL);
+	}
+
+	int status;
+	int childpid = wait(&status);
+	write(1,"\nhello exit\n",64);
+	while(1) {
+	}
+}
+```
+用户程序 hello.c
+```c
+#include <stdio.h>
+int main()
+{
+    printf("hello-world...\n")
+}
+```
+
+运行结果：
+
+
+![Alt text](./img/2024-07-31_20-30.png)
 
 ## 适配日记
 
@@ -401,10 +444,35 @@ this information is dynamic in nature and is only known after kernel has finishe
 ```c
 	for (i=0; auxv[i]; i+=2) if (auxv[i]<AUX_CNT) aux[auxv[i]] = auxv[i+1];
 ```
+因为Program Headers 本来就在被加载的段之中，所以可以从段中找到并获取
+
+
 
 疑似在`__init_libc` 处停止(奇怪的是，加个printf竟然好了...)。
 检查下auxv的数值是否与预想的一致
 是的
 发现内存数据到0x120000ffc戛然而止，跳到的函数opcode为0导致了这场错误
 加载时read错误，更改后成功运行
+
+
+在这里卡死
+```c
+	INIT_G_var();
+```
+
+错误信息：
+```
+Error: unkown opcode. 90000000901d1174: 0x0
+Error: unkown opcode. 90000000901d0d74: 0x0
+Warning: page_size is 0
+Error: unkown opcode. 90000000901cfb74: 0x0
+Error: unkown opcode. 90000000901cf774: 0x0
+```
+1.sys_mmap返回的参数不对，导致去一个奇怪的地址吗
+查看几次mmap返回的地址，对照着函数看看
+第一次：0x800000000
+第二次：0x800002000
+第三次：0x800003000
+
+
 

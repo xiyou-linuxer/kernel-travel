@@ -11,7 +11,7 @@ int main(void)
 
 	umemset(filepath,0,sizeof(filepath));
 	ustrcpy(filepath,"/sdcard/busybox");
-	char *argv[] = {"/sdcard/busybox", NULL};
+	char *argv[] = {"/sdcard/busybox","sh",NULL};
 	char *envp[] = {NULL};
 	//ustrcpy(argv[1],"sh");
 	

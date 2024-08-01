@@ -24,11 +24,13 @@ void sys_person(void)
 void syscall_init(void)
 {
 	printk("syscall init start\n");
-	syscall_table[SYS_PP]              = sys_person;
+	syscall_table[SYS_PP]                 = sys_person;
 	syscall_table[SYS_write]              = sys_write;
+	syscall_table[SYS_mprotect]           = sys_mprotect;
 	syscall_table[SYS_writev]			  = sys_writev;
 	syscall_table[SYS_getpid]             = sys_getpid;
 	syscall_table[SYS_getppid]            = sys_getppid;
+	syscall_table[SYS_getgid]             = sys_getgid;
 	syscall_table[SYS_gettimeofday]       = sys_gettimeofday;
 	syscall_table[SYS_nanosleep]          = sys_sleep;
 	syscall_table[SYS_exit]               = sys_exit;
