@@ -44,9 +44,33 @@ static inline const char *printk_skip_headers(const char *buffer)
 #define CONSOLE_LOGLEVEL_DEBUG	10 /* issue debug messages */
 #define CONSOLE_LOGLEVEL_MOTORMOUTH 15	/* You can't shut this one up */
 
-#define pr_info(fmt, ...) \
-	printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+#ifndef pr_fmt
+#define pr_fmt(fmt) fmt
+#endif
 
+#define pr_emerg(fmt, ...) \
+	printk(KERN_EMERG "[Emerg/%s]" pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_alert(fmt, ...) \
+	printk(KERN_ALERT "[Alert/%s]" pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_crit(fmt, ...) \
+	printk(KERN_CRIT "[Crit/%s]" pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_err(fmt, ...) \
+	printk(KERN_ERR "[Err/%s]" pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_warn(fmt, ...) \
+	printk(KERN_WARNING "[Warning/%s]" pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_notice(fmt, ...) \
+	printk(KERN_NOTICE "[Notice/%s]" pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_info(fmt, ...) \
+	printk(KERN_INFO "[Info/%s] " pr_fmt(fmt), __func__, ##__VA_ARGS__)
+
+#define pr_info(fmt, ...) \
+	printk(KERN_DEBUG "[Debug/%s] " pr_fmt(fmt), __func__, ##__VA_ARGS__)
 
 void efi_puts(const char *str);
 

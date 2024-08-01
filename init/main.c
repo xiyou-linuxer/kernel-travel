@@ -84,7 +84,7 @@ void __init __no_sanitize_address start_kernel(void)
 	
 	local_irq_disable();
 
-	printk("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
+	pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
 	mem_init();
 	trap_init();
