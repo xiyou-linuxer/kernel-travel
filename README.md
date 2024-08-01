@@ -26,6 +26,7 @@ kernel-travel 包含有五大模块，分别为：内存管理、进程管理、
 
 * [编译并运行kernel-travel](./doc/编译并运行kernel-travel.md)
 * [gdb调试方法](./doc/安装x86环境下支持调试loongarch体系结构的gdb.md)
+* [快速启动](./doc/快速启动.md)
 
 进程管理：
 
