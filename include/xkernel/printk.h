@@ -69,7 +69,7 @@ static inline const char *printk_skip_headers(const char *buffer)
 #define pr_info(fmt, ...) \
 	printk(KERN_INFO "[Info/%s] " pr_fmt(fmt), __func__, ##__VA_ARGS__)
 
-#define pr_info(fmt, ...) \
+#define pr_debug(fmt, ...) \
 	printk(KERN_DEBUG "[Debug/%s] " pr_fmt(fmt), __func__, ##__VA_ARGS__)
 
 void efi_puts(const char *str);
