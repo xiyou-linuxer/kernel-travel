@@ -9,7 +9,7 @@
 
 int printk(const char *fmt, ...)
 {
-	char printf_buf[256];
+	char printf_buf[1024];
 	va_list args;
 	int printed;
 	int loglevel = printk_get_level(fmt);

@@ -77,12 +77,22 @@ int sysnums = 3;
 char init_program[70000];
 char filename[50][64] = {0};
 
+char xkernel_banner[] = \
+"        __                              .__   \n"\
+"___  __|  | __ ___________  ____   ____ |  |  \n"\
+"\\  \\/  /  |/ // __ \\_  __ \\/    \\_/ __ \\|  |  \n"\
+" >    <|    <\\  ___/|  | \\/   |  \\  ___/|  |__\n"\
+"/__/\\_ \\__|_ \\___  >__|  |___|  /\\___  >____/\n"\
+"      \\/    \\/    \\/           \\/     \\/      ";
+
 void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
 	
 	local_irq_disable();
+
+	printk("%s\n", xkernel_banner);
 
 	pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
