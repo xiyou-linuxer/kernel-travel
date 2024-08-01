@@ -63,19 +63,6 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 	sys_lseek(fd,phdr->p_offset,SEEK_SET);
 	printk("load_phdr phdr->p_filesz:%d\n",phdr->p_filesz);
 	sys_read(fd,(void*)phdr->p_vaddr,phdr->p_filesz);
-	unsigned char *addr = (unsigned char *)phdr->p_vaddr;
-	int i;
-	/*if (phdr->p_filesz == 2896492)
-	{
-		for (i = 2895872; i < phdr->p_filesz; i++)
-		{
-			printk("%x ",addr[i]);
-		//printk("i:%x in %x",i,phdr->p_filesz);
-		}
-	
-	}*/
-	
-	
 	return true;
 }
 
@@ -123,19 +110,17 @@ int setup_arg_pages(void *bprm,
 	return -1;
 }
 
-int64_t load(const char *path)
+int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 {
-	Elf_Ehdr ehdr;
-	memset(&ehdr,0,sizeof(ehdr));
 	int fd = sys_open(path, O_RDWR ,660);
 	sys_lseek(fd,0,SEEK_SET);
-	int size = sys_read(fd, &ehdr, sizeof(ehdr));
+	int size = sys_read(fd, ehdr, sizeof(*ehdr));
 	printk("name %s\n",path);
 	int64_t ret;
-	if (memcmp(ehdr.e_ident,"\177ELF",4) || \
-		ehdr.e_ident[4] != 2 || \
-		ehdr.e_ident[5] != 1 || \
-		ehdr.e_ident[6] != 1)
+	if (memcmp(ehdr->e_ident,"\177ELF",4) || \
+		ehdr->e_ident[4] != 2 || \
+		ehdr->e_ident[5] != 1 || \
+		ehdr->e_ident[6] != 1)
 	{
 		printk("load file failed\n");
 		ret = -1;
@@ -157,10 +142,10 @@ int64_t load(const char *path)
 	// 			 executable_stack);
 
 	Elf_Phdr phdr;
-	uint64_t phoff = ehdr.e_phoff;
+	uint64_t phoff = ehdr->e_phoff;
 	struct mm_struct * mm = running_thread()->mm;
 
-	for (uint64_t ph = 0 ; ph < ehdr.e_phnum ; ph++)
+	for (uint64_t ph = 0 ; ph < ehdr->e_phnum ; ph++)
 	{
 		int elf_prot = 0, elf_flags = 0;
 		unsigned long v_addr = 0;
@@ -169,6 +154,10 @@ int64_t load(const char *path)
 		sys_lseek(fd,phoff,SEEK_SET);
 		sys_read(fd,&phdr,sizeof(phdr));
 		if (phdr.p_type == PT_LOAD) {
+			/* 获取程序头表的虚拟地址 */
+			if (phdr.p_vaddr <= phoff && phoff < phdr.p_vaddr+phdr.p_filesz)
+				*phaddr = phdr.p_vaddr+(phoff-phdr.p_filesz);
+
 			if (phdr.p_flags & PF_R) elf_prot |= PROT_READ;
 			if (phdr.p_flags & PF_W) elf_prot |= PROT_WRITE;
 			if (phdr.p_flags & PF_X) elf_prot |= PROT_EXEC;
@@ -194,7 +183,7 @@ int64_t load(const char *path)
 				}
 			}
 		}
-		phoff += ehdr.e_phentsize;
+		phoff += ehdr->e_phentsize;
 	}
 	/* 进程的 stack 默认 */
 	/*实现一个 ramdom 函数用来增强安全性
@@ -220,15 +209,15 @@ int64_t load(const char *path)
 	sema_down(&mm->map_lock);
 	
 
-	ret = ehdr.e_entry;
+	ret = ehdr->e_entry;
 done:
 	return ret;
 }
 
 
-int64_t sys_exeload(const char *path)
+int64_t sys_exeload(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 {
-	int64_t entry_point = load(path);
+	int64_t entry_point = load(path,ehdr,phaddr);
 	if (entry_point == -1) {
 		printk("sys_exeload: load failed\n");
 		return -1;
@@ -239,7 +228,10 @@ int64_t sys_exeload(const char *path)
 
 int sys_execve(const char *path, char *const argv[], char *const envp[])
 {
-	uint64_t argc = 0, envs = 0, auxs = 3;
+	uint64_t argc = 0, envs = 0, auxs = 13;
+	uint64_t phaddr;
+	Elf_Ehdr ehdr;
+	memset(&ehdr,0,sizeof(ehdr));
 	while (argv[argc]) argc++;
 	if (envp != NULL)
 		while (envp[envs]) envs++;
@@ -256,37 +248,58 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = USER_STACK - (argc+envs+3)*(sizeof(uint64_t)) - auxs*sizeof(Elf_auxv_t);
+	regs->regs[3]  = USER_STACK-16 - (argc+envs+3)*(sizeof(uint64_t)) - auxs*sizeof(Elf_auxv_t);
 	regs->regs[22] = regs->regs[3];
+	regs->regs[4] = regs->regs[3];
 
 	char (*uargs) [20] = (char (*)[20])USER_STACK;
-	regs->regs[4] = regs->regs[3];
-	//regs->regs[5] = (unsigned long)uargs;
-	//regs->regs[6] = (unsigned long)envp;
 	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	struct mm_struct* mm = (struct mm_struct *)get_page();
 	cur->mm = mm;
 	mm_struct_init(cur->mm);
-	int64_t entry = sys_exeload(path);
+	int64_t entry = sys_exeload(path,&ehdr,&phaddr);
 	regs->csr_era = (unsigned long)entry;
 
-	/* auxv */
-	Elf_auxv_t *auxv = (Elf_auxv_t *)(USER_STACK - auxs*sizeof(Elf_auxv_t));
-	append_to_auxv(auxv+auxs-1,(uint64_t[2]){AT_NULL,AT_NULL});
-	append_to_auxv(auxv+auxs-2,(uint64_t[2]){AT_HWCAP,0});
-	append_to_auxv(auxv+auxs-3,(uint64_t[2]){AT_PAGESZ,PAGESIZE});
+	/* random */
+	uint64_t random = USER_STACK-16;
 
-	/* envp */
+	/* envp 转移参数 */
+	Elf_auxv_t *auxv = (Elf_auxv_t *)(random - auxs*sizeof(Elf_auxv_t));
 	uint64_t argtop = (uint64_t)auxv;
 	for (int i = 0; i < envs; i++) {
 		strcpy(uargs[argc+i],envp[i]);
+	}
+
+	/* argv 转移参数 */
+	for (int i = 0; i < argc; i++) {
+		strcpy(uargs[i],argv[i]);
+	}
+
+
+	/*   下面是对栈中内容的替换操作   */
+	/* auxv */
+	append_to_auxv(auxv+auxs-1, (uint64_t[2]){AT_NULL,AT_NULL});
+	append_to_auxv(auxv+auxs-2, (uint64_t[2]){AT_HWCAP,0});
+	append_to_auxv(auxv+auxs-3, (uint64_t[2]){AT_PAGESZ,PAGESIZE});
+	append_to_auxv(auxv+auxs-4, (uint64_t[2]){AT_HWCAP,0});
+	append_to_auxv(auxv+auxs-5, (uint64_t[2]){AT_PHDR,phaddr});
+	append_to_auxv(auxv+auxs-6, (uint64_t[2]){AT_PHENT,ehdr.e_phoff});
+	append_to_auxv(auxv+auxs-7, (uint64_t[2]){AT_PHNUM,ehdr.e_phnum});
+	append_to_auxv(auxv+auxs-8, (uint64_t[2]){AT_UID,0});
+	append_to_auxv(auxv+auxs-9, (uint64_t[2]){AT_EUID,0});
+	append_to_auxv(auxv+auxs-10,(uint64_t[2]){AT_GID,0});
+	append_to_auxv(auxv+auxs-11,(uint64_t[2]){AT_ENTRY,ehdr.e_entry});
+	append_to_auxv(auxv+auxs-12,(uint64_t[2]){AT_SECURE,0});
+	append_to_auxv(auxv+auxs-13,(uint64_t[2]){AT_RANDOM,random});
+
+	/* envp */
+	for (int i = 0; i < envs; i++) {
 		*((uint64_t*)(argtop - (envs+1-i)*sizeof(uint64_t))) = (uint64_t)uargs[argc+i];
 	}
 	*((uint64_t*)(argtop - sizeof(uint64_t))) = 0;
 
 	/* argv */
 	for (int i = 0; i < argc; i++) {
-		strcpy(uargs[i],argv[i]);
 		*((uint64_t*)(argtop - (envs+argc+2-i)*sizeof(uint64_t))) = (uint64_t)uargs[i];
 	}
 	*((uint64_t*)(argtop - (envs+2)*sizeof(uint64_t))) = 0;

@@ -444,6 +444,9 @@ this information is dynamic in nature and is only known after kernel has finishe
 ```c
 	for (i=0; auxv[i]; i+=2) if (auxv[i]<AUX_CNT) aux[auxv[i]] = auxv[i+1];
 ```
+因为Program Headers 本来就在被加载的段之中，所以可以从段中找到并获取
+
+
 
 疑似在`__init_libc` 处停止(奇怪的是，加个printf竟然好了...)。
 检查下auxv的数值是否与预想的一致

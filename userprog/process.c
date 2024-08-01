@@ -1,4 +1,5 @@
 #include <process.h>
+#include <stdint.h>
 #include <xkernel/thread.h>
 #include <debug.h>
 #include <trap/irq.h>
@@ -36,7 +37,9 @@ void start_process(void* filename)
 	regs->regs[3] = (uint64_t)userstk_alloc(cur->pgdir);
 	regs->regs[22] = regs->regs[3];
 
-	int entry = sys_exeload(filename);
+	Elf_Ehdr hdr;uint64_t t;
+	memset(&hdr,0,sizeof(Elf_Ehdr));
+	int entry = sys_exeload(filename,&hdr,&t);
 	regs->csr_era = (unsigned long)entry;
 
 	utimes_begin(cur);
