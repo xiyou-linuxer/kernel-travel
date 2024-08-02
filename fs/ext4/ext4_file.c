@@ -440,3 +440,9 @@ int ext4_file_creat(struct Dirent *baseDir, char *path, Dirent **file)
 {
 	return ext4_dirent_creat(baseDir, path, file, 0);
 }
+
+int ext4_fsthaw(void)
+{
+	ext4Fs->op->file_write = ext4_fwrite;
+	return 0;
+}

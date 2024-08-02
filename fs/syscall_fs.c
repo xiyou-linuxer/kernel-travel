@@ -19,6 +19,7 @@
 #include <fs/fd.h>
 #include <debug.h>
 #include <asm/syscall.h>
+#include <asm-generic/ioctl.h>
 #include <xkernel/wait.h>
 /*本文件用于实现文件的syscall*/
 int sys_open(const char *pathname, int flags, mode_t mode)
@@ -499,4 +500,16 @@ int sys_readlinkat(int dirfd, u64 pathname, u64 buf, size_t bufsiz)
 		sys_close(fd);
 		return -1;
 	}
+}
+
+int sys_ioctl(int fd, u64 cmd, u64 arg)
+{
+	if (fd<=0)
+	{
+		return -1;
+	}
+	int _fd = fd_local2global(fd);
+	struct fd file = file_table[_fd];
+	do_vfs_ioctl(fd,_fd,cmd,arg);
+	return 0;
 }

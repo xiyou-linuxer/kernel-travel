@@ -34,7 +34,7 @@ struct fs_operation{
 	int (*file_remove)(Dirent *file);														//删除文件
 	/*目录操作*/
 	int (*makedir)(Dirent *baseDir, char *path, int mode);											//创建目录
-	
+	int (*fsthaw)(void);
 };
 
 typedef struct SuperBlock {

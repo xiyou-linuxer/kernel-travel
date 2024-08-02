@@ -10,3 +10,4 @@ obj-y	+=syscall_fs.o
 obj-y	+=path.o
 obj-y	+=mount.o
 obj-y	+=poll.o
+obj-y	+=ioctl.o

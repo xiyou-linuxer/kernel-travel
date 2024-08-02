@@ -2,6 +2,7 @@
 #define _VFS_H
 
 #include <fs/fs.h>
+#include <fs/fd.h>
 #include <fs/mount.h>
 #include <xkernel/types.h>
 
@@ -37,4 +38,5 @@ void test_fs_all(void);
 void fileStat( struct Dirent* file, struct kstat* pKStat);
 int mount_fs(char *special, char *dirPath, const char *fstype, unsigned long flags);
 int umount_fs(char* dirPath);
+int do_vfs_ioctl(struct fd *filp, unsigned int fd, unsigned int cmd, unsigned long arg);
 #endif

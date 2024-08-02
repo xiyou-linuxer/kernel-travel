@@ -20,7 +20,8 @@ static const struct fs_operation ext4_op = {
 	.file_read = ext4_fread,
 	.file_write = ext4_fwrite,
 	.file_create = ext4_file_creat,
-	.makedir = ext4_dir_creat
+	.makedir = ext4_dir_creat,
+	.fsthaw = ext4_fsthaw,
 };
 
 static void build_dirent_ext4tree(Dirent *parent)
@@ -110,6 +111,7 @@ void ext4_init(FileSystem* fs)
 	strcpy(ext4Fs->name, "ext4");
 	//初始化超级块信息
 	ASSERT(fill_sb(ext4Fs) != 0);
+	ext4Fs->superBlock.bytes_per_clus = ext4_sb_get_block_size(&ext4Fs->superBlock.ext4_sblock);
 	//初始化根目录
 	ext4Fs->root->ext4_dir_en.inode = EXT4_ROOT_INO;//根目录对应的inode号
 	strcpy(ext4Fs->root->name,"/");
