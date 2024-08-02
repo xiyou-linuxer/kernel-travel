@@ -20,7 +20,7 @@ typedef struct SuperBlock SuperBlock;
 typedef struct ext4_sblock ext4_sblock;
 
 // 对应目录、文件、设备
-typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN} dirent_type_t;
+typedef enum dirent_type { DIRENT_DIR, DIRENT_FILE, DIRENT_CHARDEV, DIRENT_BLKDEV , DIRENT_UNKNOWN,DIRENT_SOFTLINK} dirent_type_t;
 
 /*文件系统相关的的操作函数*/
 struct fs_operation{

@@ -2,7 +2,7 @@
 #define __DEVICE_CONSOLE_H
 
 #include <xkernel/types.h>
-
+int console_check_read(void);
 void console_init(void);
 void console_acquire(void);
 void console_release(void);

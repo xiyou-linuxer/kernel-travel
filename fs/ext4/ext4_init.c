@@ -30,7 +30,6 @@ static void build_dirent_ext4tree(Dirent *parent)
 	struct ext4_dir d;
 	d.pdirent = parent;
 	d.next_off = 0;
-	printk("parent %s:\n",parent->name);
 	while (1) {
 		//获取目录项
 		if (d.next_off == EXT4_DIR_ENTRY_OFFSET_TERM)// 如果已经遍历到目录尾部
@@ -43,12 +42,10 @@ static void build_dirent_ext4tree(Dirent *parent)
 		if (strncmp(child->name, ".", 2) == 0 || strncmp(child->name, "..", 3) == 0) {
 			continue;
 		}
-		printk("%s ",child->name);
 		list_append(&parent->child_list,&child->dirent_tag);
 		
 		// 如果为目录，就向下一层递归
 		if (child->ext4_dir_en.in.inode_type == EXT4_DE_DIR) {
-			printk("\n");
 			child->type = DIRENT_DIR;
 			build_dirent_ext4tree(child);
 		}

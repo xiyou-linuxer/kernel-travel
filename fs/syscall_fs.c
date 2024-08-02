@@ -13,6 +13,7 @@
 #include <fs/dirent.h>
 #include <fs/dirent.h>
 #include <fs/vfs.h>
+#include <fs/poll.h>
 #include <fs/filepnt.h>
 #include <fs/fs.h>
 #include <fs/fd.h>
@@ -480,4 +481,22 @@ int sys_writev (int fd, const struct iovec *iov, int iovcnt)
 		sys_write(fd,iov[i].iov_base,iov[i].iov_len);
 	}
 	return len;
+}
+
+int sys_readlinkat(int dirfd, u64 pathname, u64 buf, size_t bufsiz)
+{
+	printk("pathname:%s\n",pathname);
+	int fd = sys_openat(dirfd,pathname,O_RDONLY,0777);
+	int _fd = fd_local2global(fd);
+	if (file_table[_fd].dirent->type == DIRENT_SOFTLINK)//如果是软链接文件
+	{
+		int count;
+		sys_read(fd,buf,count);
+		printk("");
+		return count;
+	}else//如果不是软链接文件直接返回报错
+	{
+		sys_close(fd);
+		return -1;
+	}
 }

@@ -210,7 +210,10 @@ struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	de->linkcnt = 1;
 	de->mode = dir_inode.inode->mode;
 	ext4_dir_iterator_next(&it); // 移动到下一个目录项
-
+	if (de->ext4_dir_en.in.inode_type == EXT4_INODE_MODE_SOFTLINK);
+	{
+		de->type = DIRENT_SOFTLINK;
+	}
 	// 更新下一个目录项的偏移量，如果没有下一个目录项，则设置为终止偏移量
 	dir->next_off = it.curr ? it.curr_off : EXT4_DIR_ENTRY_OFFSET_TERM;
 	de->parent_dir_off = dir->next_off;

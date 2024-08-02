@@ -197,21 +197,7 @@ void test_getdents(void){
 
 void test_fs_all(void)
 {
-	/*int fd = sys_open("./open", O_RDWR ,660);
-	unsigned long v_addr[32];
-	fd_mapping(fd, 0, 3,v_addr);
-	printk("bbb");
-	test_mount();*/
-	//test_open();
-	//test_close();
-	//test_unlink();
-	/*printk("test_fs_all\n");*/
-	/*struct path_search_record path_search_record;
-	Dirent * d = search_file("/aaa.txt",&path_search_record);
-	printk("%s:\n",d->name);
-	char buf[64];
-	ext4_fread(d,buf,0,64);
-	printk("%s\n",buf);*/
+
 	int fd = sys_open("/aaa.txt",O_RDWR,0777);
 	printk("fd:%d\n",fd);
 	char buf[64];

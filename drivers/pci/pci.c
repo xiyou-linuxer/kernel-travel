@@ -268,9 +268,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		/*获取地址值*/
 		pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
 		/*设置bar寄存器为全1禁用此地址，在禁用后再次读取读出的内容为地址空间的大小*/
-		printk("pciwrite");
 		pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
-		printk("hello-word");
 
 		/* bass address[0~5] 获取地址长度*/
 		unsigned int len;
@@ -281,7 +279,6 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		if (len != 0 && len != 0xffffffff) {
 			pci_device_bar_init(&pci_dev->bar[bar], val, len);
 		}
-		printk(".......");
 	}
 
 	/* 获取 card bus CIS 指针 */
@@ -302,7 +299,6 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	pci_dev->capability_list = val;
 
 	/*获取中断相关的信息*/
-	printk("reading config \n");
 	pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE,&val);
 	if ((val & 0xff) > 0 && (val & 0xff) < 32) {
 		unsigned int irq = val & 0xff;

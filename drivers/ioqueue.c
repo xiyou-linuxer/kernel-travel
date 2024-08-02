@@ -112,3 +112,39 @@ uint32_t ioq_length(struct ioqueue *ioq)
     }
     return len;
 }
+
+/**
+ * 如果管道中有数据，直接返回1
+ * 如果管道中没有数据，且管道未关闭，返回0，否则返回1
+ */
+int pipe_check_read(struct ioqueue *p) {
+	lock_acquire(&p->lock);
+	if (p->head != p->tail) {
+		lock_release(&p->lock);
+		return 1;
+	} else if (p->flag == 0) {
+		lock_release(&p->lock);
+		return 1;
+	} else {
+		lock_release(&p->lock);
+		return 0;
+	}
+}
+
+/**
+ * 如果管道空闲，直接返回1
+ * 如果管道不空闲，且管道未关闭，返回0，否则返回1
+ */
+int pipe_check_write(struct ioqueue *p) {
+	lock_acquire(&p->lock);
+	if (p->head - p->tail < bufsize) {
+		lock_release(&p->lock);
+		return 1;
+	} else if (p->flag == 0) {
+		lock_release(&p->lock);
+		return 1;
+	} else {
+		lock_release(&p->lock);
+		return 0;
+	}
+}

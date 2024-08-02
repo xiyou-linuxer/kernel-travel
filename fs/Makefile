@@ -9,3 +9,4 @@ obj-y	+=ext4/
 obj-y	+=syscall_fs.o 
 obj-y	+=path.o
 obj-y	+=mount.o
+obj-y	+=poll.o

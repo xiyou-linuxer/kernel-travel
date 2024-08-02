@@ -144,6 +144,8 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_read             63
 #define SYS_write            64
 #define SYS_writev           66
+#define SYS_ppoll			 73
+#define SYS_readlinkat		 78
 #define SYS_fstat            80
 #define SYS_exit             93
 #define SYS_set_tid_address  96
