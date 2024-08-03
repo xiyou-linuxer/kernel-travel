@@ -1,4 +1,6 @@
-apt-get install bridge-utils uml-utilities net-tools tftpd-hpa
+#apt-get install bridge-utils uml-utilities net-tools tftpd-hpa
+#apt-get update
+#apt-get install vim
 
 ip link add br0 type bridge
 ip tuntap add dev tap0 mode tap

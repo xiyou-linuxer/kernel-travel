@@ -3,6 +3,7 @@
 #include <xkernel/thread.h>
 #include <asm/pt_regs.h>
 #include <xkernel/stdio.h>
+#include <xkernel/sched.h>
 #define NR_SYSCALLS 300
 #define ENOSYS		38
 
@@ -120,7 +121,7 @@ static inline long __syscall6(long n,long ag0,long ag1,long ag2,long ag3,long ag
 
 extern void* syscall_table[NR_SYSCALLS];
 
-#define SYS_PSTR 222
+#define SYS_PSTR 297
 
 #define AT_FDCWD 0
 #define AT_OPEN -100
@@ -165,6 +166,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_mprotect        226
 #define SYS_wait4           260
 #define SYS_statx           291
+#define SYS_PCB             298
 #define SYS_PP              299
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
@@ -234,6 +236,10 @@ static inline int brk(char *addr) {
 
 static inline int munmap(void *start, size_t len) {
 	return syscall(SYS_munmap, start, len);
+}
+
+static inline struct task_struct *get_pcb(void) {
+	return syscall(SYS_PCB);
 }
 
 #endif

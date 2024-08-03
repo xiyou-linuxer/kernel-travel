@@ -7,6 +7,7 @@
 #include <asm/thread_info.h>
 #include <fs/fs.h>
 #include <stdint.h>
+#include <signal.h>
 
 
 #define TASK_NAME_LEN 16
@@ -56,6 +57,9 @@ struct task_struct {
 	uint8_t priority;
 	uint8_t ticks;
 	uint32_t elapsed_ticks;
+	//struct sigpending pending;
+	//sigset_t blocked;
+	//sighand_t handlers;
 	struct virt_addr usrprog_vaddr;
 	struct list_elem general_tag;
 	int fd_table[MAX_FILES_OPEN_PER_PROC];  // 文件描述符数组

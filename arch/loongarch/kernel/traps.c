@@ -88,6 +88,12 @@ static unsigned long hwirq_to_virq(unsigned long hwirq)
 	return EXCCODE_INT_START + hwirq;
 }
 
+extern void before_ret(void);
+void before_ret(void)
+{
+
+}
+
 /**
  * do_vint - 中断处理入口程序（C语言部分）
  * @regs: 指向中断栈内容

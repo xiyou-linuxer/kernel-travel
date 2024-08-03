@@ -228,7 +228,7 @@ int64_t sys_exeload(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 
 int sys_execve(const char *path, char *const argv[], char *const envp[])
 {
-	uint64_t argc = 0, envs = 0, auxs = 13;
+	uint64_t argc = 0, envs = 0, auxs = 12;
 	uint64_t phaddr;
 	Elf_Ehdr ehdr;
 	memset(&ehdr,0,sizeof(ehdr));
@@ -281,16 +281,15 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	append_to_auxv(auxv+auxs-1, (uint64_t[2]){AT_NULL,AT_NULL});
 	append_to_auxv(auxv+auxs-2, (uint64_t[2]){AT_HWCAP,0});
 	append_to_auxv(auxv+auxs-3, (uint64_t[2]){AT_PAGESZ,PAGESIZE});
-	append_to_auxv(auxv+auxs-4, (uint64_t[2]){AT_HWCAP,0});
-	append_to_auxv(auxv+auxs-5, (uint64_t[2]){AT_PHDR,phaddr});
-	append_to_auxv(auxv+auxs-6, (uint64_t[2]){AT_PHENT,ehdr.e_phoff});
-	append_to_auxv(auxv+auxs-7, (uint64_t[2]){AT_PHNUM,ehdr.e_phnum});
-	append_to_auxv(auxv+auxs-8, (uint64_t[2]){AT_UID,0});
-	append_to_auxv(auxv+auxs-9, (uint64_t[2]){AT_EUID,0});
-	append_to_auxv(auxv+auxs-10,(uint64_t[2]){AT_GID,0});
-	append_to_auxv(auxv+auxs-11,(uint64_t[2]){AT_ENTRY,ehdr.e_entry});
-	append_to_auxv(auxv+auxs-12,(uint64_t[2]){AT_SECURE,0});
-	append_to_auxv(auxv+auxs-13,(uint64_t[2]){AT_RANDOM,random});
+	append_to_auxv(auxv+auxs-4, (uint64_t[2]){AT_PHDR,phaddr});
+	append_to_auxv(auxv+auxs-5, (uint64_t[2]){AT_PHENT,ehdr.e_phoff});
+	append_to_auxv(auxv+auxs-6, (uint64_t[2]){AT_PHNUM,ehdr.e_phnum});
+	append_to_auxv(auxv+auxs-7, (uint64_t[2]){AT_UID,0});
+	append_to_auxv(auxv+auxs-8, (uint64_t[2]){AT_EUID,0});
+	append_to_auxv(auxv+auxs-9,(uint64_t[2]){AT_GID,0});
+	append_to_auxv(auxv+auxs-10,(uint64_t[2]){AT_ENTRY,ehdr.e_entry});
+	append_to_auxv(auxv+auxs-11,(uint64_t[2]){AT_SECURE,0});
+	append_to_auxv(auxv+auxs-12,(uint64_t[2]){AT_RANDOM,random});
 
 	/* envp */
 	for (int i = 0; i < envs; i++) {

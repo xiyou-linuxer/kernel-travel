@@ -368,8 +368,6 @@ void thread_exit(struct task_struct* exit)
 
 void thread_init(void)
 {
-	printk("thread_init start\n");
-
 	list_init(&thread_ready_list);
 	list_init(&thread_all_list);
 	pid_pool_init();
@@ -377,7 +375,5 @@ void thread_init(void)
 	process_execute("initcode","init",15);
 	idle_thread = thread_start("idle",10,idle,NULL);
 	make_main_thread();
-
-	printk("thread_init done\n");
 }
 
