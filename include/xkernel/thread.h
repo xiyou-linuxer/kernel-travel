@@ -9,6 +9,7 @@ extern struct list thread_ready_list;
 extern struct list thread_all_list;
 extern struct list_elem* thread_tag;
 
+void test_pcb(void);
 pid_t sys_getpid(void);
 pid_t sys_getppid(void);
 unsigned int sys_getgid(void);

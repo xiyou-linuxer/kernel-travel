@@ -19,7 +19,7 @@ int main(void)
 	//myprintf("hello-you\n\n");
 	//int pid = fork();
 	//if (pid == 0){
-	//	//execve(filepath,(char**)argv,NULL);
+	//	//execve(filepath,(char**)argv,envp);
 	//}
 
 	//int status;
