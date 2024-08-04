@@ -248,7 +248,8 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3]  = USER_STACK-16 - (argc+envs+3)*(sizeof(uint64_t)) - auxs*sizeof(Elf_auxv_t);
+	userstk_alloc(cur->pgdir);
+	regs->regs[3]  = USER_STACK-24 - (argc+envs+3)*(sizeof(uint64_t)) - auxs*sizeof(Elf_auxv_t);
 	regs->regs[22] = regs->regs[3];
 	regs->regs[4] = regs->regs[3];
 
@@ -261,7 +262,9 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	regs->csr_era = (unsigned long)entry;
 
 	/* random */
-	uint64_t random = USER_STACK-16;
+	uint64_t random = USER_STACK-24;
+	for (int i = 0; i < 16; i++)
+		*(char*)(random+i) = i;
 
 	/* envp 转移参数 */
 	Elf_auxv_t *auxv = (Elf_auxv_t *)(random - auxs*sizeof(Elf_auxv_t));
@@ -277,6 +280,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 
 
 	/*   下面是对栈中内容的替换操作   */
+	*((uint64_t*)(USER_STACK - sizeof(uint64_t))) = 0;
 	/* auxv */
 	append_to_auxv(auxv+auxs-1, (uint64_t[2]){AT_NULL,AT_NULL});
 	append_to_auxv(auxv+auxs-2, (uint64_t[2]){AT_HWCAP,0});
@@ -307,6 +311,27 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	*((uint64_t*)(argtop - (envs+argc+3)*sizeof(uint64_t))) = argc;
 
 	//intr_enable();
+	
+	/* test arguments */
+	uint64_t stk = regs->regs[3];
+	printk("USER_STACK:%llx\n",USER_STACK);
+	printk("stack:%llx\n",regs->regs[3]);
+	printk("argc:%d\n",*(uint64_t*)stk);
+	for (int i = 1; i <= argc+1; i++)
+		printk("argv[%d]:%s\n",i-1,(char*)*(uint64_t*)(stk+i*sizeof(uint64_t)));
+	for (int i = 0; i <= envs; i++)
+		printk("envp[%d]:%s\n",i,(char*)*(uint64_t*)(stk+(argc+2+i)*sizeof(uint64_t)));
+	for (int i = 0; i < 24; i+=2) {
+		printk("address at:%llx\n",auxv+auxs-12+i/2);
+		printk("auxv[%d]:%d,auxv[%d]:%llx\n",i, \
+			   *(uint64_t*)(stk+(argc+envs+3+i)*sizeof(uint64_t)), \
+			   i+1,*(uint64_t*)(stk+(argc+envs+3+i+1)*sizeof(uint64_t)));
+	}
+	printk("random at:%llx\n",random);
+	for (int i = 0; i < 16; i++)
+		printk("random[%d]:%d\n",i,*(char*)(random+i));
+
+
 	printk("jump to proc... at %llx\n",entry);
 	utimes_begin(cur);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");

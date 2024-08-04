@@ -4,10 +4,17 @@
 #include <debug.h>
 
 #define SIGMAX 32
+#define NSIG_WORDS ((SIGMAX+7)>>3)
 
 typedef struct {
-    unsigned long sig[(SIGMAX+7) & ~7];
+    unsigned long sig[NSIG_WORDS];
 } sigset_t;
+
+static inline void init_sigset(sigset_t *set)
+{
+	for (int i = 0; i < NSIG_WORDS; i++)
+		set->sig[i] = 0;
+}
 
 static inline int sigismember(const sigset_t *set,int signo)
 {

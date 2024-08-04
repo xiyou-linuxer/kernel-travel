@@ -34,17 +34,9 @@ void start_process(void* filename)
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	regs->regs[3] = (uint64_t)userstk_alloc(cur->pgdir);
-	regs->regs[22] = regs->regs[3];
-
-	Elf_Ehdr hdr;uint64_t t;
-	memset(&hdr,0,sizeof(Elf_Ehdr));
-	int entry = sys_exeload(filename,&hdr,&t);
-	regs->csr_era = (unsigned long)entry;
-
-	utimes_begin(cur);
-	printk("jump to proc...\n");
-	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
+	char *argv[] = {filename,NULL};
+	char *envp[] = {NULL};
+	sys_execve(filename,argv,envp);
 }
 
 void process_execute(void* filename, char* name,int pri) {

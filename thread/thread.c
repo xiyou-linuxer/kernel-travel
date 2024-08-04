@@ -17,6 +17,7 @@
 #include <trap/irq.h>
 #include <asm/timer.h>
 #include <xkernel/memory.h>
+#include <xkernel/sigset.h>
 
 struct task_struct* main_thread;
 struct task_struct* idle_thread;
@@ -37,6 +38,33 @@ struct pid_pool {
 	uint32_t pid_start;
 	struct lock pid_lock;
 }pid_pool;
+
+
+void test_pcb(void)
+{
+	struct task_struct *pcb = running_thread();
+	printk("name:%s\n",pcb->name);
+	printk("self_kstack:%llx\n",pcb->self_kstack);
+	printk("thread_func :%llx\n",pcb->function);
+	printk("func_arg:%llx\n",pcb->func_arg);
+	printk("time_record.stime:%d\n",pcb->time_record.tms_stime);
+	printk("ppid:%d\n",pcb->ppid);
+	printk("pid:%d\n",pcb->pid);
+	printk("clear_child_tid:%llx\n",pcb->clear_child_tid);
+	printk("task_status:%llx\n",pcb->status);
+	printk("priority:%llx\n",pcb->priority);
+	printk("ticks:%d\n",pcb->ticks);
+	printk("elapsed_ticks:%d\n",pcb->elapsed_ticks);
+	printk("pending:%d\n",pcb->pending.signal);
+	printk("userprog_vaddr.btmp:%llx  vaddr_start:%llx:\n",pcb->usrprog_vaddr.btmp,pcb->usrprog_vaddr.vaddr_start);
+	printk("general_tag.next:%llx prev:%llx\n",pcb->general_tag.next,pcb->general_tag.prev);
+	printk("cwd_dirent:%llx\n",pcb->cwd_dirent);
+	printk("all_list_tag.next:%llx prev:%llx\n",pcb->all_list_tag.next,pcb->all_list_tag.prev);
+	printk("pgdir:%llx\n",pcb->pgdir);
+	printk("asid:%llx\n",pcb->asid);
+	printk("mm:%llx\n",pcb->mm);
+	printk("magic:%llx\n",pcb->stack_magic);
+}
 
 static void pid_pool_init(void) { 
 	pid_pool.pid_start = 1;
@@ -149,6 +177,8 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	pthread->priority = prio;
 	pthread->ticks = prio;
 	pthread->elapsed_ticks = 0;
+	init_sigset(&pthread->pending.signal);
+	init_sigset(&pthread->blocked);
 	pthread->pgdir = 0;
 	pthread->fd_table[0] = 0;
 	pthread->fd_table[1] = 1;

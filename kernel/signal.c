@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <xkernel/thread.h>
+#include <asm-generic/bitops/ffz.h>
 
 #define SIG_DFL ((void (*)(int))0)
 #define SIG_IGN ((void (*)(int))1)
@@ -12,6 +13,15 @@
 		M(SIGCONT) | M(SIGCHLD) | M(SIGWINCH) | M(SIGURG) )
 
 #define sig_kernel_ignore(sig) T(sig, SIG_KERNEL_IGNORE_MASK)
+
+static inline int find_lsb(unsigned long *x) {
+	for (int i = 0; i < sizeof(unsigned long)*8; i++) {
+		if (*x & (1<<i))
+			return i;
+	}
+	return 0;
+}
+
 
 bool isignored_signals(int sig,struct task_struct *t)
 {
@@ -38,10 +48,22 @@ int specific_sendsig(int sig,struct task_struct *t)
 	sigaddset(t->pending,sig);
 }
 
+int get_signal(struct sigpending *pending,sigset_t *blocked)
+{
+	unsigned long *s = pending->signal.sig;
+	unsigned long *m = blocked->sig;
+
+	for (int i = 0; i < NSIG_WORDS; i++,s++,m++)
+		if (*s &&~ *m)
+			return find_lsb(s);
+	return 0;
+}
+
 void check_signals(void)
 {
 	struct task_struct *cur = running_thread();
 	struct sigpending *pending = &cur->pending;
+
 }
 
 

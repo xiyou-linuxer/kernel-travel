@@ -93,6 +93,7 @@ void __init __no_sanitize_address start_kernel(void)
 	local_irq_disable();
 
 	printk("%s\n", xkernel_banner);
+	printk("sizeof pcb:%x\n",sizeof(struct task_struct));
 
 	pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
 	setup_arch();//初始化体系结构
@@ -101,23 +102,23 @@ void __init __no_sanitize_address start_kernel(void)
 	irq_init();
 
 	thread_init();
+	test_pcb();
 	timer_init();
 	pci_init();
 	console_init();
 	disk_init();
 	console_init();
 	syscall_init();
-	char buf[512];
 	vfs_init();
 	fs_init();
+
 	early_boot_irqs_disabled = true;
 	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	printk("1111\n");
+	
 	if (fd == -1) {
 		printk("open failed");
 	}
 	sys_write(fd,init_code,init_code_len);
-	bufSync();
 	local_irq_enable();
 	
 	while (1) {
