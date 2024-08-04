@@ -67,7 +67,10 @@ int ext4_blocks_set_direct(const void *buf,int block_size,uint64_t lba, uint32_t
 			bufWrite(buf);
 			p+=BUF_SIZE;
 		}
-		
+		if ((count+1) %100 == 0)//防止文件过大导致的内存覆盖
+		{
+			bufSync();
+		}
 		count++;
 	}
 	return count;

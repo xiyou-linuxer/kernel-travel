@@ -112,6 +112,7 @@ void __init __no_sanitize_address start_kernel(void)
 	fs_init();
 	early_boot_irqs_disabled = true;
 	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	printk("1111\n");
 	if (fd == -1) {
 		printk("open failed");
 	}
