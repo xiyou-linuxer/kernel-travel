@@ -476,3 +476,14 @@ Error: unkown opcode. 90000000901cf774: 0x0
 
 
 
+```c
+	for (i=0; pn[i]; i++) if (pn[i]=='/') __progname = pn+i+1;
+```
+这个pn这么来的
+```c
+	if (!pn) pn = (void*)aux[AT_EXECFN];
+```
+这个AT_EXECFN好像确实没有赋值，赋值一下看看
+
+还是不行，仔细看看是`aux[AT_RANDOM]`这个取值时错误
+

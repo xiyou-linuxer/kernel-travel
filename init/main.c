@@ -74,8 +74,8 @@ void timer_func(unsigned long unused){
 int sysnums = 3;
 //extern char* sysname[];
 
-char init_program[70000];
-char filename[50][64] = {0};
+//char init_program[70000];
+//char filename[50][64] = {0};
 
 char xkernel_banner[] = \
 "        __                              .__   \n"\

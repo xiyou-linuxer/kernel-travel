@@ -55,7 +55,7 @@ void test_pcb(void)
 	printk("priority:%llx\n",pcb->priority);
 	printk("ticks:%d\n",pcb->ticks);
 	printk("elapsed_ticks:%d\n",pcb->elapsed_ticks);
-	printk("pending:%d\n",pcb->pending.signal);
+	//printk("pending:%d\n",pcb->pending.signal);
 	printk("userprog_vaddr.btmp:%llx  vaddr_start:%llx:\n",pcb->usrprog_vaddr.btmp,pcb->usrprog_vaddr.vaddr_start);
 	printk("general_tag.next:%llx prev:%llx\n",pcb->general_tag.next,pcb->general_tag.prev);
 	printk("cwd_dirent:%llx\n",pcb->cwd_dirent);
@@ -177,8 +177,8 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	pthread->priority = prio;
 	pthread->ticks = prio;
 	pthread->elapsed_ticks = 0;
-	init_sigset(&pthread->pending.signal);
-	init_sigset(&pthread->blocked);
+	//init_sigset(&pthread->pending.signal);
+	//init_sigset(&pthread->blocked);
 	pthread->pgdir = 0;
 	pthread->fd_table[0] = 0;
 	pthread->fd_table[1] = 1;

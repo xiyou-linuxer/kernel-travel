@@ -126,18 +126,18 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		Dirent *wr_file = file_table[_fd].dirent;
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
-			test_magic();
-			printk("===========\n\n");
-			test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
-			printk("===PCB=====\n\n");
-			test_pcb();
+			//test_magic();
+			//printk("===========\n\n");
+			//test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
+			//printk("===PCB=====\n\n");
+			//test_pcb();
 			unsigned bytes_written = wr_file->file_system->op->file_write(wr_file, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
-			printk("===========\n\n");
-			test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
-			printk("===PCB=====\n\n");
-			test_pcb();
-			test_magic();
+			//printk("===========\n\n");
+			//test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
+			//printk("===PCB=====\n\n");
+			//test_pcb();
+			//test_magic();
 			return bytes_written;
 		}
 		else

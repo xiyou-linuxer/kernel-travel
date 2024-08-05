@@ -155,8 +155,8 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 		sys_read(fd,&phdr,sizeof(phdr));
 		if (phdr.p_type == PT_LOAD) {
 			/* 获取程序头表的虚拟地址 */
-			if (phdr.p_vaddr <= phoff && phoff < phdr.p_vaddr+phdr.p_filesz)
-				*phaddr = phdr.p_vaddr+(phoff-phdr.p_filesz);
+			if (phdr.p_offset <= phoff && phoff < phdr.p_offset+phdr.p_filesz)
+				*phaddr = phdr.p_vaddr+(phoff-phdr.p_offset);
 
 			if (phdr.p_flags & PF_R) elf_prot |= PROT_READ;
 			if (phdr.p_flags & PF_W) elf_prot |= PROT_WRITE;
@@ -228,7 +228,7 @@ int64_t sys_exeload(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 
 int sys_execve(const char *path, char *const argv[], char *const envp[])
 {
-	uint64_t argc = 0, envs = 0, auxs = 12;
+	uint64_t argc = 0, envs = 0, auxs = 13;
 	uint64_t phaddr;
 	Elf_Ehdr ehdr;
 	memset(&ehdr,0,sizeof(ehdr));
@@ -286,14 +286,15 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	append_to_auxv(auxv+auxs-2, (uint64_t[2]){AT_HWCAP,0});
 	append_to_auxv(auxv+auxs-3, (uint64_t[2]){AT_PAGESZ,PAGESIZE});
 	append_to_auxv(auxv+auxs-4, (uint64_t[2]){AT_PHDR,phaddr});
-	append_to_auxv(auxv+auxs-5, (uint64_t[2]){AT_PHENT,ehdr.e_phoff});
+	append_to_auxv(auxv+auxs-5, (uint64_t[2]){AT_PHENT,ehdr.e_phentsize});
 	append_to_auxv(auxv+auxs-6, (uint64_t[2]){AT_PHNUM,ehdr.e_phnum});
 	append_to_auxv(auxv+auxs-7, (uint64_t[2]){AT_UID,0});
 	append_to_auxv(auxv+auxs-8, (uint64_t[2]){AT_EUID,0});
-	append_to_auxv(auxv+auxs-9,(uint64_t[2]){AT_GID,0});
+	append_to_auxv(auxv+auxs-9, (uint64_t[2]){AT_GID,0});
 	append_to_auxv(auxv+auxs-10,(uint64_t[2]){AT_ENTRY,ehdr.e_entry});
 	append_to_auxv(auxv+auxs-11,(uint64_t[2]){AT_SECURE,0});
 	append_to_auxv(auxv+auxs-12,(uint64_t[2]){AT_RANDOM,random});
+	append_to_auxv(auxv+auxs-13,(uint64_t[2]){AT_EXECFD,(uint64_t)uargs[0]});
 
 	/* envp */
 	for (int i = 0; i < envs; i++) {
@@ -321,8 +322,8 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 		printk("argv[%d]:%s\n",i-1,(char*)*(uint64_t*)(stk+i*sizeof(uint64_t)));
 	for (int i = 0; i <= envs; i++)
 		printk("envp[%d]:%s\n",i,(char*)*(uint64_t*)(stk+(argc+2+i)*sizeof(uint64_t)));
-	for (int i = 0; i < 24; i+=2) {
-		printk("address at:%llx\n",auxv+auxs-12+i/2);
+	for (int i = 0; i < 2*auxs; i+=2) {
+		printk("address at:%llx\n",auxv+i/2);
 		printk("auxv[%d]:%d,auxv[%d]:%llx\n",i, \
 			   *(uint64_t*)(stk+(argc+envs+3+i)*sizeof(uint64_t)), \
 			   i+1,*(uint64_t*)(stk+(argc+envs+3+i+1)*sizeof(uint64_t)));

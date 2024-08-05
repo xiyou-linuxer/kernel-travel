@@ -57,8 +57,8 @@ struct task_struct {
 	uint8_t priority;
 	uint8_t ticks;
 	uint32_t elapsed_ticks;
-	struct sigpending pending;
-	sigset_t blocked;
+	//struct sigpending pending;
+	//sigset_t blocked;
 	//sighand_t handlers;
 	struct virt_addr usrprog_vaddr;
 	struct list_elem general_tag;

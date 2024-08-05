@@ -23,4 +23,6 @@ command/user_prog
 kernel.bin
 *.order
 include/xkernel/initcode.h
-
+userdump
+command/userdump
+command/user_prog
