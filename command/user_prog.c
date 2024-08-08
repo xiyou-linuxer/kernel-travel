@@ -1,7 +1,7 @@
-#include <stdio.h>
-//#include "printf.h"
-//#include "xkernel/types.h"
-//#include <asm/syscall.h>
+//#include <stdio.h>
+#include "printf.h"
+#include "xkernel/types.h"
+#include <asm/syscall.h>
 
 
 int main(void)
@@ -9,18 +9,18 @@ int main(void)
 	int count = 0 ;
 	char filepath[20];
 
-	printf("hello-you\n");
-	//umemset(filepath,0,sizeof(filepath));
-	//ustrcpy(filepath,"/sdcard/busybox");
-	//char *argv[] = {"/sdcard/busybox","sh",NULL};
-	//char *envp[] = {NULL};
-	//ustrcpy(argv[1],"sh");
+	//printf("hello-you\n");
+	umemset(filepath,0,sizeof(filepath));
+	ustrcpy(filepath,"/sdcard/busybox");
+	char *argv[] = {"/sdcard/busybox","sh",NULL};
+	char *envp[] = {NULL};
+	ustrcpy(argv[1],"sh");
 	
 	//myprintf("hello-you\n\n");
-	//int pid = fork();
-	//if (pid == 0){
-	//	//execve(filepath,(char**)argv,envp);
-	//}
+	int pid = fork();
+	if (pid == 0){
+		execve(filepath,(char**)argv,envp);
+	}
 
 	//int status;
 	//int childpid = wait(&status);

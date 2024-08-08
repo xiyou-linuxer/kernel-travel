@@ -112,6 +112,8 @@ void __init __no_sanitize_address start_kernel(void)
 	vfs_init();
 	fs_init();
 
+	struct task_struct *cur = running_thread();
+	struct task_struct* bak = bak_pcb(cur);
 	early_boot_irqs_disabled = true;
 	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
 	
@@ -119,6 +121,9 @@ void __init __no_sanitize_address start_kernel(void)
 		printk("open failed");
 	}
 	sys_write(fd,init_code,init_code_len);
+	*cur = *bak;
+	printk("last test..................\n");
+	test_pcb();
 	local_irq_enable();
 	
 	while (1) {

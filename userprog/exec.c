@@ -248,7 +248,6 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
-	userstk_alloc(cur->pgdir);
 	regs->regs[3]  = USER_STACK-24 - (argc+envs+3)*(sizeof(uint64_t)) - auxs*sizeof(Elf_auxv_t);
 	regs->regs[22] = regs->regs[3];
 	regs->regs[4] = regs->regs[3];

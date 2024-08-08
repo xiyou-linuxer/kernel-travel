@@ -17,7 +17,9 @@ void create_user_vaddr_bitmap(struct task_struct* user_prog) {
    user_prog->usrprog_vaddr.vaddr_start = USER_VADDR_START;
    uint64_t bitmap_pg_cnt = DIV_ROUND_UP((USER_STACK - USER_VADDR_START) / PAGESIZE / 8 , PAGESIZE) + 1;
    user_prog->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(bitmap_pg_cnt);
-   user_prog->usrprog_vaddr.btmp.btmp_bytes_len = (USER_STACK - USER_VADDR_START) / PAGESIZE / 8 +1;
+   user_prog->usrprog_vaddr.btmp.btmp_bytes_len = (USER_STACK - USER_VADDR_START) / PAGESIZE / 8;
+   uint64_t b = user_prog->usrprog_vaddr.btmp.btmp_bytes_len;
+   printk("max address:%llx\n",b*8*PAGESIZE+USER_VADDR_START);
    bitmap_init(&user_prog->usrprog_vaddr.btmp);
 }
 
@@ -34,6 +36,7 @@ void start_process(void* filename)
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
+	userstk_alloc(cur->pgdir);
 	char *argv[] = {filename,NULL};
 	char *envp[] = {NULL};
 	sys_execve(filename,argv,envp);

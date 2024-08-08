@@ -141,7 +141,7 @@ SYM_CODE_START(kernel_entry)			# kernel entry point
 	csrwr		t0, LOONGARCH_CSR_CRMD
 	li.w		t0, 0x04		# 0000 0100, PLV=0, PIE=1, PWE=0
 	csrwr		t0, LOONGARCH_CSR_PRMD
-	li.w		t0, 0x00		# 0000 0000, FPE=0, SXE=0, ASXE=0, BTE=0, 不使用扩展
+	li.w		t0, 0x01		# 0000 0000, FPE=1, SXE=0, ASXE=0, BTE=0, 不使用扩展
 	csrwr		t0, LOONGARCH_CSR_EUEN
 
 	/* We might not get launched at the address the kernel is linked to,

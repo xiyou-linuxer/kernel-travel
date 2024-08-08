@@ -26,7 +26,7 @@ static int copy_pcb(struct task_struct* parent,struct task_struct* child)
 	memset(&child->time_record,0,sizeof(struct tms));
 	memset(&child->start_times,0,sizeof(struct start_tms));
 
-	uint64_t vaddr_btmp_size = DIV_ROUND_UP((USER_TOP - USER_VADDR_START)/PAGESIZE/8,PAGESIZE);
+	uint64_t vaddr_btmp_size = DIV_ROUND_UP((USER_STACK - USER_VADDR_START)/PAGESIZE/8,PAGESIZE);
 	child->usrprog_vaddr.btmp.bits = (uint8_t*)get_pages(vaddr_btmp_size+1);
 	child->usrprog_vaddr.btmp.btmp_bytes_len = parent->usrprog_vaddr.btmp.btmp_bytes_len;
 	if (child->usrprog_vaddr.btmp.bits == NULL) {
@@ -58,6 +58,8 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 				continue;
 			}
 			uint64_t vaddr = (b*8+bit_idx)*PAGESIZE + vaddr_start;
+			printk("vaddr:%llx\n",vaddr);
+			ASSERT(vaddr >=0 && vaddr < USER_STACK);
 			memcpy(page,(void*)vaddr,PAGESIZE);
 			page_dir_activate(child);
 			malloc_usrpage_withoutopmap(child->pgdir,vaddr);

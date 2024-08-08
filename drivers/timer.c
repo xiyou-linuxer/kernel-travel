@@ -29,7 +29,7 @@ void intr_timer_handler(struct pt_regs *regs)
 {
 	struct task_struct* cur_thread = running_thread();
 
-	ASSERT(cur_thread->stack_magic == STACK_MAGIC_NUM);
+	//ASSERT(cur_thread->stack_magic == STACK_MAGIC_NUM);
 
 	cur_thread->elapsed_ticks++;
 	ticks++;

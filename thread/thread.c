@@ -39,7 +39,6 @@ struct pid_pool {
 	struct lock pid_lock;
 }pid_pool;
 
-
 void test_pcb(void)
 {
 	struct task_struct *pcb = running_thread();
@@ -58,6 +57,9 @@ void test_pcb(void)
 	//printk("pending:%d\n",pcb->pending.signal);
 	printk("userprog_vaddr.btmp:%llx  vaddr_start:%llx:\n",pcb->usrprog_vaddr.btmp,pcb->usrprog_vaddr.vaddr_start);
 	printk("general_tag.next:%llx prev:%llx\n",pcb->general_tag.next,pcb->general_tag.prev);
+	printk("fd_table: ");
+	for (int i=0;i<10;i++) printk("%d ",pcb->fd_table[i]);
+	printk("cwd:%s\n",pcb->cwd);
 	printk("cwd_dirent:%llx\n",pcb->cwd_dirent);
 	printk("all_list_tag.next:%llx prev:%llx\n",pcb->all_list_tag.next,pcb->all_list_tag.prev);
 	printk("pgdir:%llx\n",pcb->pgdir);
@@ -65,6 +67,14 @@ void test_pcb(void)
 	printk("mm:%llx\n",pcb->mm);
 	printk("magic:%llx\n",pcb->stack_magic);
 }
+
+struct task_struct *bak_pcb(struct task_struct *p)
+{
+	struct task_struct *bak = (struct task_struct*)get_page();
+	*bak = *p;
+	return bak;
+}
+
 
 static void pid_pool_init(void) { 
 	pid_pool.pid_start = 1;

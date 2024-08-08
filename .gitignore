@@ -26,3 +26,8 @@ include/xkernel/initcode.h
 userdump
 command/userdump
 command/user_prog
+runqemu.sh
+include/xkernel/initcode.h
+command/user_prog
+
+

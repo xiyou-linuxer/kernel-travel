@@ -331,13 +331,20 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 		pgoff = addr >> PAGE_SHIFT;
 	}
 	/*建立VMA和红黑树，文件页等映射*/
+	printk("addr:%llx   len:%llx\n",addr,len);
  	vma_link(mm, vma, prev, rb_link, rb_parent);
 	if (unlikely(!(flags & MAP_FOR_INIT_FILE))) {
 		for (int i = 0; i < len >> PAGE_SHIFT; i++) {
+			printk("vaddr:%llx  ",addr+i*PAGE_SIZE);
 			malloc_usrpage(running_thread()->pgdir, addr + i * PAGE_SIZE);
 			invalidate();
 		}
 	}
+	//for (int i = 0; i < len; i++) {
+	//	printk("%x ",*(char*)(addr+i));
+	//}
+	//printk("bye");
+	//printk("\n\n");
 
 
 out:
