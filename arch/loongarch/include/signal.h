@@ -2,7 +2,6 @@
 #define __SIGNAL_H
 
 #include <sync.h>
-#include <xkernel/sched.h>
 #include <xkernel/sigset.h>
 
 #define SIGHUP           1
@@ -58,9 +57,10 @@ typedef struct {
     struct k_sigaction action[SIGMAX];
 } sighand_t;
 
+void init_handlers(sighand_t **handlers);
 int group_sendsig(void); //future work
 int specific_sendsig(int sig,struct task_struct* t);
 void check_signals(void);
-
+int sys_sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oldact);
 
 #endif

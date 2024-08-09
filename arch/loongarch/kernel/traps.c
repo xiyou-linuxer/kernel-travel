@@ -6,6 +6,7 @@
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <xkernel/types.h>
+#include <signal.h>
 
 extern void *vector_table[];
 extern void tlb_handler(void);
@@ -91,7 +92,7 @@ static unsigned long hwirq_to_virq(unsigned long hwirq)
 extern void before_ret(void);
 void before_ret(void)
 {
-
+	check_signals();
 }
 
 /**

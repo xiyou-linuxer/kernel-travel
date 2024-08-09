@@ -30,4 +30,11 @@ static inline void sigaddset(sigset_t *set,int signo)
 	set->sig[signo/8] |= (1 << signo%8);
 }
 
+static inline void sigremove(sigset_t *set,int signo)
+{
+	ASSERT(0 < signo && signo <= SIGMAX);
+	signo -= 1;
+	set->sig[signo/8] &= ~(1 << signo%8);
+}
+
 #endif

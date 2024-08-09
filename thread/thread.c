@@ -187,8 +187,9 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
 	pthread->priority = prio;
 	pthread->ticks = prio;
 	pthread->elapsed_ticks = 0;
-	//init_sigset(&pthread->pending.signal);
-	//init_sigset(&pthread->blocked);
+	init_sigset(&pthread->pending.signal);
+	init_sigset(&pthread->blocked);
+	init_handlers(&pthread->handlers);
 	pthread->pgdir = 0;
 	pthread->fd_table[0] = 0;
 	pthread->fd_table[1] = 1;

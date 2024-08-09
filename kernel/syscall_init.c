@@ -27,9 +27,10 @@ void syscall_init(void)
 	syscall_table[SYS_PP]                 = sys_person;
 	syscall_table[SYS_write]              = sys_write;
 	syscall_table[SYS_mprotect]           = sys_mprotect;
-	syscall_table[SYS_writev]			  = sys_writev;
-	syscall_table[SYS_ppoll]			  = sys_ppoll;
-	syscall_table[SYS_readlinkat]		  = sys_readlinkat;
+	syscall_table[SYS_writev]             = sys_writev;
+	syscall_table[SYS_ppoll]              = sys_ppoll;
+	syscall_table[SYS_readlinkat]         = sys_readlinkat;
+	syscall_table[SYS_sigaction]          = sys_sigaction;
 	syscall_table[SYS_getpid]             = sys_getpid;
 	syscall_table[SYS_getppid]            = sys_getppid;
 	syscall_table[SYS_getgid]             = sys_getgid;

@@ -10,17 +10,18 @@ int main(void)
 	char filepath[20];
 
 	//printf("hello-you\n");
-	umemset(filepath,0,sizeof(filepath));
-	ustrcpy(filepath,"/sdcard/busybox");
-	char *argv[] = {"/sdcard/busybox","sh",NULL};
-	char *envp[] = {NULL};
-	ustrcpy(argv[1],"sh");
+	//umemset(filepath,0,sizeof(filepath));
+	//ustrcpy(filepath,"/sdcard/busybox");
+	//char *argv[] = {"/sdcard/busybox","sh",NULL};
+	//char *envp[] = {NULL};
+	//ustrcpy(argv[1],"sh");
 	
-	//myprintf("hello-you\n\n");
-	int pid = fork();
-	if (pid == 0){
-		execve(filepath,(char**)argv,envp);
-	}
+	myprintf("hello-you\n\n");
+	sigaction(2,NULL,NULL);
+	//int pid = fork();
+	//if (pid == 0){
+	//	//execve(filepath,(char**)argv,envp);
+	//}
 
 	//int status;
 	//int childpid = wait(&status);

@@ -145,13 +145,14 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_read             63
 #define SYS_write            64
 #define SYS_writev           66
-#define SYS_ppoll			 73
-#define SYS_readlinkat		 78
+#define SYS_ppoll            73
+#define SYS_readlinkat       78
 #define SYS_fstat            80
 #define SYS_exit             93
 #define SYS_set_tid_address  96
 #define SYS_nanosleep       101
 #define SYS_sched_yield     124
+#define SYS_sigaction       134
 #define SYS_times           153
 #define SYS_uname           160
 #define SYS_gettimeofday    169
@@ -240,6 +241,10 @@ static inline int munmap(void *start, size_t len) {
 
 static inline struct task_struct *get_pcb(void) {
 	return syscall(SYS_PCB);
+}
+
+static inline int sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oldact) {
+	return syscall(SYS_sigaction,sig,act,oldact);
 }
 
 #endif
