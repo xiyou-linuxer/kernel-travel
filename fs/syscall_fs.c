@@ -45,6 +45,7 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		//return file_open(fatFs->root,flags,mode);
 	}
 	path_resolution(pathname);
+	printk("pathname:%s\n",pathname);
 	Dirent *file;
 	int fd = -1;
 	struct path_search_record searched_record;
@@ -87,6 +88,8 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		fd = file_open(file, flags ,mode);
 		int _fd = fd_local2global(fd);
 		file_table[_fd].offset = 0;
+		printk("fd name:%s ",file_table[_fd].dirent->name);
+		printk("sys_open fd:%d\n",fd);
 	}
 
 	/* 此fd是指任务pcb->fd_table数组中的元素下标,
@@ -126,18 +129,8 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		Dirent *wr_file = file_table[_fd].dirent;
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
-			//test_magic();
-			printk("===========\n\n");
-			//test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
-			printk("===PCB=====\n\n");
-			test_pcb();
 			unsigned bytes_written = wr_file->file_system->op->file_write(wr_file, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
-			printk("===========\n\n");
-			//test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
-			printk("===PCB=====\n\n");
-			test_pcb();
-			//test_magic();
 			return bytes_written;
 		}
 		else
@@ -159,11 +152,15 @@ int sys_read(int fd, void *buf, unsigned int count)
 	}
 	else if (fd == STDIN)
 	{
+		//printk("STDIN\n");
 		/* 标准输入有可能被重定向为管道缓冲区, 因此要判断 */
 		if (is_pipe(fd))
 		{
 			ret = pipe_read(fd, buf, count);
 		}
+		memcpy(buf,"ls",3);
+		count = 3;
+		return count;
     }
     else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 

@@ -7,15 +7,15 @@
 int main(void)
 {
 	int count = 0 ;
-	char filepath[20];
+	char filepath[64];
 
 	//printf("hello-you\n");
 	umemset(filepath,0,sizeof(filepath));
 	ustrcpy(filepath,"/sdcard/busybox");
-	char *argv[] = {"/sdcard/busybox","sh",NULL};
+	char *argv[] = {"/sdcard/busybox","sh","busybox_testcode.sh",NULL};
 	char *envp[] = {NULL};
 	ustrcpy(argv[1],"sh");
-	
+	ustrcpy(argv[2],"busybox_testcode.sh");
 	//myprintf("hello-you\n\n");
 	int pid = fork();
 	if (pid == 0){

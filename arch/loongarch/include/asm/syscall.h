@@ -175,6 +175,10 @@ static inline int64_t write(int fd,const void* buf,size_t count) {
 	return syscall(SYS_write,fd,buf,count);
 }
 
+static inline int64_t chdir(char* path) {
+	return syscall(SYS_chdir,path);
+}
+
 static inline int64_t writev(int fd,struct iovec *iov,size_t count) {
 	return syscall(SYS_write,fd,iov,count);
 }

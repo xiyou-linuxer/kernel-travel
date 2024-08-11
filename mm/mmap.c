@@ -273,7 +273,7 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 			printk("2MAP_SHARED\n");
 			break;
 		case MAP_PRIVATE:
-			printk("2MAP_PRIVATE\n");
+			//printk("2MAP_PRIVATE\n");
 			break;
 		default:
 			printk("2default\n");
@@ -331,11 +331,11 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 		pgoff = addr >> PAGE_SHIFT;
 	}
 	/*建立VMA和红黑树，文件页等映射*/
-	printk("addr:%llx   len:%llx\n",addr,len);
+	//printk("addr:%llx   len:%llx\n",addr,len);
  	vma_link(mm, vma, prev, rb_link, rb_parent);
 	if (unlikely(!(flags & MAP_FOR_INIT_FILE))) {
 		for (int i = 0; i < len >> PAGE_SHIFT; i++) {
-			printk("vaddr:%llx  ",addr+i*PAGE_SIZE);
+			//printk("vaddr:%llx  ",addr+i*PAGE_SIZE);
 			malloc_usrpage(running_thread()->pgdir, addr + i * PAGE_SIZE);
 			invalidate();
 		}
@@ -357,7 +357,7 @@ out:
 void *sys_mmap(void* addr, size_t len, int prot,
 		int flags, int fd, off_t offset)
 {
-	printk("addr:%x,len:%x,prot:%x,flags:%x,fd:%x,off:%x\n",addr,len,prot,flags,fd,offset);
+	//printk("addr:%x,len:%x,prot:%x,flags:%x,fd:%x,off:%x\n",addr,len,prot,flags,fd,offset);
 	/*fd 获取 struct file*/
 	struct file * file = NULL;
 	if (fd > 2) {
