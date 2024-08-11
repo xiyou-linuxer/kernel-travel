@@ -16,6 +16,7 @@ SYM_FUNC_START(handle_vint_\num)
 	move	a1, sp
 	la.abs	t0, do_vint
 	jirl	ra, t0, 0
+	move	a0, sp
 	la.abs	t0, before_ret
 	jirl	ra, t0, 0
 	RESTORE_ALL_AND_RET
@@ -81,8 +82,6 @@ SYM_FUNC_START(syscall_handler)
 
 	move	a0,sp
 	la.abs	t0, do_syscall
-	jirl	ra, t0, 0
-	la.abs	t0, before_ret
 	jirl	ra, t0, 0
 	RESTORE_ALL_AND_RET
 SYM_FUNC_END(syscall_handler)

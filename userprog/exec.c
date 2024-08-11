@@ -236,9 +236,11 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	if (envp != NULL)
 		while (envp[envs]) envs++;
 
+	struct task_struct* cur = running_thread();
+
+
 	unsigned long crmd;
 	unsigned long prmd;
-	struct task_struct* cur = running_thread();
 	//printk("%s sys_execve\n",cur->name);
 	strcpy(cur->name,path);
 	struct pt_regs* regs = (struct pt_regs*)((uint64_t)cur + PAGESIZE -sizeof(struct pt_regs));
@@ -313,23 +315,23 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	//intr_enable();
 	
 	/* test arguments */
-	uint64_t stk = regs->regs[3];
-	printk("USER_STACK:%llx\n",USER_STACK);
-	printk("stack:%llx\n",regs->regs[3]);
-	printk("argc:%d\n",*(uint64_t*)stk);
-	for (int i = 1; i <= argc+1; i++)
-		printk("argv[%d]:%s\n",i-1,(char*)*(uint64_t*)(stk+i*sizeof(uint64_t)));
-	for (int i = 0; i <= envs; i++)
-		printk("envp[%d]:%s\n",i,(char*)*(uint64_t*)(stk+(argc+2+i)*sizeof(uint64_t)));
-	for (int i = 0; i < 2*auxs; i+=2) {
-		printk("address at:%llx\n",auxv+i/2);
-		printk("auxv[%d]:%d,auxv[%d]:%llx\n",i, \
-			   *(uint64_t*)(stk+(argc+envs+3+i)*sizeof(uint64_t)), \
-			   i+1,*(uint64_t*)(stk+(argc+envs+3+i+1)*sizeof(uint64_t)));
-	}
-	printk("random at:%llx\n",random);
-	for (int i = 0; i < 16; i++)
-		printk("random[%d]:%d\n",i,*(char*)(random+i));
+	//uint64_t stk = regs->regs[3];
+	//printk("USER_STACK:%llx\n",USER_STACK);
+	//printk("stack:%llx\n",regs->regs[3]);
+	//printk("argc:%d\n",*(uint64_t*)stk);
+	//for (int i = 1; i <= argc+1; i++)
+	//	printk("argv[%d]:%s\n",i-1,(char*)*(uint64_t*)(stk+i*sizeof(uint64_t)));
+	//for (int i = 0; i <= envs; i++)
+	//	printk("envp[%d]:%s\n",i,(char*)*(uint64_t*)(stk+(argc+2+i)*sizeof(uint64_t)));
+	//for (int i = 0; i < 2*auxs; i+=2) {
+	//	printk("address at:%llx\n",auxv+i/2);
+	//	printk("auxv[%d]:%d,auxv[%d]:%llx\n",i, \
+	//		   *(uint64_t*)(stk+(argc+envs+3+i)*sizeof(uint64_t)), \
+	//		   i+1,*(uint64_t*)(stk+(argc+envs+3+i+1)*sizeof(uint64_t)));
+	//}
+	//printk("random at:%llx\n",random);
+	//for (int i = 0; i < 16; i++)
+	//	printk("random[%d]:%d\n",i,*(char*)(random+i));
 
 
 	printk("jump to proc... at %llx\n",entry);

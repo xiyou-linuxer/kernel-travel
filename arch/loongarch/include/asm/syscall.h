@@ -152,7 +152,9 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_set_tid_address  96
 #define SYS_nanosleep       101
 #define SYS_sched_yield     124
+#define SYS_kill            129
 #define SYS_sigaction       134
+#define SYS_sigreturn       139
 #define SYS_times           153
 #define SYS_uname           160
 #define SYS_gettimeofday    169
@@ -246,5 +248,10 @@ static inline struct task_struct *get_pcb(void) {
 static inline int sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oldact) {
 	return syscall(SYS_sigaction,sig,act,oldact);
 }
+
+static inline int kill(pid_t pid,int sig) {
+	return syscall(SYS_kill,pid,sig);
+}
+
 
 #endif

@@ -7,6 +7,7 @@
 #include <xkernel/string.h>
 #include <xkernel/types.h>
 #include <signal.h>
+#include <xkernel/thread.h>
 
 extern void *vector_table[];
 extern void tlb_handler(void);
@@ -89,10 +90,13 @@ static unsigned long hwirq_to_virq(unsigned long hwirq)
 	return EXCCODE_INT_START + hwirq;
 }
 
-extern void before_ret(void);
-void before_ret(void)
+extern void before_ret(struct pt_regs *regs);
+void before_ret(struct pt_regs *regs)
 {
-	check_signals();
+	if (running_thread() == main_thread)
+		return ;
+	//printk("before_ret:%llx\n",regs);
+	check_signals(regs);
 }
 
 /**

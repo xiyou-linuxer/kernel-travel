@@ -15,8 +15,6 @@
 
 #define STACK_MAGIC_NUM 0x27839128
 
-typedef int16_t pid_t;
-
 typedef void thread_func(void *);
 
 struct tms {

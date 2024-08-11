@@ -1,8 +1,10 @@
+#include <allocator.h>
 #include <signal.h>
 #include <xkernel/thread.h>
 #include <asm-generic/bitops/ffz.h>
 #include <xkernel/stdio.h>
 #include <xkernel/sched.h>
+
 
 #define SIG_DFL ((void (*)(int))0)
 #define SIG_IGN ((void (*)(int))1)
@@ -15,6 +17,9 @@
 		M(SIGCONT) | M(SIGCHLD) | M(SIGWINCH) | M(SIGURG) )
 
 #define sig_kernel_ignore(sig) T(sig, SIG_KERNEL_IGNORE_MASK)
+
+#define SIGRETURN_ADDR USER_TOP-0x2000
+extern void sigreturn_code(void);
 
 static inline int find_lsb(unsigned long *x) {
 	for (int i = 0; i < sizeof(unsigned long)*8; i++) {
@@ -59,6 +64,14 @@ int specific_sendsig(int sig,struct task_struct *t)
 	return sig;
 }
 
+int sys_kill(pid_t pid, int sig)
+{
+	printk("kill %d sig %d\n",pid,sig);
+	struct task_struct *t = pid2thread(pid);
+	return specific_sendsig(sig,t);
+}
+
+
 int get_signal(struct sigpending *pending,sigset_t *blocked)
 {
 	unsigned long *s = pending->signal.sig;
@@ -78,23 +91,76 @@ int dequeue_signal(struct sigpending *pending,sigset_t *blocked)
 	return sig;
 }
 
-void check_signals(void)
+void save_sigcontext(struct pt_regs *regs,struct sigframe *f)
+{
+	ucontext_t *uc = &f->uc;
+	uc->uc_stack = regs->regs[3];
+
+	uc->uc_mcontext.csr_era  = regs->csr_era;
+	uc->uc_mcontext.csr_prmd = regs->csr_prmd; 
+	for (int r = 0; r < 32; r++) {
+		uc->uc_mcontext.__space[r] = regs->regs[r];
+	}
+}
+
+void restore_sigcontext(struct pt_regs *regs,struct sigframe *f)
+{
+	ucontext_t *uc = &f->uc;
+	regs->regs[3] = uc->uc_stack;
+
+	regs->csr_era  = uc->uc_mcontext.csr_era;
+	regs->csr_prmd = uc->uc_mcontext.csr_prmd; 
+	for (int r = 0; r < 32; r++) {
+		regs->regs[r] = uc->uc_mcontext.__space[r];
+	}
+}
+
+void sys_sigreturn(struct pt_regs *regs)
+{
+	struct sigframe *f = (struct sigframe*)regs->regs[3];
+	restore_sigcontext(regs,f);
+}
+
+void set_sigframe(int sig,struct pt_regs* regs)
+{
+	/* 保存当前用户进程上下文 */
+	struct sigframe *frame = (struct sigframe*)(regs->regs[3] - sizeof(struct sigframe));
+	save_sigcontext(regs,frame);
+
+	/* 修改regs,以正确的状态进入信号处理程序 */
+	struct task_struct *cur = running_thread();
+	memcpy((void*)SIGRETURN_ADDR,sigreturn_code,0x20);
+	regs->regs[1] = SIGRETURN_ADDR;
+	regs->regs[3] = (uint64_t)frame;
+	regs->regs[4] = (uint64_t)sig;
+	regs->csr_era = (uint64_t)cur->handlers->action[sig-1].sa_handler;
+}
+
+void check_signals(struct pt_regs* regs)
 {
 	struct task_struct *cur = running_thread();
+	//printk("check_signals:%llx\n",regs);
 
 	int sig = dequeue_signal(&cur->pending,&cur->blocked);
 	while (sig)
 	{
 		printk("receive sig:%d\n",sig);
 
+		if (false /* 阻塞的情况 */) {
+
+		} else {
+			set_sigframe(sig,regs);
+			break;
+		}
 		sig = dequeue_signal(&cur->pending,&cur->blocked);
 	}
 }
 
 int sys_sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oldact)
 {
+	printk("sys_sigaction\n");
 	struct task_struct *cur = running_thread();
-	specific_sendsig(sig,cur);
+	memcpy(&cur->handlers->action[sig-1],act,sizeof(*act));
 	return 0;
 }
 

@@ -5,6 +5,7 @@
 #include <xkernel/list.h>
 #include <asm/timer.h>
 
+extern struct task_struct* main_thread;
 extern struct list thread_ready_list;
 extern struct list thread_all_list;
 extern struct list_elem* thread_tag;

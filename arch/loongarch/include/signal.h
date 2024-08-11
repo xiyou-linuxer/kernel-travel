@@ -57,10 +57,32 @@ typedef struct {
     struct k_sigaction action[SIGMAX];
 } sighand_t;
 
+
+typedef struct {
+	unsigned long csr_era;
+	unsigned long csr_prmd;
+	unsigned long __space[32];
+} mcontext_t;
+
+typedef struct __ucontext
+{
+	unsigned long      uc_stack;
+	sigset_t           uc_sigmask;
+	mcontext_t         uc_mcontext;
+} ucontext_t;
+
+
+struct sigframe
+{
+	ucontext_t uc;
+};
+
+void sys_sigreturn(struct pt_regs *regs);
 void init_handlers(sighand_t **handlers);
 int group_sendsig(void); //future work
 int specific_sendsig(int sig,struct task_struct* t);
-void check_signals(void);
+int sys_kill(pid_t pid, int sig);
+void check_signals(struct pt_regs* regs);
 int sys_sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oldact);
 
 #endif

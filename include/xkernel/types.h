@@ -48,6 +48,8 @@ typedef s16		    int16_t;
 typedef unsigned long		size_t;
 typedef unsigned long long	phys_addr_t;
 
+typedef int16_t pid_t;
+
 #define __bitwise	__attribute__((bitwise))
 typedef unsigned int __bitwise gfp_t;
 

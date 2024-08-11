@@ -49,7 +49,13 @@ void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs)
 	if (nr > NR_SYSCALLS) {
 		return ;
 	}
+
 	sys_fn = syscall_table[nr];
+	if (nr == SYS_sigreturn) {
+		//printk("do_syscall: regs at:%llx\n",regs);
+		regs->orig_a0 = (unsigned long)regs;
+	}
+
 	regs->regs[4] = sys_fn(regs->orig_a0,regs->regs[5],regs->regs[6], \
 						   regs->regs[7],regs->regs[8],regs->regs[9]);
 	//printk("\n!!!pid:%d do_syscall:%d done !!!\n",sys_getpid(),nr);

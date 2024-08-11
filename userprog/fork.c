@@ -43,6 +43,9 @@ static int copy_pcb(struct task_struct* parent,struct task_struct* child)
 
 static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* child,void* page)
 {
+	/* alloc space for sigreturn */
+	malloc_usrpage_withoutopmap(child->pgdir,USER_TOP-0x2000);
+
 	uint64_t vaddr_start = child->usrprog_vaddr.vaddr_start;
 	struct bitmap* btmp = &child->usrprog_vaddr.btmp;
 	//printk("copy_body_stack3: parent %s vaddr = %d\n",parent->name,*(unsigned long*)parent->usrprog_vaddr.btmp.bits);

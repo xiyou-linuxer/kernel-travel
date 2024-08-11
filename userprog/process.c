@@ -36,6 +36,7 @@ void start_process(void* filename)
 	prmd |= PLV_USER;
 	regs->csr_prmd = prmd;
 
+	malloc_usrpage_withoutopmap(cur->pgdir,USER_TOP-0x2000);
 	userstk_alloc(cur->pgdir);
 	char *argv[] = {filename,NULL};
 	char *envp[] = {NULL};
