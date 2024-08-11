@@ -37,4 +37,10 @@ static inline void sigremove(sigset_t *set,int signo)
 	set->sig[signo/8] &= ~(1 << signo%8);
 }
 
+static inline void sigset_or(sigset_t *set1, sigset_t *set2) {
+	for (int i = 0; i < NSIG_WORDS; i++) {
+		set1->sig[i] |= set2->sig[i];
+	}
+}
+
 #endif

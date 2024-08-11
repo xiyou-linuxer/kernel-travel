@@ -91,9 +91,10 @@ int dequeue_signal(struct sigpending *pending,sigset_t *blocked)
 	return sig;
 }
 
-void save_sigcontext(struct pt_regs *regs,struct sigframe *f)
+static void save_sigcontext(struct pt_regs *regs,struct sigframe *f,sigset_t *blocked)
 {
 	ucontext_t *uc = &f->uc;
+	memcpy(&uc->uc_sigmask,blocked,sizeof(sigset_t));
 	uc->uc_stack = regs->regs[3];
 
 	uc->uc_mcontext.csr_era  = regs->csr_era;
@@ -103,9 +104,11 @@ void save_sigcontext(struct pt_regs *regs,struct sigframe *f)
 	}
 }
 
-void restore_sigcontext(struct pt_regs *regs,struct sigframe *f)
+static void restore_sigcontext(struct pt_regs *regs,struct sigframe *f)
 {
+	struct task_struct *cur = running_thread();
 	ucontext_t *uc = &f->uc;
+	memcpy(&cur->blocked,&uc->uc_sigmask,sizeof(sigset_t));
 	regs->regs[3] = uc->uc_stack;
 
 	regs->csr_era  = uc->uc_mcontext.csr_era;
@@ -121,11 +124,11 @@ void sys_sigreturn(struct pt_regs *regs)
 	restore_sigcontext(regs,f);
 }
 
-void set_sigframe(int sig,struct pt_regs* regs)
+static void set_sigframe(int sig,struct pt_regs* regs,sigset_t *blocked)
 {
 	/* 保存当前用户进程上下文 */
 	struct sigframe *frame = (struct sigframe*)(regs->regs[3] - sizeof(struct sigframe));
-	save_sigcontext(regs,frame);
+	save_sigcontext(regs,frame,blocked);
 
 	/* 修改regs,以正确的状态进入信号处理程序 */
 	struct task_struct *cur = running_thread();
@@ -139,19 +142,37 @@ void set_sigframe(int sig,struct pt_regs* regs)
 void check_signals(struct pt_regs* regs)
 {
 	struct task_struct *cur = running_thread();
-	//printk("check_signals:%llx\n",regs);
+	sigset_t *blocked = &cur->blocked;
 
 	int sig = dequeue_signal(&cur->pending,&cur->blocked);
 	while (sig)
 	{
 		printk("receive sig:%d\n",sig);
 
-		if (false /* 阻塞的情况 */) {
+		/* SIGKILL 永不阻塞，直接杀死对方 */
+		if (sig == SIGKILL) {
 
-		} else {
-			set_sigframe(sig,regs);
+		}
+
+		/* 若取得的信号被阻塞,则重新加入 */
+		if (sigismember(blocked,sig)) {
+			specific_sendsig(sig,cur);
+			sig = dequeue_signal(&cur->pending,&cur->blocked);
+			continue;
+		}
+
+		struct k_sigaction *ka = &cur->handlers->action[sig-1];
+		if (ka->sa_handler != SIG_DFL) {
+			sigset_or(&cur->blocked,&ka->sa_mask);
+			set_sigframe(sig,regs,blocked);
 			break;
 		}
+
+		/* do default */
+		if (sig_kernel_ignore(sig)) {
+			continue;
+		}
+
 		sig = dequeue_signal(&cur->pending,&cur->blocked);
 	}
 }
