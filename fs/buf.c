@@ -1,3 +1,4 @@
+#include <xkernel/printk.h>
 #include <xkernel/block_device.h>
 #include <fs/buf.h>
 #include <xkernel/stdio.h>

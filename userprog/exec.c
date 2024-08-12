@@ -127,6 +127,8 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 		goto done;
 	}
 	/* mm_strct 初始化*/
+	struct task_struct * curr = running_thread();
+	printk("curr: %p\n", curr);
 	running_thread()->mm->start_data = 0;
 	running_thread()->mm->end_data = 0;
 	

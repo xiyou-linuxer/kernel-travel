@@ -370,13 +370,21 @@ static void port_rebase(int portno)
 	// 命令表偏移：40K + 8K*portno
 	// 命令表大小 = 256*32 = 每个端口 8K
 	struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB)));
+	pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
+	pr_info("port: %llu\n", port);
+	pr_info("PORT_CLB: %llu\n", PORT_CLB);
+	pr_info("cmdheader: 0x%p", cmdheader);
 	for (int i = 0; i < 32; ++i)//32个命令槽位
 	{
+		pr_info("2\n");
 		cmdheader[i].prdt_len = 8;  // 每个命令表 8 个 prdt 条目
+		pr_info("3\n");
 		// 256 bytes per command table, 64+16+48+16*8
 		// 每个命令表256字节，64+16+48+16*8
 		cmdheader[i].command_table_base = ahci_port_base_vaddr + (40 << 10) + (portno << 13) + (i << 8);
+		pr_info("4\n");
 		memset((void *)cmdheader[i].command_table_base, 0, 256);
+		pr_info("5\n");
 	}
 	start_cmd(port); // Start command engine
 }
@@ -392,7 +400,8 @@ void disk_init(void) {
 	{
 		printk(KERN_ERR "[ahci]: no AHCI controllers present!\n");
 	}
-	SATA_ABAR_BASE = CSR_DMW0_BASE|pci_dev->bar[0].base_addr;
+	SATA_ABAR_BASE = CSR_DMW1_BASE|pci_dev->bar[0].base_addr;
+	pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
 	/*注册中断处理程序*/
 
 	*(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_IE;//全局中断使能

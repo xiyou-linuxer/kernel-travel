@@ -1,3 +1,4 @@
+#include <xkernel/printk.h>
 #include <xkernel/list.h>
 #include <trap/irq.h>
 #include <debug.h>
@@ -89,7 +90,7 @@ struct list_elem* list_traversal(struct list* plist, function func, void *arg)
 
 /*反向遍历*/
 struct list_elem* list_reverse(struct list* plist, function func, void *arg)
-{
+{	
 	struct list_elem* ret = plist->tail.prev;
 	while (ret != &plist->head)
 	{

@@ -228,7 +228,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 {
 	/*读取总线设备的设备id*/
 	unsigned int val;
-	//printk("read config a\n");
+	// pr_info("read config a\n");
 	pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_DEVICE_VENDER,(int *)&val);
 	unsigned int vendor_id = val & 0xffff;
 	unsigned int device_id = val >> 16;
@@ -243,7 +243,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/*读取设备类型*/
-	//printk("read config b\n");
+	// pr_info("read config b\n");
 	pci_read_config(PCI_CONFIG0_BASE,bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,(int *)&val);
 	unsigned char header_type = ((val >> 16));
 	/*读取 command 寄存器*/
@@ -265,16 +265,25 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	int bar, reg;
 	for (bar = 0; bar < PCI_MAX_BAR; bar++) {//遍历六个地址寄存器
 		reg = PCI_BASS_ADDRESS0 + (bar*4);
+		// pr_info("bar %d\n", bar);
 		/*获取地址值*/
+		// pr_info("reg %d\n", reg);
+		if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)
+			continue;
+		if (bar == 0 && reg == 16 && bus == 0 && device == 14 && function == 1)
+			continue;
+
 		pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
 		/*设置bar寄存器为全1禁用此地址，在禁用后再次读取读出的内容为地址空间的大小*/
 		pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
+		// pr_info("pci_write_config down\n");
 
 		/* bass address[0~5] 获取地址长度*/
 		unsigned int len;
 		pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg,&len);
 		/*pci_write_config 将io/mem地址返回到confige空间*/
 		pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, val);
+		// pr_info("pci_write_config down\n");
 		/*init pci device bar*/
 		if (len != 0 && len != 0xffffffff) {
 			pci_device_bar_init(&pci_dev->bar[bar], val, len);
@@ -322,8 +331,8 @@ static void pci_scan_buses()
 	for (bus = 0; bus < PCI_MAX_BUS; bus++) {//遍历总线
 		for (device = 0; device < PCI_MAX_DEV; device++) {//遍历总线上的每一个设备
 			for (function = 0; function < PCI_MAX_FUN; function++) {//遍历每个功能号
+				// pr_info("bus: %d, device: %d, function: %d\n",bus ,device ,function);
 				pci_scan_device(bus, device, function);
-				//printk("next scan\n");
 			}
 		}
 	}

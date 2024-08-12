@@ -1,6 +1,7 @@
 #include <fs/fs.h>
 #include <xkernel/types.h>
 #include <xkernel/stdio.h>
+#include <xkernel/printk.h>
 #include <xkernel/string.h>
 #include <fs/vfs.h>
 #include <fs/dirent.h>
@@ -59,7 +60,7 @@ static void build_dirent_ext4tree(Dirent *parent)
 int fill_sb(FileSystem *fs)
 {
 	ASSERT(fs != NULL);
-
+	pr_info("1\n");
 	/*填写超级块中ext4的基本属性*/
 	Buffer *buf0 = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
 	void *p = &fs->superBlock.ext4_sblock;
