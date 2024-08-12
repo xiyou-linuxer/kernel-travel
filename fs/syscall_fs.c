@@ -45,7 +45,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		//return file_open(fatFs->root,flags,mode);
 	}
 	path_resolution(pathname);
-	printk("pathname:%s\n",pathname);
 	Dirent *file;
 	int fd = -1;
 	struct path_search_record searched_record;
@@ -88,8 +87,6 @@ int sys_open(const char *pathname, int flags, mode_t mode)
 		fd = file_open(file, flags ,mode);
 		int _fd = fd_local2global(fd);
 		file_table[_fd].offset = 0;
-		printk("fd name:%s ",file_table[_fd].dirent->name);
-		printk("sys_open fd:%d\n",fd);
 	}
 
 	/* 此fd是指任务pcb->fd_table数组中的元素下标,
@@ -157,10 +154,13 @@ int sys_read(int fd, void *buf, unsigned int count)
 		if (is_pipe(fd))
 		{
 			ret = pipe_read(fd, buf, count);
+		}else
+		{
+			char tmp_buf[1024] = {0};
+			console_get_str(tmp_buf);
+			memcpy(tmp_buf, buf, count);
+			return count;
 		}
-		memcpy(buf,"ls",3);
-		count = 3;
-		return count;
     }
     else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 
