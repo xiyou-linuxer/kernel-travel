@@ -254,7 +254,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	regs->regs[22] = regs->regs[3];
 	regs->regs[4] = regs->regs[3];
 
-	char (*uargs) [20] = (char (*)[20])USER_STACK;
+	char (*uargs) [30] = (char (*)[30])USER_STACK;
 	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	struct mm_struct* mm = (struct mm_struct *)get_page();
 	cur->mm = mm;
