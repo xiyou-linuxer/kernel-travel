@@ -19,14 +19,25 @@ pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];/*存储设备信息的结构�
 */
 static void pci_read_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
-    unsigned long pcie_header_base = CSR_DMW0_BASE|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
-    *read_data = *(volatile unsigned int *)(pcie_header_base + reg_id) ; 
+	unsigned long pcie_header_base = CSR_DMW0_BASE|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+	*read_data = *(volatile unsigned int *)(pcie_header_base + reg_id) ; 
 }
 
 static void pci_write_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int  write_data)
 {
 	unsigned long pcie_header_base = CSR_DMW0_BASE|base_cfg_addr| (bus << 16) | (device << 11)| (function<<8);
+	// if (reg_id == 16 && bus == 0 && device == 13 && function == 1) {
+		// pr_info("pcie_header_base: 0x%p\n", pcie_header_base);
+		// unsigned int * val = (volatile unsigned int *)( pcie_header_base + reg_id);
+		// pr_info("reg_id: 0x%p\n", reg_id);
+		// pr_info("write_data: 0x%x\n", write_data);
+		// pr_info("val: 0x%p\n", val);
+		// pr_info("before *val: 0x%x\n", *val);
+	// }
+
 	*(volatile unsigned int *)( pcie_header_base + reg_id) = write_data;
+	// pr_info("curr *val: 0x%x\n", *val);
+
 }
 
 /*初始化pci设备的bar地址*/
@@ -268,12 +279,15 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		// pr_info("bar %d\n", bar);
 		/*获取地址值*/
 		// pr_info("reg %d\n", reg);
-		if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)
-			continue;
-		if (bar == 0 && reg == 16 && bus == 0 && device == 14 && function == 1)
-			continue;
+
+		// if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)
+		// 	continue;
+		// if (bar == 0 && reg == 16 && bus == 0 && device == 14 && function == 1)
+		// 	continue;
 
 		pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
+		// if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)
+		// 	pr_info("val: 0x%x\n", val);
 		/*设置bar寄存器为全1禁用此地址，在禁用后再次读取读出的内容为地址空间的大小*/
 		pci_write_config(PCI_CONFIG0_BASE,bus, device, function, reg, 0xffffffff);
 		// pr_info("pci_write_config down\n");
@@ -336,6 +350,7 @@ static void pci_scan_buses()
 			}
 		}
 	}
+	pr_info("pci_scan_buses done\n");
 }
 
 pci_device_t* pci_get_device(unsigned int vendor_id, unsigned int device_id)

@@ -394,7 +394,7 @@ void disk_init(void) {
 	printk("disk_init start\n");
 	char* block_data = 0;
 	/*获取磁盘控制器的bar地址*/
-	pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
+	pci_device_t *pci_dev = pci_get_device_by_bus(0, 8, 0);
 	/*sata控制器不存在则报错*/
 	if (pci_dev==NULL)
 	{
