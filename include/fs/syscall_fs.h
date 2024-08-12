@@ -3,6 +3,7 @@
 
 #include <xkernel/types.h>
 
+#define F_DUPFD_CLOEXEC 1030
 
 int sys_open(const char* pathname, int flags, mode_t mode);
 int sys_write(int fd, const void* buf, unsigned int count);
@@ -27,4 +28,5 @@ int sys_getdents(int fd, struct linux_dirent64* buf, size_t len);
 int sys_writev(int fd, const struct iovec* iov, int iovcnt);
 int sys_readlinkat(int dirfd, u64 pathname, u64 buf, size_t bufsiz);
 int sys_ppoll(unsigned long p_fds, int nfds, unsigned long tmo_p, unsigned long sigmask);
+int sys_fcntl(int, int, int );
 #endif

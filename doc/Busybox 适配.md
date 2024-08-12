@@ -497,7 +497,31 @@ exitcode=2，查了下是命令（或参数）使用不当
 检查下argv是否如愿,有无问题
 检查了，没问题
 
+跟踪调试了一下，原因在这：
+```c
+static int
+savefd(int from)
+{
+	int newfd;
+	int err;
 
+	newfd = fcntl(from, F_DUPFD_CLOEXEC, 10);
+	err = newfd < 0 ? errno : 0;
+	if (err != EBADF) {
+		if (err)
+			ash_msg_and_raise_perror("%d", from);
+		close(from);
+		if (F_DUPFD_CLOEXEC == F_DUPFD)
+			close_on_exec_on(newfd);
+	}
+
+	return newfd;
+}
+```
+fcntl 返回的newfd<0
+它应该sys_fcntl的，但是没打印出来，是没调吗？
+好吧，之前打印了
+这里fildes=F_DUPFD_CLOEXEC，表示分配一个指向同一个open file descriptor的fd，并设置FD_CLOEXEC标志，表示在exec新进程的时候关闭旧的文件描述符
 
 
 

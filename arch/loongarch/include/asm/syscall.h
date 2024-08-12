@@ -133,6 +133,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_getcwd           17
 #define SYS_dup              23
 #define SYS_dup2             24
+#define __NR3264_fcntl       25
 #define SYS_mkdirat          34
 #define SYS_unlinkat         35
 #define SYS_umount2          39
@@ -171,6 +172,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_statx           291
 #define SYS_PCB             298
 #define SYS_PP              299
+#define SYS_fcntl           __NR3264_fcntl
 
 void __attribute__((__noinline__)) do_syscall(struct pt_regs *regs);
 

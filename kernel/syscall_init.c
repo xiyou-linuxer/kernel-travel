@@ -27,6 +27,7 @@ void syscall_init(void)
 	syscall_table[SYS_PP]                 = sys_person;
 	syscall_table[SYS_write]              = sys_write;
 	syscall_table[SYS_sigreturn]          = sys_sigreturn;
+	syscall_table[SYS_fcntl]              = sys_fcntl;
 	syscall_table[SYS_kill]               = sys_kill;
 	syscall_table[SYS_mprotect]           = sys_mprotect;
 	syscall_table[SYS_writev]             = sys_writev;

@@ -21,6 +21,9 @@
 #include <asm/syscall.h>
 #include <asm-generic/ioctl.h>
 #include <xkernel/wait.h>
+#include <fs/fcntl.h>
+#include <xkernel/stdarg.h>
+
 void test_memory(void *addr,uint64_t size)
 {
 	char *p = addr;
@@ -535,4 +538,18 @@ int sys_ioctl(int fd, u64 cmd, u64 arg)
 	struct fd file = file_table[_fd];
 	do_vfs_ioctl(fd,_fd,cmd,arg);
 	return 0;
+}
+
+
+int sys_fcntl(int fd,int cmd,int arg)
+{
+	int ret = -1;
+	va_list ap;
+	switch(cmd)
+	{
+		case F_DUPFD_CLOEXEC :
+			ret = sys_dup(fd); //CLOEXEC还未实现
+			break;
+	}
+	return ret;
 }
