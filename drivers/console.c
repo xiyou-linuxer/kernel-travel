@@ -27,10 +27,23 @@ void console_put_str(char* str) {
 	serial_ns16550a_puts(str);
 	console_release();
 }
+
+void console_get_str(char* str) {
+	console_acquire();
+	serial_ns16550a_gets(str);
+	console_release();
+}
+
 /* 终端中输出字符 */
 void console_put_char(uint8_t char_asci) {
 	console_acquire(); 
 	serial_ns16550a_putc(char_asci); 
+	console_release();
+}
+
+void console_get_char(uint8_t char_asci) {
+	console_acquire(); 
+	char_asci = serial_ns16550a_getc(); 
 	console_release();
 }
 

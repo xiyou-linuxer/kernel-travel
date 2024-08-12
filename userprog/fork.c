@@ -61,7 +61,7 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 				continue;
 			}
 			uint64_t vaddr = (b*8+bit_idx)*PAGESIZE + vaddr_start;
-			printk("vaddr:%llx\n",vaddr);
+			//printk("vaddr:%llx\n",vaddr);
 			ASSERT(vaddr >=0 && vaddr < USER_STACK);
 			memcpy(page,(void*)vaddr,PAGESIZE);
 			page_dir_activate(child);

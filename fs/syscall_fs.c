@@ -126,18 +126,8 @@ int sys_write(int fd, const void *buf, unsigned int count)
 		Dirent *wr_file = file_table[_fd].dirent;
 		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
 		{
-			//test_magic();
-			printk("===========\n\n");
-			//test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
-			printk("===PCB=====\n\n");
-			test_pcb();
 			unsigned bytes_written = wr_file->file_system->op->file_write(wr_file, buf,file_table[_fd].offset,count);
 			file_table[_fd].offset += bytes_written;
-			printk("===========\n\n");
-			//test_memory((uint64_t*)((uint64_t)running_thread()+sizeof(struct task_struct)),400);
-			printk("===PCB=====\n\n");
-			test_pcb();
-			//test_magic();
 			return bytes_written;
 		}
 		else
@@ -159,10 +149,17 @@ int sys_read(int fd, void *buf, unsigned int count)
 	}
 	else if (fd == STDIN)
 	{
+		//printk("STDIN\n");
 		/* 标准输入有可能被重定向为管道缓冲区, 因此要判断 */
 		if (is_pipe(fd))
 		{
 			ret = pipe_read(fd, buf, count);
+		}else
+		{
+			char tmp_buf[1024] = {0};
+			console_get_str(tmp_buf);
+			memcpy(tmp_buf, buf, count);
+			return count;
 		}
     }
     else if (is_pipe(fd))

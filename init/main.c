@@ -116,7 +116,7 @@ void __init __no_sanitize_address start_kernel(void)
 	struct task_struct* bak = bak_pcb(cur);
 	early_boot_irqs_disabled = true;
 	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	
+	sys_chdir("/sdcard");
 	if (fd == -1) {
 		printk("open failed");
 	}

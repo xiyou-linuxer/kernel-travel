@@ -75,3 +75,12 @@ void serial_ns16550a_puts(char *str)
 		ch++;
 	}
 }
+
+void serial_ns16550a_gets(char *str)
+{
+	char *ch = str;
+	while (*ch != '\0') {
+		ch = serial_ns16550a_getc();
+		ch++;
+	}
+}

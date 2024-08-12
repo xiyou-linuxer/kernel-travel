@@ -16,6 +16,7 @@
 #include <process.h>
 #include <trap/irq.h>
 #include <asm/timer.h>
+#include <fs/syscall_fs.h>
 #include <xkernel/memory.h>
 #include <xkernel/sigset.h>
 
@@ -124,6 +125,7 @@ pid_t sys_set_tid_address(int* tidptr)
 {
 	struct task_struct* cur = running_thread();
 	cur->clear_child_tid = (uint64_t)tidptr;
+	sys_chdir("/sdcard");
 	return sys_getpid();
 }
 
