@@ -158,6 +158,8 @@ static int check_cached(struct list_elem* list_elem, void* arg)
 /*list_reverse的回调函数*/
 static int check_uncached(struct list_elem* list_elem, void* arg)
 {
+	pr_info("list_elem: 0x%p\n", list_elem);
+	pr_info("arg: 0x%p\n", arg);
 	unsigned long * arg1 = (unsigned long *)arg;
 	uint64_t dev = arg1[0];
 	uint64_t blockno= arg1[1];
@@ -170,10 +172,16 @@ static int check_uncached(struct list_elem* list_elem, void* arg)
 		}
 		// 如果该缓冲区没有被引用，直接使用
 		buf->dev = dev;
+		pr_info("buf->dev: %d\n", buf->dev);
 		buf->blockno = blockno;
+		pr_info("buf->blockno: %d\n", buf->blockno);
 		buf->valid = 0;
+		pr_info("buf->valid: %d\n", buf->valid);
 		buf->dirty = 0;
+		pr_info("buf->dirty: %d\n", buf->dirty);
 		buf->refcnt = 1;
+		pr_info("buf->refcnt: %d\n", buf->refcnt);
+		pr_info("finish check_uncached\n");
 		return 1;
 	}else
 	{
@@ -193,11 +201,15 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
 		buf = elem2entry(Buffer, Buffer_node, elem);
 		return buf;
 	}
+	pr_info("check_uncached: %p\n",check_uncached);
 	struct list_elem * elem1=list_reverse(&bufferGroups[group].list,check_uncached,(void *)arg);
+	pr_info("no cache\n");
+	pr_info("elem1: %p\n",elem1);
 	// 没有被缓存，找到最久未使用的缓冲区（LRU策略换出）
 	if(elem1!=NULL)
 	{
 		buf = elem2entry(Buffer, Buffer_node, elem1);
+		pr_info("return buf: 0x%p\n",buf);
 		return buf;
 	}
 	printk("No Buffer Available!\n");
@@ -209,8 +221,10 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
  */
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
 	Buffer *buf = bufAlloc(dev, blockno);
+	pr_info("buf->valid: 0x%x\n", buf->valid);
 	if (!buf->valid) {
 		if (is_read) block_read(blockno,1,buf->data,1);
+		pr_info("buf->valid: 0x%x\n", buf->valid);
 		buf->valid = true;
 	}
 	return buf;

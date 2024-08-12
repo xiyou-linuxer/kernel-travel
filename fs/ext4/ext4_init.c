@@ -60,7 +60,6 @@ static void build_dirent_ext4tree(Dirent *parent)
 int fill_sb(FileSystem *fs)
 {
 	ASSERT(fs != NULL);
-	pr_info("1\n");
 	/*填写超级块中ext4的基本属性*/
 	Buffer *buf0 = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
 	void *p = &fs->superBlock.ext4_sblock;
@@ -111,6 +110,7 @@ void ext4_init(FileSystem* fs)
 	printk("ext4 is initing...\n");
 	strcpy(ext4Fs->name, "ext4");
 	//初始化超级块信息
+	pr_info("fill_sb start\n");
 	ASSERT(fill_sb(ext4Fs) != 0);
 	ext4Fs->superBlock.bytes_per_clus = ext4_sb_get_block_size(&ext4Fs->superBlock.ext4_sblock);
 	//初始化根目录
@@ -123,7 +123,9 @@ void ext4_init(FileSystem* fs)
 	ext4Fs->root->parent_dirent = NULL; // 父节点为空，表示已经到达根节点
 	list_init(&ext4Fs->root->child_list);
 	ext4Fs->root->linkcnt = 1;
+	pr_info("build_dirent_ext4tree start\n");
 	//构建目录树
 	build_dirent_ext4tree(ext4Fs->root);
+	pr_info("build_dirent_ext4tree end\n");
 	printk("\nbuild dirent tree succeed!\n");
 }

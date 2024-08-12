@@ -280,10 +280,10 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		/*获取地址值*/
 		// pr_info("reg %d\n", reg);
 
-		// if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)
-		// 	continue;
-		// if (bar == 0 && reg == 16 && bus == 0 && device == 14 && function == 1)
-		// 	continue;
+		if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)
+			continue;
+		if (bar == 0 && reg == 16 && bus == 0 && device == 14 && function == 1)
+			continue;
 
 		pci_read_config(PCI_CONFIG0_BASE,bus, device, function, reg, &val);
 		// if (bar == 0 && reg == 16 && bus == 0 && device == 13 && function == 1)

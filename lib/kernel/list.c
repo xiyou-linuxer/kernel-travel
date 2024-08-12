@@ -1,3 +1,4 @@
+#include <xkernel/stdio.h>
 #include <xkernel/printk.h>
 #include <xkernel/list.h>
 #include <trap/irq.h>
@@ -95,8 +96,10 @@ struct list_elem* list_reverse(struct list* plist, function func, void *arg)
 	while (ret != &plist->head)
 	{
 		if (func(ret,arg)){
+			pr_info("now ret\n");
 			return ret;
 		}
+		pr_info("ret->prev\n");
 		ret = ret->prev;
 	}
 

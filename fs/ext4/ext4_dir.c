@@ -9,6 +9,7 @@
 #include <fs/ext4_crc32.h>
 #include <asm-generic/errno-base.h>
 #include <xkernel/stdio.h>
+#include <xkernel/printk.h>
 #include <xkernel/string.h>
 #include <debug.h>
 /** 
@@ -171,6 +172,7 @@ int ext4_dir_iterator_next(struct ext4_dir_iter *it)
  */
 struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 {
+	pr_info("ext4_dir_entry_next start\n");
 	int r;
 	uint16_t name_length;
 	Dirent *de = 0; // 指向目录项的指针
@@ -220,6 +222,7 @@ struct Dirent *ext4_dir_entry_next(struct ext4_dir *dir)
 	ext4_dir_iterator_fini(&it); // 结束目录迭代器的使用
 	ext4_fs_put_inode_ref(&dir_inode); // 释放目录 i-node 的引用
 Finish:
+	pr_info("ext4_dir_entry_next end\n");
 	return de; // 返回下一个目录项的指针，如果没有更多目录项可用，则返回NULL
 }
 

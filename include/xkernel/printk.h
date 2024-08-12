@@ -2,6 +2,7 @@
 #define _LINUX_PRINTK_H
 
 #include <xkernel/kern_level.h>
+#include <xkernel/printk.h>
 
 #define PRINTK_MAX_SINGLE_HEADER_LEN 2
 

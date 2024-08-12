@@ -42,7 +42,7 @@ static void stop_cmd(unsigned int prot_base)
 		continue;
 		break;
 	}
-	printk("stop_cmd down\n");
+	pr_info("stop_cmd down\n");
 }
 
 /*寻找可用的命令槽位*/
@@ -57,7 +57,7 @@ static int ahci_find_cmdslot(unsigned long prot_base)
 			return i;
 		slots >>= 1;
 	}
-	printk("Cannot find free command list entry\n");
+	pr_info("Cannot find free command list entry\n");
 	return -1;
 }
 
@@ -376,15 +376,11 @@ static void port_rebase(int portno)
 	pr_info("cmdheader: 0x%p", cmdheader);
 	for (int i = 0; i < 32; ++i)//32个命令槽位
 	{
-		pr_info("2\n");
 		cmdheader[i].prdt_len = 8;  // 每个命令表 8 个 prdt 条目
-		pr_info("3\n");
 		// 256 bytes per command table, 64+16+48+16*8
 		// 每个命令表256字节，64+16+48+16*8
 		cmdheader[i].command_table_base = ahci_port_base_vaddr + (40 << 10) + (portno << 13) + (i << 8);
-		pr_info("4\n");
 		memset((void *)cmdheader[i].command_table_base, 0, 256);
-		pr_info("5\n");
 	}
 	start_cmd(port); // Start command engine
 }
