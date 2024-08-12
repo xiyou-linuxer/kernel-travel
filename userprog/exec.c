@@ -127,14 +127,13 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 		goto done;
 	}
 	/* mm_strct 初始化*/
-	struct task_struct * curr = running_thread();
-	printk("curr: %p\n", curr);
-	running_thread()->mm->start_data = 0;
-	running_thread()->mm->end_data = 0;
+	struct task_struct* cur = running_thread();
+	cur->mm->start_data = 0;
+	cur->mm->end_data = 0;
 	
-	running_thread()->mm->end_code = 0;
-	running_thread()->mm->mmap = NULL;
-	running_thread()->mm->rss = 0;
+	cur->mm->end_code = 0;
+	cur->mm->mmap = NULL;
+	cur->mm->rss = 0;
 
 	/*获取当前内存布局*/
 	arch_pick_mmap_layout(running_thread()->mm);
@@ -256,7 +255,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	regs->regs[22] = regs->regs[3];
 	regs->regs[4] = regs->regs[3];
 
-	char (*uargs) [20] = (char (*)[20])USER_STACK;
+	char (*uargs) [30] = (char (*)[30])USER_STACK;
 	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	struct mm_struct* mm = (struct mm_struct *)get_page();
 	cur->mm = mm;

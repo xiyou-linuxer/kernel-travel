@@ -162,7 +162,7 @@ int sys_read(int fd, void *buf, unsigned int count)
 			return count;
 		}*/
     }
-    else if (is_pipe(fd))
+	else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 
         ret = pipe_read(fd, buf, count);
 		if (ret == -1)

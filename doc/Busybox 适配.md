@@ -487,3 +487,18 @@ Error: unkown opcode. 90000000901cf774: 0x0
 
 还是不行，仔细看看是`aux[AT_RANDOM]`这个取值时错误
 
+
+busybox sh 解析busybox_testcode
+```c
+char *argv[] = {"/sdcard/busybox","sh","busybox_testcode.sh",NULL};
+```
+没有成功解析,不知道出了什么错提前退出了
+exitcode=2，查了下是命令（或参数）使用不当
+检查下argv是否如愿,有无问题
+检查了，没问题
+
+
+
+
+
+
