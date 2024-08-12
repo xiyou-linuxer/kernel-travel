@@ -127,12 +127,13 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 		goto done;
 	}
 	/* mm_strct 初始化*/
-	running_thread()->mm->start_data = 0;
-	running_thread()->mm->end_data = 0;
+	struct task_struct* cur = running_thread();
+	cur->mm->start_data = 0;
+	cur->mm->end_data = 0;
 	
-	running_thread()->mm->end_code = 0;
-	running_thread()->mm->mmap = NULL;
-	running_thread()->mm->rss = 0;
+	cur->mm->end_code = 0;
+	cur->mm->mmap = NULL;
+	cur->mm->rss = 0;
 
 	/*获取当前内存布局*/
 	arch_pick_mmap_layout(running_thread()->mm);

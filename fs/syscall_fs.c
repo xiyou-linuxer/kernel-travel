@@ -154,15 +154,15 @@ int sys_read(int fd, void *buf, unsigned int count)
 		if (is_pipe(fd))
 		{
 			ret = pipe_read(fd, buf, count);
-		}else
+		}/*else
 		{
 			char tmp_buf[1024] = {0};
 			console_get_str(tmp_buf);
 			memcpy(tmp_buf, buf, count);
 			return count;
-		}
+		}*/
     }
-    else if (is_pipe(fd))
+	else if (is_pipe(fd))
     { // 若是管道就调用管道的方法 
         ret = pipe_read(fd, buf, count);
 		if (ret == -1)
