@@ -356,7 +356,7 @@ int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd)
 			file_close(cur->fd_table[new_local_fd]);
 		}
 		uint32_t new_global_fd = cur->fd_table[old_local_fd];
-		cur->fd_table[new_global_fd] = old_local_fd;
+		cur->fd_table[new_local_fd] = new_global_fd;
 		ret = old_local_fd;
 	}
 	return ret;
