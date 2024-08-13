@@ -19,15 +19,6 @@ void sys_pstr(char *str)
 
 void sys_person(void)
 {
-	struct task_struct *cur = running_thread();
-	for (int i=0;i<10;i++)
-	{
-		printk("%d: %d\n",i,cur->fd_table[i]);
-		if (cur->fd_table[i] > 0) {
-			if (is_pipe(i))
-				printk("fd=%d,is pipe\n",i);
-		}
-	}
 	printk("person\n");
 }
 

@@ -25,6 +25,10 @@ int32_t get_free_slot_in_global(void)
 	uint32_t fd_idx = 3;
 	while (fd_idx < MAX_FILE_OPEN)
 	{
+		if (file_table[fd_idx].type == dev_pipe) {
+			fd_idx++;
+			continue;
+		}
 		if (file_table[fd_idx].dirent == NULL)
 		{
 			break;
