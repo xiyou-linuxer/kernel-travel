@@ -130,6 +130,15 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 
 	update_inode_open_cnts(child);
 
+	printk("parent:=============\n");
+	for (int i = 0; i < 10; i++)
+		printk("%d: %d  ",i,parent->fd_table[i]);
+	printk("\n");
+
+	printk("child:=============\n");
+	for (int i = 0; i < 10; i++)
+		printk("%d: %d  ",i,child->fd_table[i]);
+
 	//mfree_page(PF_KERNEL,page,1);
 	return 0;
 }

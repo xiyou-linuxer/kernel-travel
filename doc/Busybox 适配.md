@@ -524,5 +524,34 @@ fcntl 返回的newfd<0
 这里fildes=F_DUPFD_CLOEXEC，表示分配一个指向同一个open file descriptor的fd，并设置FD_CLOEXEC标志，表示在exec新进程的时候关闭旧的文件描述符
 
 
+调整后解析成功,sys_execve失败
+```
+Error: unkown opcode. 90000000901c09f0: 0x901c09f0
+Error: unkown opcode. 90000000901c13f0: 0x901c1388
+```
+好吧，是到cat里面了，接下来适配cat
+
+简单阅读下源码，大致过程是这样的：
+`evaltree` 调用 `evalpipe` 做一个管道，fork一个子进程把busybox_testcode.sh里的内容`cat`出来，然后被管道另一端的命令当作标准输入来解析。
+cat实现的主要部分是
+```c
+off_t r = bb_copyfd_eof(fd, STDOUT_FILENO);
+```
+这里利用sendfile把fd里的东西拷贝到stdout
+```c
+		if (sendfile_sz) {
+			/* dst_fd == -1 is a fake, else... */
+			if (dst_fd >= 0) {
+				rd = sendfile(dst_fd, src_fd, NULL,
+					size > sendfile_sz ? sendfile_sz : size);
+				if (rd >= 0)
+					goto read_ok;
+			}
+			sendfile_sz = 0; /* do not try sendfile anymore */
+		}
+```
+两个问题：
+1.`sys_sendfile` 返回到零地址处。
+2.描述符没有被识别为pipe,调pipe_write。
 
 

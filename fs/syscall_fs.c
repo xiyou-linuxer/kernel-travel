@@ -553,3 +553,16 @@ int sys_fcntl(int fd,int cmd,int arg)
 	}
 	return ret;
 }
+
+unsigned long sys_sendfile(int out_fd, int in_fd, off_t *offset,
+                        size_t count)
+{
+	/* 分配buf做中转 */
+	int pages = DIV_ROUND_UP(count,PAGESIZE);
+	char *buf = (char*)get_pages(pages);
+	sys_read(in_fd,buf,count);
+	sys_write(out_fd,buf,count);
+	return count;
+}
+
+

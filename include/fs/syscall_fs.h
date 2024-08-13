@@ -29,4 +29,6 @@ int sys_writev(int fd, const struct iovec* iov, int iovcnt);
 int sys_readlinkat(int dirfd, u64 pathname, u64 buf, size_t bufsiz);
 int sys_ppoll(unsigned long p_fds, int nfds, unsigned long tmo_p, unsigned long sigmask);
 int sys_fcntl(int, int, int );
+unsigned long sys_sendfile(int out_fd, int in_fd, off_t *offset,
+                        size_t count);
 #endif

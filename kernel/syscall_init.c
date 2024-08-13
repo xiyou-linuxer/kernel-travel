@@ -10,6 +10,7 @@
 #include <xkernel/mmap.h>
 #include <exec.h>
 #include <xkernel/uname.h>
+#include <fs/fd.h>
 
 void sys_pstr(char *str)
 {
@@ -18,6 +19,15 @@ void sys_pstr(char *str)
 
 void sys_person(void)
 {
+	struct task_struct *cur = running_thread();
+	for (int i=0;i<10;i++)
+	{
+		printk("%d: %d\n",i,cur->fd_table[i]);
+		if (cur->fd_table[i] > 0) {
+			if (is_pipe(i))
+				printk("fd=%d,is pipe\n",i);
+		}
+	}
 	printk("person\n");
 }
 
@@ -28,6 +38,7 @@ void syscall_init(void)
 	syscall_table[SYS_write]              = sys_write;
 	syscall_table[SYS_sigreturn]          = sys_sigreturn;
 	syscall_table[SYS_fcntl]              = sys_fcntl;
+	syscall_table[SYS_sendfile]           = sys_sendfile;
 	syscall_table[SYS_kill]               = sys_kill;
 	syscall_table[SYS_mprotect]           = sys_mprotect;
 	syscall_table[SYS_writev]             = sys_writev;
