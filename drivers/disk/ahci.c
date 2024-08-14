@@ -324,22 +324,22 @@ static void ahci_probe_port(void)
 		if (pi & 1)
 		{
 			unsigned int dt = check_type(PORT_BASE+PORT_OFFEST*i);
-			printk("ahci_probe_port dt:%d\n",dt);
+			pr_info("ahci_probe_port dt:%d\n",dt);
 			if (dt == AHCI_DEV_SATA)
 			{
-				printk("SATA drive found at port %d\n", i);
+				pr_info("SATA drive found at port %d\n", i);
 			}
 			else if (dt == AHCI_DEV_SATAPI)
 			{
-				printk("SATAPI drive found at port %d\n", i);
+				pr_info("SATAPI drive found at port %d\n", i);
 			}
 			else if (dt == AHCI_DEV_SEMB)
 			{
-				printk("SEMB drive found at port %d\n", i);
+				pr_info("SEMB drive found at port %d\n", i);
 			}
 			else if (dt == AHCI_DEV_PM)
 			{
-				printk("PM drive found at port %d\n", i);
+				pr_info("PM drive found at port %d\n", i);
 			}
 			else
 			{
@@ -347,7 +347,7 @@ static void ahci_probe_port(void)
 			}
 		}
 	}
-	printk("ahci_probe_port down\n");
+	pr_info("ahci_probe_port down\n");
 }
 
 static void port_rebase(int portno)
@@ -387,14 +387,14 @@ static void port_rebase(int portno)
 
 /*磁盘驱动初始化*/
 void disk_init(void) {
-	printk("disk_init start\n");
+	pr_info("disk_init start\n");
 	char* block_data = 0;
 	/*获取磁盘控制器的bar地址*/
 	pci_device_t *pci_dev = pci_get_device_by_bus(0, 8, 0);
 	/*sata控制器不存在则报错*/
 	if (pci_dev==NULL)
 	{
-		printk(KERN_ERR "[ahci]: no AHCI controllers present!\n");
+		pr_info(KERN_ERR "[ahci]: no AHCI controllers present!\n");
 	}
 	SATA_ABAR_BASE = CSR_DMW1_BASE|pci_dev->bar[0].base_addr;
 	pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
@@ -403,7 +403,9 @@ void disk_init(void) {
 	*(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_IE;//全局中断使能
 	*(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_AHCI_ENABLE;//启用ahci
 	// kalloc();//分配
+	pr_info("ahci_probe_port start\n");
 	ahci_probe_port();  // 扫描ahci的所有端口
+	pr_info("ahci_probe_port end\n");
 	port_rebase(1);//开启1号端口
 	//memcpy(buf, "hello world\n", 13);
 	//ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
@@ -411,5 +413,5 @@ void disk_init(void) {
 	/*ahci_req_queue.in_service = NULL;
 	list_init(&(ahci_req_queue.queue_list));
 	ahci_req_queue.request_count = 0;*/
-	printk("disk_init down\n");
+	pr_info("disk_init down\n");
 }
