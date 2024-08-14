@@ -113,6 +113,21 @@ static void update_inode_open_cnts(struct task_struct *thread)
 
 static int copy_process(struct task_struct* parent,struct task_struct* child)
 {
+	printk("parent ========================================\n");
+	struct task_struct *cur = running_thread();
+	for (int i=0;i<10;i++)
+	{
+		printk("%d: %d\n",i,cur->fd_table[i]);
+		int _fd = cur->fd_table[i];
+		if (_fd > 0) {
+			if (is_pipe(i)) {
+				struct ioqueue *pipe = &file_table[_fd].pipe;
+				printk("fd=%d,is pipe,offset=%d\n",i,file_table[_fd].offset);
+				if (pipe->flag == 0)
+					printk("error pipe\n");
+			}
+		}
+	}
 	void* page = (void*)get_page();
 	if (page == NULL) {
 		printk("copy_process: page malloc failed\n");
@@ -130,15 +145,30 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 
 	update_inode_open_cnts(child);
 
-	printk("parent:=============\n");
-	for (int i = 0; i < 10; i++)
-		printk("%d: %d  ",i,parent->fd_table[i]);
-	printk("\n");
+	printk("child ========================================\n");
+	for (int i=0;i<10;i++)
+	{
+		printk("%d: %d\n",i,cur->fd_table[i]);
+		int _fd = cur->fd_table[i];
+		if (_fd > 0) {
+			if (is_pipe(i)) {
+				struct ioqueue *pipe = &file_table[_fd].pipe;
+				printk("fd=%d,is pipe,offset=%d\n",i,file_table[_fd].offset);
+				if (pipe->flag == 0)
+					printk("error pipe\n");
+			}
+		}
+	}
 
-	printk("child:=============\n");
-	for (int i = 0; i < 10; i++)
-		printk("%d: %d  ",i,child->fd_table[i]);
-
+//	printk("parent:=============\n");
+//	for (int i = 0; i < 10; i++)
+//		printk("%d: %d  ",i,parent->fd_table[i]);
+//	printk("\n");
+//
+//	printk("child:=============\n");
+//	for (int i = 0; i < 10; i++)
+//		printk("%d: %d  ",i,child->fd_table[i]);
+//
 	//mfree_page(PF_KERNEL,page,1);
 	return 0;
 }

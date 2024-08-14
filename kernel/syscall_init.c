@@ -19,6 +19,20 @@ void sys_pstr(char *str)
 
 void sys_person(void)
 {
+	struct task_struct *cur = running_thread();
+	for (int i=0;i<10;i++)
+	{
+		printk("%d: %d\n",i,cur->fd_table[i]);
+		int _fd = cur->fd_table[i];
+		if (_fd > 0) {
+			if (is_pipe(i)) {
+				struct ioqueue *pipe = &file_table[_fd].pipe;
+				printk("fd=%d,is pipe\n",i);
+				if (pipe->flag == 0)
+					printk("error pipe\n");
+			}
+		}
+	}
 	printk("person\n");
 }
 
