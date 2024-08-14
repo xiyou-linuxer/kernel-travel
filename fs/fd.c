@@ -187,7 +187,7 @@ uint32_t pipe_write(int32_t fd, const void *buf, uint32_t count)
     struct ioqueue *ioq = &file_table[global_fd].pipe;
 
     /* 选择较小的数据写入量,避免阻塞 */
-    uint32_t ioq_left = bufsize - ioq_length(ioq);
+    uint32_t ioq_left = bufsize - ioq_length(ioq) -1;
     uint32_t size = ioq_left > count ? count : ioq_left;
 
     const char *buffer = buf;

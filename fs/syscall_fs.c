@@ -200,13 +200,14 @@ int sys_close(int fd)
 			{
 				pipe_table[pid][1] = 0;
 			}
-			if (pipe_table[pid][0]==0&&pipe_table[pid][1] == 0)
-			{
-				file_table[global_fd].pipe.flag = 0;
-			}
+			//if (pipe_table[pid][0]==0&&pipe_table[pid][1] == 0)
+			//{
+			//	file_table[global_fd].pipe.flag = 0;
+			//}
 			// 如果此管道上的描述符都被关闭,释放管道的环形缓冲区 
 			if (--file_table[global_fd].offset == 0)
 			{
+				printk("release pipe.............\n\n");
 				memset(&file_table[global_fd].pipe,0,sizeof(struct ioqueue));
 			}
 			ret = 0;
