@@ -5,7 +5,6 @@
 
 int main(void)
 {
-	
 	int count = 0 ;
 	char filepath[64];
 

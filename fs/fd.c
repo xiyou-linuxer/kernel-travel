@@ -25,6 +25,10 @@ int32_t get_free_slot_in_global(void)
 	uint32_t fd_idx = 3;
 	while (fd_idx < MAX_FILE_OPEN)
 	{
+		if (file_table[fd_idx].type == dev_pipe) {
+			fd_idx++;
+			continue;
+		}
 		if (file_table[fd_idx].dirent == NULL)
 		{
 			break;
@@ -183,7 +187,7 @@ uint32_t pipe_write(int32_t fd, const void *buf, uint32_t count)
     struct ioqueue *ioq = &file_table[global_fd].pipe;
 
     /* 选择较小的数据写入量,避免阻塞 */
-    uint32_t ioq_left = bufsize - ioq_length(ioq);
+    uint32_t ioq_left = bufsize - ioq_length(ioq) -1;
     uint32_t size = ioq_left > count ? count : ioq_left;
 
     const char *buffer = buf;

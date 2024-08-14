@@ -21,6 +21,9 @@
 #include <asm/syscall.h>
 #include <asm-generic/ioctl.h>
 #include <xkernel/wait.h>
+#include <fs/fcntl.h>
+#include <xkernel/stdarg.h>
+
 void test_memory(void *addr,uint64_t size)
 {
 	char *p = addr;
@@ -197,13 +200,14 @@ int sys_close(int fd)
 			{
 				pipe_table[pid][1] = 0;
 			}
-			if (pipe_table[pid][0]==0&&pipe_table[pid][1] == 0)
-			{
-				file_table[global_fd].pipe.flag = 0;
-			}
+			//if (pipe_table[pid][0]==0&&pipe_table[pid][1] == 0)
+			//{
+			//	file_table[global_fd].pipe.flag = 0;
+			//}
 			// 如果此管道上的描述符都被关闭,释放管道的环形缓冲区 
 			if (--file_table[global_fd].offset == 0)
 			{
+				printk("release pipe.............\n\n");
 				memset(&file_table[global_fd].pipe,0,sizeof(struct ioqueue));
 			}
 			ret = 0;
@@ -353,7 +357,9 @@ int sys_dup2(uint32_t old_local_fd, uint32_t new_local_fd)
 			file_close(cur->fd_table[new_local_fd]);
 		}
 		uint32_t new_global_fd = cur->fd_table[old_local_fd];
-		cur->fd_table[new_global_fd] = old_local_fd;
+		if (file_table[new_global_fd].type == dev_pipe) 
+			file_table[new_global_fd].offset++;
+		cur->fd_table[new_local_fd] = new_global_fd;
 		ret = old_local_fd;
 	}
 	return ret;
@@ -536,3 +542,30 @@ int sys_ioctl(int fd, u64 cmd, u64 arg)
 	do_vfs_ioctl(fd,_fd,cmd,arg);
 	return 0;
 }
+
+
+int sys_fcntl(int fd,int cmd,int arg)
+{
+	int ret = -1;
+	va_list ap;
+	switch(cmd)
+	{
+		case F_DUPFD_CLOEXEC :
+			ret = sys_dup(fd); //CLOEXEC还未实现
+			break;
+	}
+	return ret;
+}
+
+unsigned long sys_sendfile(int out_fd, int in_fd, off_t *offset,
+                        size_t count)
+{
+	/* 分配buf做中转 */
+	//count = count < bufsize ? count : bufsize; //权益之计，日后完善
+	int pages = DIV_ROUND_UP(count,PAGESIZE);
+	char *buf = (char*)get_pages(pages);
+	sys_read(in_fd,buf,count);
+	return sys_write(out_fd,buf,count);
+}
+
+
