@@ -27,7 +27,7 @@ userdump
 command/userdump
 command/user_prog
 runqemu.sh
-include/xkernel/initcode.h
+#include/xkernel/initcode.h
 command/user_prog
 dockerset.sh
 
