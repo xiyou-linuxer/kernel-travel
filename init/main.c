@@ -107,6 +107,10 @@ void __init __no_sanitize_address start_kernel(void)
 	pci_init();
 	console_init();
 	disk_init();
+	block_write(0,1,"aaa",0);
+	char buf[512];
+	block_read(0,1,buf,0);
+	printk("buf:%s\n",buf);
 	console_init();
 	syscall_init();
 	vfs_init();

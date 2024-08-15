@@ -78,10 +78,10 @@ enum disk_result {
 #define PORT_PHYSR 0X7C  // PHY 状态寄存器
 
 /*向CMD寄存器中填入的位*/
-#define HBA_PxCMD_ST 0x0001   // 表示端口的命令引擎的启动/停止位
-#define HBA_PxCMD_FRE 0x0010  // 表示端口的 FIS 接收引擎
-#define HBA_PxCMD_FR 0x4000   // 表示端口的 FIS 接收引擎状态位
-#define HBA_PxCMD_CR 0x8000   // 表示端口的命令引擎状态位
+#define HBA_PxCMD_ST  (1 << 0)
+#define HBA_PxCMD_CR  (1 << 15)
+#define HBA_PxCMD_FR  (1 << 14)
+#define HBA_PxCMD_FRE (1 << 4)
 
 /*向IE寄存器写入的位*/
 #define HBA_PORT_IE_DHRE (1UL << 0)  // 中断使能

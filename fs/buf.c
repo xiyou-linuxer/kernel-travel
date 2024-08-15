@@ -168,7 +168,7 @@ static int check_uncached(struct list_elem* list_elem, void* arg)
 		if (buf->valid && buf->dirty) {
 			// 如果该缓冲区已经被使用，写回磁盘
 			// 即换出时写回磁盘
-			block_write(blockno,1,buf->data,1);;
+			block_write(blockno,1,buf->data,0);;
 		}
 		// 如果该缓冲区没有被引用，直接使用
 		buf->dev = dev;
@@ -223,7 +223,7 @@ Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
 	Buffer *buf = bufAlloc(dev, blockno);
 	pr_info("buf->valid: 0x%x\n", buf->valid);
 	if (!buf->valid) {
-		if (is_read) block_read(blockno,1,buf->data,1);
+		if (is_read) block_read(blockno,1,buf->data,0);
 		pr_info("buf->valid: 0x%x\n", buf->valid);
 		buf->valid = true;
 	}
@@ -254,7 +254,7 @@ void bufSync(void) {
 		for (int j = 0; j < BGROUP_BUF_NUM; j++) {
 			Buffer *buf = &b->buf[j];
 			if (buf->valid && buf->dirty) {
-				block_write(buf->blockno,1,buf->data,1);
+				block_write(buf->blockno,1,buf->data,0);
 				buf->dirty = false;
 			}
 		}
