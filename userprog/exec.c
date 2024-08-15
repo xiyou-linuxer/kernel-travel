@@ -110,6 +110,29 @@ int setup_arg_pages(void *bprm,
 	return -1;
 }
 
+void free_mapped_area(uint64_t pd,struct rb_node *node)
+{
+	if (node == NULL)
+		return ;
+	struct vm_area_struct * vma_tmp;
+	free_mapped_area(pd,node->rb_left);
+	vma_tmp = rb_entry(node,
+					   struct vm_area_struct,vm_rb);
+
+	if (vma_tmp->vm_start < 0x7f00000000 && vma_tmp->vm_start >= 0x800000000)
+	{
+		printk("addr = %llx\n",vma_tmp->vm_start);
+		for (uint64_t addr = vma_tmp->vm_start; addr < vma_tmp->vm_end; addr+=PAGESIZE) {
+			printk("free %llx\n",addr);
+			free_usrpage(pd,addr);
+		}
+
+	}
+	free_mapped_area(pd,node->rb_right);
+}
+
+
+
 int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 {
 	int fd = sys_open(path, O_RDWR ,660);
@@ -126,8 +149,13 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 		ret = -1;
 		goto done;
 	}
-	/* mm_strct 初始化*/
 	struct task_struct* cur = running_thread();
+	free_mapped_area(cur->pgdir,cur->mm->mm_rb.rb_node);
+
+	/* mm_strct 初始化*/
+	struct mm_struct* mm = (struct mm_struct *)get_page();
+	cur->mm = mm;
+	mm_struct_init(cur->mm);
 	cur->mm->start_data = 0;
 	cur->mm->end_data = 0;
 	
@@ -144,8 +172,6 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 
 	Elf_Phdr phdr;
 	uint64_t phoff = ehdr->e_phoff;
-	struct mm_struct * mm = running_thread()->mm;
-
 	for (uint64_t ph = 0 ; ph < ehdr->e_phnum ; ph++)
 	{
 		int elf_prot = 0, elf_flags = 0;
@@ -194,7 +220,7 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 	mm->start_stack = USER_STACK;
 	mm->start_brk = HEAP_START;
 	mm->brk = mm->start_brk;
-	mm->arg_start = USER_TOP - 0x2000;
+	mm->arg_start = USER_TOP - 0x8000;
 	mm->arg_end = USER_TOP;
 
 	sema_down(&mm->map_lock);
@@ -212,12 +238,14 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 
 	ret = ehdr->e_entry;
 done:
+	printk("load done");
 	return ret;
 }
 
 
 int64_t sys_exeload(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 {
+	printk("sys_exeload");
 	int64_t entry_point = load(path,ehdr,phaddr);
 	if (entry_point == -1) {
 		printk("sys_exeload: load failed\n");
@@ -241,7 +269,6 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	printk("before sys_execve.............\n");
 	test_vma(cur->mm);
 
-
 	unsigned long crmd;
 	unsigned long prmd;
 	//printk("%s sys_execve\n",cur->name);
@@ -258,19 +285,14 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	regs->regs[4] = regs->regs[3];
 
 	char (*uargs) [30] = (char (*)[30])USER_STACK;
-	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
-	struct mm_struct* mm = (struct mm_struct *)get_page();
-	cur->mm = mm;
-	mm_struct_init(cur->mm);
-	int64_t entry = sys_exeload(path,&ehdr,&phaddr);
-	regs->csr_era = (unsigned long)entry;
-
 	/* random */
 	uint64_t random = USER_STACK-24;
 	for (int i = 0; i < 16; i++)
 		*(char*)(random+i) = i;
 
 	/* envp 转移参数 */
+	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
+	printk("envp.........\n");
 	Elf_auxv_t *auxv = (Elf_auxv_t *)(random - auxs*sizeof(Elf_auxv_t));
 	uint64_t argtop = (uint64_t)auxv;
 	for (int i = 0; i < envs; i++) {
@@ -278,11 +300,15 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	}
 
 	/* argv 转移参数 */
+	printk("argv.........\n");
 	for (int i = 0; i < argc; i++) {
 		strcpy(uargs[i],argv[i]);
 	}
 
+	int64_t entry = sys_exeload(path,&ehdr,&phaddr);
+	regs->csr_era = (unsigned long)entry;
 
+	printk("next\n");
 	/*   下面是对栈中内容的替换操作   */
 	*((uint64_t*)(USER_STACK - sizeof(uint64_t))) = 0;
 	/* auxv */

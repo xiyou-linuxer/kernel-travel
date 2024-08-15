@@ -150,6 +150,13 @@ void malloc_usrpage(u64 pd,u64 vaddr)
 	bitmap_set(&cur->usrprog_vaddr.btmp,bit_idx,1);
 }
 
+void free_usrpage(u64 pd,u64 vaddr)
+{
+	u64 *pte_ptr = reverse_pte_ptr(pd,vaddr);
+	ASSERT(pte_ptr != NULL);
+	*pte_ptr = 0;
+}
+
 void malloc_usrpage_withoutopmap(u64 pd,u64 vaddr)
 {
 	unsigned long paddr = get_page();

@@ -172,16 +172,16 @@ static int check_uncached(struct list_elem* list_elem, void* arg)
 		}
 		// 如果该缓冲区没有被引用，直接使用
 		buf->dev = dev;
-		pr_info("buf->dev: %d\n", buf->dev);
+		//pr_info("buf->dev: %d\n", buf->dev);
 		buf->blockno = blockno;
-		pr_info("buf->blockno: %d\n", buf->blockno);
+		//pr_info("buf->blockno: %d\n", buf->blockno);
 		buf->valid = 0;
-		pr_info("buf->valid: %d\n", buf->valid);
+		//pr_info("buf->valid: %d\n", buf->valid);
 		buf->dirty = 0;
-		pr_info("buf->dirty: %d\n", buf->dirty);
+		//pr_info("buf->dirty: %d\n", buf->dirty);
 		buf->refcnt = 1;
-		pr_info("buf->refcnt: %d\n", buf->refcnt);
-		pr_info("finish check_uncached\n");
+		//pr_info("buf->refcnt: %d\n", buf->refcnt);
+		//pr_info("finish check_uncached\n");
 		return 1;
 	}else
 	{
@@ -221,7 +221,7 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
  */
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
 	Buffer *buf = bufAlloc(dev, blockno);
-	pr_info("buf->valid: 0x%x\n", buf->valid);
+	//pr_info("buf->valid: 0x%x\n", buf->valid);
 	if (!buf->valid) {
 		if (is_read) block_read(blockno,1,buf->data,0);
 		pr_info("buf->valid: 0x%x\n", buf->valid);
