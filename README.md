@@ -52,6 +52,8 @@ kernel-travel 包含有五大模块，分别为：内存管理、进程管理、
 其他：
 
 * [kernel-travel的编译链接与初始化](./doc/kernel-travel的编译链接与初始化.md)
+* [适配busybox](./doc/适配busybox.md)
+* [适配硬件开发板](./doc/板子.md)
 
 ## 参考资料
 
