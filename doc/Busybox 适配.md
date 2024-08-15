@@ -99,7 +99,15 @@ int main()
 
 ![Alt text](./img/2024-07-31_20-30.png)
 
-## 适配日记
+## busybox运行流程
+ash_main 进入cmdloop
+`evaltree` 用来解析命令树
+在解析脚本的过程中，`evaltree` 调用 `evalpipe` 做一个管道，fork一个子进程把busybox_testcode.sh里的内容`cat`出来，然后被管道另一端的命令当作标准输入来解析。
+左右两边都算一个命令，所以用`evaltree`解析
+循环用`evalloop`解析
+最后`evalcommand`负责最后实施命令
+
+#### 适配日记
 
 运行时出现
 ```
@@ -558,4 +566,12 @@ off_t r = bb_copyfd_eof(fd, STDOUT_FILENO);
 
 调mmap发现之前的vma信息丢失
 是fork一个新进程导致的吗？可是之前也没丢失啊
+是exec 时清空的，没问题
+
+
+strlen出错，疑似是地址错误
+```c
+$1 = 0x7fffff801e 
+```
+这个地址眼熟，存放argv的地方，是什么时候被释放了？
 

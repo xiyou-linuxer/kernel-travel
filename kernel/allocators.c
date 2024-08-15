@@ -35,8 +35,8 @@ void task_free(struct task_struct* task)
 void* userstk_alloc(uint64_t pdir)
 {
 	void *stk_ptr = NULL;
-	malloc_usrpage(pdir,USER_STACK-KERNEL_STACK_SIZE);
-	malloc_usrpage(pdir,USER_STACK-2*KERNEL_STACK_SIZE);
+	for (int i=1;i<0x10;i++)
+		malloc_usrpage(pdir,USER_STACK-i*KERNEL_STACK_SIZE);
 	stk_ptr = (void*)USER_STACK;
 
 	return stk_ptr;
