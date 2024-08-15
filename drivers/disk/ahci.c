@@ -316,40 +316,6 @@ static int check_type(unsigned int port)
 	}
 }
 
-static void ahci_probe_port(void)
-{
-	uint32_t pi = *(unsigned int*)(SATA_ABAR_BASE | HBA_PI);
-	for (int i = 0; i < PORT_NR; ++i, (pi >>= 1))
-	{
-		if (pi & 1)
-		{
-			unsigned int dt = check_type(PORT_BASE+PORT_OFFEST*i);
-			pr_info("ahci_probe_port dt:%d\n",dt);
-			if (dt == AHCI_DEV_SATA)
-			{
-				pr_info("SATA drive found at port %d\n", i);
-			}
-			else if (dt == AHCI_DEV_SATAPI)
-			{
-				pr_info("SATAPI drive found at port %d\n", i);
-			}
-			else if (dt == AHCI_DEV_SEMB)
-			{
-				pr_info("SEMB drive found at port %d\n", i);
-			}
-			else if (dt == AHCI_DEV_PM)
-			{
-				pr_info("PM drive found at port %d\n", i);
-			}
-			else
-			{
-				// kdebug("No drive found at port %d", i);
-			}
-		}
-	}
-	pr_info("ahci_probe_port down\n");
-}
-
 static void port_rebase(int portno)
 {
 	unsigned long port = PORT_BASE + portno * PORT_OFFEST;//计算端口的偏移地址
@@ -385,6 +351,41 @@ static void port_rebase(int portno)
 	start_cmd(port); // Start command engine
 }
 
+static void ahci_probe_port(void)
+{
+	uint32_t pi = *(unsigned int*)(SATA_ABAR_BASE | HBA_PI);
+	for (int i = 0; i < PORT_NR; ++i, (pi >>= 1))
+	{
+		if (pi & 1)
+		{
+			unsigned int dt = check_type(PORT_BASE+PORT_OFFEST*i);
+			pr_info("ahci_probe_port dt:%d\n",dt);
+			if (dt == AHCI_DEV_SATA)
+			{
+				pr_info("SATA drive found at port %d\n", i);
+				port_rebase(i);
+			}
+			else if (dt == AHCI_DEV_SATAPI)
+			{
+				pr_info("SATAPI drive found at port %d\n", i);
+			}
+			else if (dt == AHCI_DEV_SEMB)
+			{
+				pr_info("SEMB drive found at port %d\n", i);
+			}
+			else if (dt == AHCI_DEV_PM)
+			{
+				pr_info("PM drive found at port %d\n", i);
+			}
+			else
+			{
+				// kdebug("No drive found at port %d", i);
+			}
+		}
+	}
+	pr_info("ahci_probe_port down\n");
+}
+
 /*磁盘驱动初始化*/
 void disk_init(void) {
 	pr_info("disk_init start\n");
@@ -396,7 +397,7 @@ void disk_init(void) {
 	{
 		pr_info(KERN_ERR "[ahci]: no AHCI controllers present!\n");
 	}
-	SATA_ABAR_BASE = CSR_DMW1_BASE|pci_dev->bar[0].base_addr;
+	SATA_ABAR_BASE = CSR_DMW0_BASE|pci_dev->bar[0].base_addr;
 	pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
 	/*注册中断处理程序*/
 
@@ -406,7 +407,7 @@ void disk_init(void) {
 	pr_info("ahci_probe_port start\n");
 	ahci_probe_port();  // 扫描ahci的所有端口
 	pr_info("ahci_probe_port end\n");
-	port_rebase(1);//开启1号端口
+	
 	//memcpy(buf, "hello world\n", 13);
 	//ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
 	/*io调度初始化*/
