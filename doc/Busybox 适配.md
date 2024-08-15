@@ -553,5 +553,9 @@ off_t r = bb_copyfd_eof(fd, STDOUT_FILENO);
 两个问题：
 1.`sys_sendfile` 返回到零地址处。
 2.描述符没有被识别为pipe,调pipe_write。
+原因是file_table里占用global_fd以及sys_dup2处没有增加引用
 
+
+调mmap发现之前的vma信息丢失
+是fork一个新进程导致的吗？可是之前也没丢失啊
 

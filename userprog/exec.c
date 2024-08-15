@@ -238,6 +238,8 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 		while (envp[envs]) envs++;
 
 	struct task_struct* cur = running_thread();
+	printk("before sys_execve.............\n");
+	test_vma(cur->mm);
 
 
 	unsigned long crmd;
@@ -312,6 +314,9 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 
 	/* argc */
 	*((uint64_t*)(argtop - (envs+argc+3)*sizeof(uint64_t))) = argc;
+
+	printk("after sys_execve.............\n");
+	test_vma(cur->mm);
 
 	//intr_enable();
 	

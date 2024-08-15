@@ -9,6 +9,7 @@
 #include <xkernel/switch.h>
 #include <asm/loongarch.h>
 #include <fs/fd.h>
+#include <xkernel/mmap.h>
 extern void user_ret(void);
 
 static int copy_pcb(struct task_struct* parent,struct task_struct* child)
@@ -130,15 +131,12 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 
 	update_inode_open_cnts(child);
 
-//	printk("parent:=============\n");
-//	for (int i = 0; i < 10; i++)
-//		printk("%d: %d  ",i,parent->fd_table[i]);
-//	printk("\n");
-//
-//	printk("child:=============\n");
-//	for (int i = 0; i < 10; i++)
-//		printk("%d: %d  ",i,child->fd_table[i]);
-//
+	printk("parent:=============\n");
+	test_vma(parent->mm);
+
+	printk("child:=============\n");
+	test_vma(child->mm);
+
 	//mfree_page(PF_KERNEL,page,1);
 	return 0;
 }

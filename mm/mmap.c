@@ -17,6 +17,33 @@
 unsigned long sysctl_max_map_count = 1024;
 unsigned long mmap_min_addr = TASK_SIZE / 3;
 
+
+void print_tree(struct rb_node *node,int level)
+{
+	if (node == NULL)
+		return ;
+	struct vm_area_struct * vma_tmp;
+	level++;
+	print_tree(node->rb_right,level);
+	level--;
+	for (int i=0;i<level;i++)
+		printk("\t");
+	vma_tmp = rb_entry(node,
+					   struct vm_area_struct,vm_rb);
+	printk("vma start:%llx  end:%llx\n",vma_tmp->vm_start,vma_tmp->vm_end);
+	level++;
+	print_tree(node->rb_left,level);
+}
+
+void test_vma(struct mm_struct * mm)
+{
+	struct rb_node *rb_node = mm->mm_rb.rb_node;
+	printk("start print vma..................\n");
+	print_tree(rb_node,0);
+	printk("print vma done....................\n\n");
+}
+
+
 struct vm_area_struct * 
 find_vma(struct mm_struct * mm, unsigned long addr)
 {
@@ -72,6 +99,7 @@ get_unmapped_area(struct file *filp, unsigned long addr,
 	}
 
 	/*在给定的地址处分配，如果成功返回*/
+	test_vma(mm);
 	if (addr) {
 		addr = PAGE_ALIGN(addr);
 		vma = find_vma(mm, addr);

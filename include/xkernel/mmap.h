@@ -64,6 +64,7 @@ struct anon_vma {
 
 };
 
+void test_vma(struct mm_struct * mm);
 struct vm_area_struct * 
 find_vma(struct mm_struct * mm, unsigned long addr);
 
