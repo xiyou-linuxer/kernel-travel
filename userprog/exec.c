@@ -291,7 +291,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 		*(char*)(random+i) = i;
 
 	/* envp 转移参数 */
-	malloc_usrpage(cur->pgdir,(uint64_t)uargs);
+	//malloc_usrpage(cur->pgdir,(uint64_t)uargs);
 	printk("envp.........\n");
 	Elf_auxv_t *auxv = (Elf_auxv_t *)(random - auxs*sizeof(Elf_auxv_t));
 	uint64_t argtop = (uint64_t)auxv;
@@ -307,6 +307,10 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 
 	int64_t entry = sys_exeload(path,&ehdr,&phaddr);
 	regs->csr_era = (unsigned long)entry;
+
+	printk("\n\npid=%d:\n",cur->pid);
+	for (int i=0;i<argc;i++)
+		printk("%s ",uargs[i]);
 
 	printk("next\n");
 	/*   下面是对栈中内容的替换操作   */

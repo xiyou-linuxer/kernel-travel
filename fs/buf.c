@@ -158,8 +158,8 @@ static int check_cached(struct list_elem* list_elem, void* arg)
 /*list_reverse的回调函数*/
 static int check_uncached(struct list_elem* list_elem, void* arg)
 {
-	pr_info("list_elem: 0x%p\n", list_elem);
-	pr_info("arg: 0x%p\n", arg);
+	//pr_info("list_elem: 0x%p\n", list_elem);
+	//pr_info("arg: 0x%p\n", arg);
 	unsigned long * arg1 = (unsigned long *)arg;
 	uint64_t dev = arg1[0];
 	uint64_t blockno= arg1[1];
@@ -168,7 +168,7 @@ static int check_uncached(struct list_elem* list_elem, void* arg)
 		if (buf->valid && buf->dirty) {
 			// 如果该缓冲区已经被使用，写回磁盘
 			// 即换出时写回磁盘
-			block_write(blockno,1,buf->data,0);;
+			block_write(blockno,1,buf->data,1);;
 		}
 		// 如果该缓冲区没有被引用，直接使用
 		buf->dev = dev;
@@ -201,15 +201,15 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
 		buf = elem2entry(Buffer, Buffer_node, elem);
 		return buf;
 	}
-	pr_info("check_uncached: %p\n",check_uncached);
+	//pr_info("check_uncached: %p\n",check_uncached);
 	struct list_elem * elem1=list_reverse(&bufferGroups[group].list,check_uncached,(void *)arg);
-	pr_info("no cache\n");
-	pr_info("elem1: %p\n",elem1);
+	//pr_info("no cache\n");
+	//pr_info("elem1: %p\n",elem1);
 	// 没有被缓存，找到最久未使用的缓冲区（LRU策略换出）
 	if(elem1!=NULL)
 	{
 		buf = elem2entry(Buffer, Buffer_node, elem1);
-		pr_info("return buf: 0x%p\n",buf);
+		//pr_info("return buf: 0x%p\n",buf);
 		return buf;
 	}
 	printk("No Buffer Available!\n");
@@ -223,8 +223,8 @@ Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
 	Buffer *buf = bufAlloc(dev, blockno);
 	//pr_info("buf->valid: 0x%x\n", buf->valid);
 	if (!buf->valid) {
-		if (is_read) block_read(blockno,1,buf->data,0);
-		pr_info("buf->valid: 0x%x\n", buf->valid);
+		if (is_read) block_read(blockno,1,buf->data,1);
+		//pr_info("buf->valid: 0x%x\n", buf->valid);
 		buf->valid = true;
 	}
 	return buf;
@@ -254,10 +254,12 @@ void bufSync(void) {
 		for (int j = 0; j < BGROUP_BUF_NUM; j++) {
 			Buffer *buf = &b->buf[j];
 			if (buf->valid && buf->dirty) {
-				block_write(buf->blockno,1,buf->data,0);
+				block_write(buf->blockno,1,buf->data,1);
 				buf->dirty = false;
 			}
 		}
 	}
 	printk( "sync all pages to disk done!\n");
 }
+
+

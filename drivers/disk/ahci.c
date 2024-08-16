@@ -43,7 +43,7 @@ static void stop_cmd(unsigned int prot_base)
 	
 	// Clear FRE (bit4)
 	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) &= ~HBA_PxCMD_FRE;
-	while (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_FR!=0)
+	while (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_FR!=0);
 	
 	// Wait until FR (bit14), CR (bit15) are cleared
 	/*while (1)
@@ -55,7 +55,7 @@ static void stop_cmd(unsigned int prot_base)
 		break;
 	}*/
 
-	pr_info("stop_cmd down\n");
+	//pr_info("stop_cmd down\n");
 }
 
 /*寻找可用的命令槽位*/
@@ -70,7 +70,7 @@ static int ahci_find_cmdslot(unsigned long prot_base)
 			return i;
 		slots >>= 1;
 	}
-	pr_info("Cannot find free command list entry\n");
+	//pr_info("Cannot find free command list entry\n");
 	return -1;
 }
 
@@ -111,15 +111,15 @@ static struct hba_command_table *ahci_initialize_command_table(struct hba_comman
 */
 static struct hba_command_header *ahci_initialize_command_header(unsigned long prot_base,int slot,unsigned int count,int write)
 {
-	printk("ahci_initialize_command_header\n");
-	printk("PORT_CLB2:%p\n",(struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(prot_base+PORT_CLB))));
+	//printk("ahci_initialize_command_header\n");
+	//printk("PORT_CLB2:%p\n",(struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(prot_base+PORT_CLB))));
 	struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(prot_base+PORT_CLB)));
 	cmdheader += slot;
-	printk("cmdheader :%p",cmdheader);
+	//printk("cmdheader :%p",cmdheader);
 	cmdheader->fis_length = sizeof(struct fis_reg_host_to_device) / sizeof(uint32_t); // 帧结构大小
 	cmdheader->write = write ? 1 : 0;                                        //0为读，1为写
 	cmdheader->prdt_len = (uint16_t)((count - 1) >> 4) + 1;     // PRDT entries count
-	printk("cmdheader\n");
+	//printk("cmdheader\n");
 	return cmdheader;
 }
 
@@ -357,10 +357,10 @@ static void port_rebase(int portno)
 	// 命令表偏移：40K + 8K*portno
 	// 命令表大小 = 256*32 = 每个端口 8K
 	struct hba_command_header *cmdheader = (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB)));
-	pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
-	pr_info("port: %llu\n", port);
-	pr_info("PORT_CLB: 0x%p\n", (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB))));
-	pr_info("cmdheader: 0x%p\n", cmdheader);
+	//pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
+	//pr_info("port: %llu\n", port);
+	//pr_info("PORT_CLB: 0x%p\n", (struct hba_command_header *)(*(unsigned long *)(SATA_ABAR_BASE|(port+PORT_CLB))));
+	//pr_info("cmdheader: 0x%p\n", cmdheader);
 	for (int i = 0; i < 32; ++i)//32个命令槽位
 	{
 		cmdheader[i].prdt_len = 8;  // 每个命令表 8 个 prdt 条目
@@ -381,23 +381,23 @@ static void ahci_probe_port(void)
 		if (pi & 1)
 		{
 			unsigned int dt = check_type(PORT_BASE+PORT_OFFEST*i);
-			pr_info("ahci_probe_port dt:%d\n",dt);
+			//pr_info("ahci_probe_port dt:%d\n",dt);
 			if (dt == AHCI_DEV_SATA)
 			{
-				pr_info("SATA drive found at port %d\n", i);
+				//pr_info("SATA drive found at port %d\n", i);
 				port_rebase(i);
 			}
 			else if (dt == AHCI_DEV_SATAPI)
 			{
-				pr_info("SATAPI drive found at port %d\n", i);
+				//pr_info("SATAPI drive found at port %d\n", i);
 			}
 			else if (dt == AHCI_DEV_SEMB)
 			{
-				pr_info("SEMB drive found at port %d\n", i);
+				//pr_info("SEMB drive found at port %d\n", i);
 			}
 			else if (dt == AHCI_DEV_PM)
 			{
-				pr_info("PM drive found at port %d\n", i);
+				//pr_info("PM drive found at port %d\n", i);
 			}
 			else
 			{
@@ -405,30 +405,30 @@ static void ahci_probe_port(void)
 			}
 		}
 	}
-	pr_info("ahci_probe_port down\n");
+	//pr_info("ahci_probe_port down\n");
 }
 
 /*磁盘驱动初始化*/
 void disk_init(void) {
-	pr_info("disk_init start\n");
+	//pr_info("disk_init start\n");
 	char* block_data = 0;
 	/*获取磁盘控制器的bar地址*/
 	pci_device_t *pci_dev = pci_get_device_by_bus(0, 8, 0);
 	/*sata控制器不存在则报错*/
 	if (pci_dev==NULL)
 	{
-		pr_info(KERN_ERR "[ahci]: no AHCI controllers present!\n");
+		//pr_info(KERN_ERR "[ahci]: no AHCI controllers present!\n");
 	}
 	SATA_ABAR_BASE = CSR_DMW0_BASE|pci_dev->bar[0].base_addr;
-	pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
+	//pr_info("SATA_ABAR_BASE: %p\n", SATA_ABAR_BASE);
 	/*注册中断处理程序*/
 
 	*(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_IE;//全局中断使能
 	*(unsigned int *)(SATA_ABAR_BASE|HBA_GHC) |= HBA_GHC_AHCI_ENABLE;//启用ahci
 	// kalloc();//分配
-	pr_info("ahci_probe_port start\n");
+	//pr_info("ahci_probe_port start\n");
 	ahci_probe_port();  // 扫描ahci的所有端口
-	pr_info("ahci_probe_port end\n");
+	//pr_info("ahci_probe_port end\n");
 	
 	//memcpy(buf, "hello world\n", 13);
 	//ahci_write(0x180, 1, 0, 1, (unsigned long)buf);
@@ -436,5 +436,5 @@ void disk_init(void) {
 	/*ahci_req_queue.in_service = NULL;
 	list_init(&(ahci_req_queue.queue_list));
 	ahci_req_queue.request_count = 0;*/
-	pr_info("disk_init down\n");
+	//pr_info("disk_init down\n");
 }

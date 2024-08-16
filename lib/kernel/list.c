@@ -96,10 +96,10 @@ struct list_elem* list_reverse(struct list* plist, function func, void *arg)
 	while (ret != &plist->head)
 	{
 		if (func(ret,arg)){
-			pr_info("now ret\n");
+			//pr_info("now ret\n");
 			return ret;
 		}
-		pr_info("ret->prev\n");
+		//pr_info("ret->prev\n");
 		ret = ret->prev;
 	}
 

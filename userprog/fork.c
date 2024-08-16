@@ -62,7 +62,7 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 				continue;
 			}
 			uint64_t vaddr = (b*8+bit_idx)*PAGESIZE + vaddr_start;
-			//printk("vaddr:%llx\n",vaddr);
+			printk("vaddr:%llx\n",vaddr);
 			ASSERT(vaddr >=0 && vaddr < USER_STACK);
 			memcpy(page,(void*)vaddr,PAGESIZE);
 			page_dir_activate(child);
@@ -73,6 +73,18 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 		}
 	}
 	return 0;
+}
+
+void copy_args(struct task_struct* parent,struct task_struct* child,void* page)
+{
+	printk("copy_args...\n");
+	uint64_t arg_start = USER_STACK;
+	memcpy(page,(void*)arg_start,PAGESIZE);
+	page_dir_activate(child);
+	malloc_usrpage_withoutopmap(child->pgdir,arg_start);
+	memcpy((void*)arg_start,page,PAGESIZE);
+	page_dir_activate(parent);
+	printk("copy_args done...\n");
 }
 
 static void make_switch_prepare(struct task_struct* child,void *stack,int (*fn)(void *arg))
@@ -129,6 +141,7 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 		return -1;
 	}
 
+	copy_args(parent,child,page);
 	update_inode_open_cnts(child);
 
 	printk("parent:=============\n");
