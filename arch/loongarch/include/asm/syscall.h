@@ -123,8 +123,8 @@ extern void* syscall_table[NR_SYSCALLS];
 
 #define SYS_PSTR 297
 
-#define AT_FDCWD 0
-#define AT_OPEN -100
+#define AT_FDCWD -100
+#define AT_OPEN 0
 
 #define open(filename, flags) openat(AT_OPEN, (filename), (flags), (066))
 #define mkdir(path, mode) mkdirat(AT_FDCWD,(path),(mode))

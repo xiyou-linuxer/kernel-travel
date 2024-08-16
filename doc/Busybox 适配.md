@@ -105,7 +105,7 @@ ash_main 进入cmdloop
 在解析脚本的过程中，`evaltree` 调用 `evalpipe` 做一个管道，fork一个子进程把busybox_testcode.sh里的内容`cat`出来，然后被管道另一端的命令当作标准输入来解析。
 左右两边都算一个命令，所以用`evaltree`解析
 循环用`evalloop`解析
-最后`evalcommand`负责最后实施命令
+最后`evalcommand`负责最后实施命令，它把命令映射成cmdentry，然后fork子进程exec完成。
 
 #### 适配日记
 
@@ -574,5 +574,8 @@ strlen出错，疑似是地址错误
 $1 = 0x7fffff801e 
 ```
 这个地址眼熟，存放argv的地方，是什么时候被释放了？
-511 511 504
+不是释放，是fork新进程的时候没有复制
+
+
+
 

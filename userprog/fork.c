@@ -62,7 +62,7 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 				continue;
 			}
 			uint64_t vaddr = (b*8+bit_idx)*PAGESIZE + vaddr_start;
-			printk("vaddr:%llx\n",vaddr);
+			//printk("vaddr:%llx\n",vaddr);
 			ASSERT(vaddr >=0 && vaddr < USER_STACK);
 			memcpy(page,(void*)vaddr,PAGESIZE);
 			page_dir_activate(child);
@@ -145,10 +145,10 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 	update_inode_open_cnts(child);
 
 	printk("parent:=============\n");
-	test_vma(parent->mm);
+	//test_vma(parent->mm);
 
 	printk("child:=============\n");
-	test_vma(child->mm);
+	//test_vma(child->mm);
 
 	//mfree_page(PF_KERNEL,page,1);
 	return 0;
