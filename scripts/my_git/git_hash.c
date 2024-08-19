@@ -59,17 +59,16 @@ void commit(const char *message) {
 	}
 
 	char line[256];
+	memset(line, 0, sizeof(line));
 	char commit_content[4096] = "";
 	while (fgets(line, sizeof(line), index_file)) {
 		strcat(commit_content, line);
 	}
 	fclose(index_file);
 
-	// 将提交信息与文件内容结合生成 commit hash
 	strcat(commit_content, message);
 	unsigned int commit_hash = simple_hash((unsigned char *)commit_content, strlen(commit_content));
 
-	// 将提交保存到 .git/objects 目录
 	char commit_path[128];
 	sprintf(commit_path, ".git/objects/%08x", commit_hash);
 	FILE *commit_file = fopen(commit_path, "w");
@@ -80,18 +79,17 @@ void commit(const char *message) {
 	fprintf(commit_file, "%s", commit_content);
 	fclose(commit_file);
 
-	// 更新当前分支的指针
 	FILE *head = fopen(".git/refs/heads/master", "a");
 	if (!head) {
-		perror("Failed to update head");
-		return;
+		mkdir(".git/refs/heads", 0755);
+		head = fopen(".git/refs/heads/master", "a");
 	}
 	fprintf(head, "%08x\n", commit_hash);
 	fclose(head);
 
 	printf("Committed changes with hash: %08x\n", commit_hash);
 
-	// 清空 index 文件
+	// Clear the index file
 	index_file = fopen(".git/index", "w");
 	if (!index_file) {
 		perror("Failed to clear index file");
@@ -99,6 +97,7 @@ void commit(const char *message) {
 	}
 	fclose(index_file);
 }
+
 
 
 void log_history() {
@@ -145,15 +144,48 @@ void checkout(const char *commit_hash) {
 	char object_path[128];
 	sprintf(object_path, ".git/objects/%s", commit_hash);
 
-	FILE *file = fopen(object_path, "rb");
-	if (!file) {
+	FILE *commit_file = fopen(object_path, "r");
+	if (!commit_file) {
 		printf("Commit not found: %s\n", commit_hash);
 		return;
 	}
 
-	// 在这里恢复文件内容。
-	fclose(file);
+	char commit_content[4096];
+	fread(commit_content, 1, sizeof(commit_content), commit_file);
+	fclose(commit_file);
+
+	char *line = strtok(commit_content, "\n");
+	while (line != NULL) {
+		if (strstr(line, " ") != NULL) {
+			char *hash = strtok(line, " ");
+			char *file_path = strtok(NULL, " ");
+			char file_object_path[128];
+			sprintf(file_object_path, ".git/objects/%s", hash);
+
+			FILE *file_object = fopen(file_object_path, "rb");
+			if (file_object) {
+				FILE *work_file = fopen(file_path, "wb");
+
+				fseek(file_object, 0, SEEK_END);
+				long size = ftell(file_object);
+				fseek(file_object, 0, SEEK_SET);
+
+				unsigned char *buffer = malloc(size);
+				fread(buffer, 1, size, file_object);
+
+				fwrite(buffer, 1, size, work_file);
+
+				fclose(file_object);
+				fclose(work_file);
+				free(buffer);
+			}
+		}
+		line = strtok(NULL, "\n");
+	}
+
+	printf("Checked out to commit: %s\n", commit_hash);
 }
+
 
 void add(const char *file_path) {
 	FILE *file = fopen(file_path, "rb");
@@ -171,7 +203,18 @@ void add(const char *file_path) {
 
 	unsigned int hash = simple_hash(buffer, file_size);
 
-	// 将文件的 hash 值写入 .git/index 文件
+	char object_path[128];
+	sprintf(object_path, ".git/objects/%08x", hash);
+	FILE *object_file = fopen(object_path, "wb");
+	if (!object_file) {
+		perror("Failed to open object file");
+		fclose(file);
+		free(buffer);
+		return;
+	}
+	fwrite(buffer, 1, file_size, object_file);
+	fclose(object_file);
+
 	FILE *index_file = fopen(".git/index", "a");
 	fprintf(index_file, "%08x %s\n", hash, file_path);
 	fclose(index_file);
@@ -197,16 +240,18 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 		add(argv[2]);
-	} else if (strcmp(argv[1], "commit") == 0) {
-		if (argc < 3) {
+	} else if (!strcmp(argv[1], "commit") && !strcmp(argv[2], "-m")) {
+		if (argc < 4) {
 			printf("Usage: %s commit <message>\n", argv[0]);
 			return 1;
 		}
-		commit(argv[2]);
+		commit(argv[3]);
 	} else if (strcmp(argv[1], "log") == 0) {
 		log_history();
 	} else if (strcmp(argv[1], "reflog") == 0) {
 		reflog();
+	}else if (strcmp(argv[1], "checkout") == 0) {
+		checkout(argv[2]);
 	} else {
 		printf("Unknown command: %s\n", argv[1]);
 	}

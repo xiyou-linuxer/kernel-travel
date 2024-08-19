@@ -68,7 +68,7 @@ int sys_kill(pid_t pid, int sig)
 {
 	printk("kill %d sig %d\n",pid,sig);
 	struct task_struct *t = pid2thread(pid);
-	return specific_sendsig(sig,t);
+	return t ? specific_sendsig(sig,t) : -1;
 }
 
 
