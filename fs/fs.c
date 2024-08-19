@@ -8,7 +8,9 @@
 #include <xkernel/string.h>
 #include <xkernel/printk.h>
 #include <debug.h>
+#include <fs/path.h>
 static struct FileSystem fs[MAX_FS_COUNT];
+struct vfsmount proc;
 
 static Buffer *getBlock(FileSystem *fs, u64 blockNum, bool is_read) 
 {
@@ -84,6 +86,29 @@ void vfs_init(void)
 	bufInit();			//初始化buf
 	dirent_init();		//初始化目录列表
 	init_rootfs();		//初始化根文件系统
+}
+
+void create_new_procfile(char* fname)
+{
+	struct Dirent *new = dirent_alloc();
+	list_init(&new->child_list);
+	new->head = &proc;
+	strcpy(new->name,fname);
+
+	struct Dirent *proc_dirent = search_dir_tree(mnt_root.mnt_rootdir, "proc");
+	list_append(&proc_dirent->child_list,&new->dirent_tag);
+}
+
+void proc_files_init(void)
+{
+	struct Dirent* proc_dirent = dirent_alloc();
+	proc.mnt_rootdir = proc_dirent;
+	proc_dirent->head = &proc;
+	list_init(&proc_dirent->child_list);
+	strcpy(proc_dirent->name,"proc");
+	list_append(&mnt_root.mnt_rootdir->child_list,&proc_dirent->dirent_tag);
+
+	create_new_procfile("mounts");
 }
 
 /*加载磁盘文件系统并完成rootfs的迁移*/

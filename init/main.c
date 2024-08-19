@@ -111,6 +111,7 @@ void __init __no_sanitize_address start_kernel(void)
 	syscall_init();
 	vfs_init();
 	fs_init();
+	//proc_files_init();
 
 	struct task_struct *cur = running_thread();
 	struct task_struct* bak = bak_pcb(cur);

@@ -183,4 +183,5 @@ FileSystem *find_fs_by(findfs_callback_t findfs, void *data);
 void fat32_init(struct FileSystem* fs) ;
 int is_directory(FAT32Directory* f);
 void fat32Test(void);
+void proc_files_init(void);
 #endif

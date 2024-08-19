@@ -9,6 +9,15 @@ void umemset(void* dst_, uint8_t value, uint32_t size) {
 	}
 }
 
+char ustrcmp (const char* a, const char* b) {
+    while (*a != 0 && *a == *b) {
+        a++;
+        b++;
+    }
+    return *a < *b ? -1 : *a > *b;
+}
+
+
 char *ustrcpy(char *dest, const char *src)
 {
 	char *tmp = dest;

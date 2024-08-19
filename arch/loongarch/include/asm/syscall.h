@@ -124,7 +124,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_PSTR 297
 
 #define AT_FDCWD -100
-#define AT_OPEN 0
+#define AT_OPEN -10
 
 #define open(filename, flags) openat(AT_OPEN, (filename), (flags), (066))
 #define mkdir(path, mode) mkdirat(AT_FDCWD,(path),(mode))
@@ -148,6 +148,7 @@ extern void* syscall_table[NR_SYSCALLS];
 #define SYS_writev           66
 #define __NR3264_sendfile    71
 #define SYS_ppoll            73
+#define SYS_splice           76
 #define SYS_readlinkat       78
 #define SYS_fstat            80
 #define SYS_exit             93
@@ -259,6 +260,28 @@ static inline int sigaction(int sig, const struct k_sigaction *act, struct k_sig
 
 static inline int kill(pid_t pid,int sig) {
 	return syscall(SYS_kill,pid,sig);
+}
+
+static inline int openfile(int fd, const char *filename, int flags, mode_t mode)
+{
+	return syscall(SYS_openat,fd,filename,flags,mode);
+}
+
+static inline int readfile(int fd, void *buf, unsigned int count)
+{
+	return syscall(SYS_read,fd,buf,count);
+}
+
+static inline int32_t pipe(int32_t pipefd[2])
+{
+	return syscall(SYS_pipe2,pipefd);
+}
+
+static inline long splice(int fd_in, off_t *off_in,
+                      int fd_out, off_t *off_out,
+                      size_t len, unsigned int flags)
+{
+	return syscall(SYS_splice,fd_in,off_in,fd_out,off_out,len,flags);
 }
 
 

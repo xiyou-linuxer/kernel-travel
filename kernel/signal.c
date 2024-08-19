@@ -68,7 +68,9 @@ int sys_kill(pid_t pid, int sig)
 {
 	printk("kill %d sig %d\n",pid,sig);
 	struct task_struct *t = pid2thread(pid);
-	return t ? specific_sendsig(sig,t) : -1;
+	if (t == NULL)
+		return 1;
+	return specific_sendsig(sig,t);
 }
 
 
@@ -179,7 +181,7 @@ void check_signals(struct pt_regs* regs)
 
 int sys_sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oldact)
 {
-	printk("sys_sigaction\n");
+	//printk("sys_sigaction\n");
 	struct task_struct *cur = running_thread();
 	memcpy(&cur->handlers->action[sig-1],act,sizeof(*act));
 	return 0;

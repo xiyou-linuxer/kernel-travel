@@ -31,4 +31,7 @@ int sys_ppoll(unsigned long p_fds, int nfds, unsigned long tmo_p, unsigned long 
 int sys_fcntl(int, int, int );
 unsigned long sys_sendfile(int out_fd, int in_fd, off_t *offset,
                         size_t count);
+long sys_splice(int fd_in, off_t *off_in,
+                      int fd_out, off_t *off_out,
+                      size_t len, unsigned int flags);
 #endif

@@ -9,5 +9,6 @@ int myprintf(const char *fmt, ...);
 char *ustrcpy(char *dest, const char *src);
 char* ustrcat(char* dst_, const char* src_);
 void umemset(void* dst_, uint8_t value, uint32_t size);
+char ustrcmp (const char* a, const char* b);
 
 #endif

@@ -77,14 +77,14 @@ static int64_t copy_body_stack3(struct task_struct* parent,struct task_struct* c
 
 void copy_args(struct task_struct* parent,struct task_struct* child,void* page)
 {
-	printk("copy_args...\n");
+	//printk("copy_args...\n");
 	uint64_t arg_start = USER_STACK;
 	memcpy(page,(void*)arg_start,PAGESIZE);
 	page_dir_activate(child);
 	malloc_usrpage_withoutopmap(child->pgdir,arg_start);
 	memcpy((void*)arg_start,page,PAGESIZE);
 	page_dir_activate(parent);
-	printk("copy_args done...\n");
+	//printk("copy_args done...\n");
 }
 
 static void make_switch_prepare(struct task_struct* child,void *stack,int (*fn)(void *arg))
@@ -144,10 +144,10 @@ static int copy_process(struct task_struct* parent,struct task_struct* child)
 	copy_args(parent,child,page);
 	update_inode_open_cnts(child);
 
-	printk("parent:=============\n");
+	//printk("parent:=============\n");
 	//test_vma(parent->mm);
 
-	printk("child:=============\n");
+	//printk("child:=============\n");
 	//test_vma(child->mm);
 
 	//mfree_page(PF_KERNEL,page,1);

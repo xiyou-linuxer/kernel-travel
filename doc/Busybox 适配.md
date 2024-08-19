@@ -577,5 +577,65 @@ $1 = 0x7fffff801e
 不是释放，是fork新进程的时候没有复制
 
 
+df命令适配：
+`setmntent` 初始化并返回一个FILE
+```c
+	f->fd = fd;
+	f->buf = (unsigned char *)f + sizeof *f + UNGET;
+	f->buf_size = BUFSIZ;
+
+	/* Activate line buffered mode for terminals */
+	f->lbf = EOF;
+	if (!(f->flags & F_NOWR) && !__syscall(SYS_ioctl, fd, TIOCGWINSZ, &wsz))
+		f->lbf = '\n';
+
+	/* Initialize op ptrs. No problem if some are unneeded. */
+	f->read = __stdio_read;
+	f->write = __stdio_write;
+	f->seek = __stdio_seek;
+	f->close = __stdio_close;
+```
+fd 是打开filename得到的，这里的filename为
+```c
+#define bb_path_mtab_file IF_FEATURE_MTAB_SUPPORT("/etc/mtab")IF_NOT_FEATURE_MTAB_SUPPORT("/proc/mounts")
+```
+所以要有一个'/proc/mounts'存放一些信息，存放什么信息呢？
+```c
+struct mntent
+  {
+    char *mnt_fsname;		/* Device or server for filesystem.  */
+    char *mnt_dir;		/* Directory mounted on.  */
+    char *mnt_type;		/* Type of filesystem: ufs, nfs, etc.  */
+    char *mnt_opts;		/* Comma-separated options for fs.  */
+    int mnt_freq;		/* Dump frequency (in days).  */
+    int mnt_passno;		/* Pass number for `fsck'.  */
+  };
+```
+查看本机的`/proc/mounts`
+```
+dev /dev devtmpfs rw,nosuid,relatime,size=6973032k,nr_inodes=1743258,mode=755,inode64 0 0
+```
+再结合源代码中的内容：
+```c
+    for (i = 0; i < sizeof n / sizeof *n; i++) n[i] = len;
+    sscanf(linebuf, " %n%*s%n %n%*s%n %n%*s%n %n%*s%n %d %d",
+        n, n+1, n+2, n+3, n+4, n+5, n+6, n+7,
+        &mnt->mnt_freq, &mnt->mnt_passno);
+
+    //......
+
+	linebuf[n[1]] = 0;
+	linebuf[n[3]] = 0;
+	linebuf[n[5]] = 0;
+	linebuf[n[7]] = 0;
+
+	mnt->mnt_fsname = linebuf+n[0];
+	mnt->mnt_dir = linebuf+n[2];
+	mnt->mnt_type = linebuf+n[4];
+	mnt->mnt_opts = linebuf+n[6];
+```
+就是前四项。
+
+
 
 

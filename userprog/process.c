@@ -9,6 +9,8 @@
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
 #include <exec.h>
+#include <fs/syscall_fs.h>
+#include <fs/fd.h>
 
 extern char usrprog[];
 extern void user_ret(void);

@@ -21,13 +21,14 @@ void sys_person(void)
 {
 	struct task_struct *cur = running_thread();
 	//printk("at 0x7fffff801e:%s",(char*)0x7fffff801e);
-	printk("person\n");
+	//printk("person\n");
 }
 
 void syscall_init(void)
 {
 	printk("syscall init start\n");
 	syscall_table[SYS_PP]                 = sys_person;
+	syscall_table[SYS_splice]             = sys_splice;
 	syscall_table[SYS_write]              = sys_write;
 	syscall_table[SYS_sigreturn]          = sys_sigreturn;
 	syscall_table[SYS_fcntl]              = sys_fcntl;

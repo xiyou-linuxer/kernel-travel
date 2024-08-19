@@ -141,8 +141,91 @@ int sys_write(int fd, const void *buf, unsigned int count)
 	}
 }
 
+int write_nomove_offset(int fd, const void *buf, unsigned int count)
+{
+	int _fd = fd_local2global(fd);
+	if (fd < 0)
+	{
+		printk("sys_write %d: fd error\n",fd);
+		return -1;
+	}
+	if (_fd == STDOUT || fd == STDOUT)
+	{
+		/* 标准输出有可能被重定向为管道缓冲区, 因此要判断 */
+		if (is_pipe(fd))
+		{
+			return pipe_write(fd, buf, count);
+		}
+		else
+		{
+			char tmp_buf[1024] = {0};
+			memcpy(tmp_buf, buf, count);
+			console_put_str(tmp_buf);
+			return count;
+		}
+	}
+	else if (is_pipe(fd))
+	{ // 若是管道就调用管道的方法
+		return pipe_write(fd, buf, count);
+	}
+	else
+	{
+		Dirent *wr_file = file_table[_fd].dirent;
+		if (file_table[_fd].flags & O_WRONLY || file_table[_fd].flags & O_RDWR)
+		{
+			unsigned bytes_written = wr_file->file_system->op->file_write(wr_file, buf,file_table[_fd].offset,count);
+			return bytes_written;
+		}
+		else
+		{
+			/*console_put_str("sys_write: not allowed to write file without flag O_RDWR or O_WRONLY\n");*/
+			return -1;
+		}
+	}
+}
+
+
 /* 从文件描述符fd指向的文件中读取count个字节到buf,若成功则返回读出的字节数,到文件尾则返回-1 */
 int sys_read(int fd, void *buf, unsigned int count)
+{
+	int32_t ret = -1;
+	uint32_t global_fd = 0;
+	if (fd < 0 || fd == STDOUT || fd == STDERR)
+	{
+		printk("sys_read: fd error\n");
+	}
+	else if (fd == STDIN)
+	{
+		//printk("STDIN\n");
+		/* 标准输入有可能被重定向为管道缓冲区, 因此要判断 */
+		if (is_pipe(fd))
+		{
+			ret = pipe_read(fd, buf, count);
+		}/*else
+		{
+			char tmp_buf[1024] = {0};
+			console_get_str(tmp_buf);
+			memcpy(tmp_buf, buf, count);
+			return count;
+		}*/
+    }
+	else if (is_pipe(fd))
+    { // 若是管道就调用管道的方法 
+        ret = pipe_read(fd, buf, count);
+		if (ret == -1)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		global_fd = fd_local2global(fd);
+		ret = file_table[global_fd].dirent->file_system->op->file_read(file_table[global_fd].dirent, buf,file_table[global_fd].offset, count);
+	}
+	return count;
+}
+
+int read_nomove_offset(int fd, void *buf, unsigned int count)
 {
 	int32_t ret = -1;
 	uint32_t global_fd = 0;
@@ -181,6 +264,7 @@ int sys_read(int fd, void *buf, unsigned int count)
 	}
 	return count;
 }
+
 
 /* 成功关闭文件返回0,失败返回-1 */
 int sys_close(int fd)
@@ -575,4 +659,22 @@ unsigned long sys_sendfile(int out_fd, int in_fd, off_t *offset,
 	return sys_write(out_fd,buf,count);
 }
 
+long sys_splice(int fd_in, off_t *off_in,
+                      int fd_out, off_t *off_out,
+                      size_t len, unsigned int flags)
+{
+	int pages = DIV_ROUND_UP(len,PAGESIZE);
+	char *buf = (char*)get_pages(pages);
+
+	if (off_in)
+		*off_in = read_nomove_offset(fd_in,buf,len);
+	else
+		read_nomove_offset(fd_in,buf,len);
+
+	if (off_out)
+		*off_out = write_nomove_offset(fd_out,buf,len);
+	else
+		write_nomove_offset(fd_out,buf,len);
+	return 0;
+}
 

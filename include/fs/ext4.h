@@ -10,6 +10,7 @@ typedef struct FileSystem FileSystem;
 typedef struct Dirent Dirent;
 
 extern FileSystem *ext4Fs;
+extern FileSystem *procFs;
 
 #define EXT4_DIR_ENTRY_OFFSET_TERM (uint64_t)(-1)
 

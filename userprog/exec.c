@@ -61,7 +61,7 @@ static bool load_phdr(uint32_t fd,Elf_Phdr *phdr)
 		page += PAGESIZE;
 	}
 	sys_lseek(fd,phdr->p_offset,SEEK_SET);
-	printk("load_phdr phdr->p_filesz:%d\n",phdr->p_filesz);
+	//printk("load_phdr phdr->p_filesz:%d\n",phdr->p_filesz);
 	sys_read(fd,(void*)phdr->p_vaddr,phdr->p_filesz);
 	return true;
 }
@@ -77,8 +77,8 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,Elf_Phdr *ep
 			   eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr), prot, type,
 			   eppnt->p_offset - ELF_PAGEOFFSET(eppnt->p_vaddr));
 
-	printk("map_addr: 0x%lx\n",map_addr);
-	printk("map_prot : %x\n",prot);
+	//printk("map_addr: 0x%lx\n",map_addr);
+	//printk("map_prot : %x\n",prot);
 
 	sema_up(&running_thread()->mm->map_lock);
 
@@ -121,9 +121,9 @@ void free_mapped_area(uint64_t pd,struct rb_node *node)
 
 	if (vma_tmp->vm_start < 0x7f00000000 && vma_tmp->vm_start >= 0x800000000)
 	{
-		printk("addr = %llx\n",vma_tmp->vm_start);
+		//printk("addr = %llx\n",vma_tmp->vm_start);
 		for (uint64_t addr = vma_tmp->vm_start; addr < vma_tmp->vm_end; addr+=PAGESIZE) {
-			printk("free %llx\n",addr);
+			//printk("free %llx\n",addr);
 			free_usrpage(pd,addr);
 		}
 
@@ -138,14 +138,14 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 	int fd = sys_open(path, O_RDWR ,660);
 	sys_lseek(fd,0,SEEK_SET);
 	int size = sys_read(fd, ehdr, sizeof(*ehdr));
-	printk("name %s\n",path);
+	//printk("name %s\n",path);
 	int64_t ret;
 	if (memcmp(ehdr->e_ident,"\177ELF",4) || \
 		ehdr->e_ident[4] != 2 || \
 		ehdr->e_ident[5] != 1 || \
 		ehdr->e_ident[6] != 1)
 	{
-		printk("load file failed\n");
+		//printk("load file failed\n");
 		ret = -1;
 		goto done;
 	}
@@ -192,7 +192,7 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 					MAP_EXECUTABLE|MAP_FOR_INIT_FILE;
 			v_addr = phdr.p_vaddr;
 			//printk("vaddr=%llx:p_offset=%llx\n:filesz=%llx\n",phdr.p_vaddr,phdr.p_offset,phdr.p_filesz);
-			printk("range:%llx - %llx\n",phdr.p_vaddr,phdr.p_vaddr+phdr.p_filesz);
+			//printk("range:%llx - %llx\n",phdr.p_vaddr,phdr.p_vaddr+phdr.p_filesz);
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
 			unsigned long addr = 
@@ -238,14 +238,14 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 
 	ret = ehdr->e_entry;
 done:
-	printk("load done");
+	//printk("load done");
 	return ret;
 }
 
 
 int64_t sys_exeload(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 {
-	printk("sys_exeload");
+	//printk("sys_exeload");
 	int64_t entry_point = load(path,ehdr,phaddr);
 	if (entry_point == -1) {
 		printk("sys_exeload: load failed\n");
@@ -266,8 +266,8 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 		while (envp[envs]) envs++;
 
 	struct task_struct* cur = running_thread();
-	printk("before sys_execve.............\n");
-	test_vma(cur->mm);
+	//printk("before sys_execve.............\n");
+	//test_vma(cur->mm);
 
 	unsigned long crmd;
 	unsigned long prmd;
@@ -292,7 +292,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 
 	/* envp 转移参数 */
 	//malloc_usrpage(cur->pgdir,(uint64_t)uargs);
-	printk("envp.........\n");
+	//printk("envp.........\n");
 	Elf_auxv_t *auxv = (Elf_auxv_t *)(random - auxs*sizeof(Elf_auxv_t));
 	uint64_t argtop = (uint64_t)auxv;
 	for (int i = 0; i < envs; i++) {
@@ -300,7 +300,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	}
 
 	/* argv 转移参数 */
-	printk("argv.........\n");
+	//printk("argv.........\n");
 	for (int i = 0; i < argc; i++) {
 		strcpy(uargs[i],argv[i]);
 	}
@@ -312,7 +312,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	for (int i=0;i<argc;i++)
 		printk("%s ",uargs[i]);
 
-	printk("next\n");
+	//printk("next\n");
 	/*   下面是对栈中内容的替换操作   */
 	*((uint64_t*)(USER_STACK - sizeof(uint64_t))) = 0;
 	/* auxv */
@@ -345,8 +345,8 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	/* argc */
 	*((uint64_t*)(argtop - (envs+argc+3)*sizeof(uint64_t))) = argc;
 
-	printk("after sys_execve.............\n");
-	test_vma(cur->mm);
+	//printk("after sys_execve.............\n");
+	//test_vma(cur->mm);
 
 	//intr_enable();
 	
@@ -370,7 +370,7 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	//	printk("random[%d]:%d\n",i,*(char*)(random+i));
 
 
-	printk("jump to proc... at %llx\n",entry);
+	//printk("jump to proc... at %llx\n",entry);
 	utimes_begin(cur);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 	return -1;

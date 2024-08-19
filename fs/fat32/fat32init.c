@@ -12,6 +12,7 @@
 #include <fs/mount.h>
 #include <fs/buf.h>
 #include <sync.h>
+#include <fs/procfile.h>
 
 FileSystem *fatFs;
 struct lock mtx_file;
@@ -167,8 +168,15 @@ void init_root_fs(void)
 	ext4_init(ext4Fs);
 	pr_info("ext4_init finished\n");
 	//fat32_init(fatFs);
+
+	/* 初始化 proc */
+	//allocFs(&procFs);
+	//procFs->root = dirent_alloc();
+	//procFs->root->head = &mnt_root;
+	//procfs_init(procFs);
+
+
 	/*将原来的rootfs目录转移到fat32下*/
-	
 	/*将fat32系统挂载到根挂载点*/
 	
 }

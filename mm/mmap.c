@@ -99,7 +99,7 @@ get_unmapped_area(struct file *filp, unsigned long addr,
 	}
 
 	/*在给定的地址处分配，如果成功返回*/
-	test_vma(mm);
+	//test_vma(mm);
 	if (addr) {
 		addr = PAGE_ALIGN(addr);
 		vma = find_vma(mm, addr);
@@ -304,7 +304,7 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr,
 			//printk("2MAP_PRIVATE\n");
 			break;
 		default:
-			printk("2default\n");
+			//printk("2default\n");
 			break;
 			// return -EINVAL;
 		}

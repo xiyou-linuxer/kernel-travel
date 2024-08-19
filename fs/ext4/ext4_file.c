@@ -131,7 +131,7 @@ int ext4_fread(Dirent *file, unsigned long dst, unsigned int off, unsigned int n
 				break;
 			fblock_count++;
 		}
-		printk("fblock_count:%d\n",fblock_count);
+		//printk("fblock_count:%d\n",fblock_count);
 		// 直接读取多个数据块
 		r = ext4_blocks_get_direct(u8_buf, block_size, fblock_start, fblock_count);
 		// 更新缓冲区指针和剩余大小

@@ -41,7 +41,7 @@ int ext4_blocks_get_direct(const void *buf,int block_size, uint64_t lba, uint32_
 		}
 		count++;
 	}
-	printk("count:%d\n",count);
+	//printk("count:%d\n",count);
 	return count;
 }
 
