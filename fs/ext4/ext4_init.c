@@ -61,7 +61,9 @@ int fill_sb(FileSystem *fs)
 {
 	ASSERT(fs != NULL);
 	/*填写超级块中ext4的基本属性*/
+	pr_info("read buf0 start\n");
 	Buffer *buf0 = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
+	pr_info("read buf0 end\n");
 	void *p = &fs->superBlock.ext4_sblock;
 	memcpy(p,buf0->data->data,512);
 	bufRelease(buf0);
@@ -110,8 +112,10 @@ void ext4_init(FileSystem* fs)
 	printk("ext4 is initing...\n");
 	strcpy(ext4Fs->name, "ext4");
 	//初始化超级块信息
-	//pr_info("fill_sb start\n");
+	pr_info("fill_sb start\n");
+	pr_info("ext4Fs: 0x%p\n", ext4Fs);
 	ASSERT(fill_sb(ext4Fs) != 0);
+	pr_info("fill_sb finish\n");
 	ext4Fs->superBlock.bytes_per_clus = ext4_sb_get_block_size(&ext4Fs->superBlock.ext4_sblock);
 	//初始化根目录
 	ext4Fs->root->ext4_dir_en.inode = EXT4_ROOT_INO;//根目录对应的inode号

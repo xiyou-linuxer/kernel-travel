@@ -220,8 +220,9 @@ static Buffer *bufAlloc(u32 dev, u64 blockno) {
  * @brief 当is_read为1时，首次获取时，只获取buffer，而不读取buffer，适合于clusterAlloc
  */
 Buffer *bufRead(unsigned int dev, unsigned long blockno, bool is_read) {
+	// pr_info("alloc buf\n");
 	Buffer *buf = bufAlloc(dev, blockno);
-	//pr_info("buf->valid: 0x%x\n", buf->valid);
+	// pr_info("buf->valid: 0x%x\n", buf->valid);
 	if (!buf->valid) {
 		if (is_read) block_read(blockno,1,buf->data,1);
 		//pr_info("buf->valid: 0x%x\n", buf->valid);

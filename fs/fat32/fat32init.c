@@ -3,6 +3,7 @@
 #include <xkernel/stdio.h>
 #include <debug.h>
 #include <xkernel/string.h>
+#include <xkernel/printk.h>
 #include <fs/fat32.h>
 #include <fs/vfs.h>
 #include <fs/dirent.h>
@@ -156,11 +157,15 @@ void init_root_fs(void)
 	//allocFs(&fatFs);
 	allocFs(&ext4Fs);
 	//fatFs->deviceNumber = 0;
+	pr_info("ext4Fs->root alloc started\n");
 	ext4Fs->root = dirent_alloc();
+	pr_info("ext4Fs->root: 0x%p\n", ext4Fs->root);
+	pr_info("ext4Fs->root alloc finished\n");
 	mnt_root.mnt_rootdir = ext4Fs->root;
 	ext4Fs->root->head = &mnt_root;
-	printk("ext4_init\n");
+	pr_info("ext4_init start started\n");
 	ext4_init(ext4Fs);
+	pr_info("ext4_init finished\n");
 	//fat32_init(fatFs);
 	/*将原来的rootfs目录转移到fat32下*/
 	

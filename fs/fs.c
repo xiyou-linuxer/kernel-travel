@@ -6,6 +6,7 @@
 #include <fs/ramfs.h>
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
+#include <xkernel/printk.h>
 #include <debug.h>
 static struct FileSystem fs[MAX_FS_COUNT];
 
@@ -88,9 +89,9 @@ void vfs_init(void)
 /*加载磁盘文件系统并完成rootfs的迁移*/
 void fs_init(void)
 {
-	printk("fs_init start\n");
+	pr_info("fs_init start\n");
 	init_root_fs();	//将根目录从虚拟文件系统rootfs转移到磁盘文件系统中fat32/ext4
 	//test_fs_all();
-	printk("init_root_fs down\n");
+	pr_info("init_root_fs down\n");
 	printk("fs_init down\n");
 }

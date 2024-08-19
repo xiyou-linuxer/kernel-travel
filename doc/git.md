@@ -1,5 +1,9 @@
 # git 下载编译
 
+最终实现了一个简易版的git:
+仓库链接：git@github.com:zhendewokusi/my_git.git 能完成task1、task2
+
+
 主机配置交叉编译版本的 `zlib`：
 
 ```bash
@@ -116,16 +120,16 @@ config.log:
 
 ```
 
-尝试修改，没有结果，直接修改Makefile中的CC，AR,以及 LDFLAGS 和 CFLAGS 为对应的，编译发现缺少 `curl`库，安装龙芯的 `curl` 库：
+尝试修改，没有结果，直接修改Makefile中的CC，AR,以及 LDFLAGS 和 CFLAGS 为对应的，编译发现缺少 `curl`库，安装龙芯的 `curl` 库，`curl`库依赖龙芯的`libpsl`,`libpsl`又依赖两个 lib 库....
 
-安装龙芯的`curl`库之前，需要先安装龙芯的`libpsl`
 ```bash
 wget https://github.com/rockdaboot/libpsl/archive/refs/heads/master.zip
 unzip master.zip
 cd libpsl-master
 mkdir build
 cd build
-
+make -j 16
+make install DESTDIR=/opt/gcc-13.2.0-loongarch64-linux-gnu/ includedir=include
 ```
 ```bash
 wget https://github.com/curl/curl/archive/refs/heads/master.zip
@@ -133,5 +137,21 @@ unzip curl-master.zip
 cd curl-master
 mkdir build
 cd build
+make -j 16
+make install DESTDIR=/opt/gcc-13.2.0-loongarch64-linux-gnu/ includedir=include
+```
+
+
+
+直接修改 git 的 Makefile
+```Makefile
+CROSS_COMPILE=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu-
+
+CC = $(CROSS_COMPILE)gcc
+AR = $(CROSS_COMPILE)ar
+
+CFLAGS = -g -O2 -Wall --sysroot=/opt/gcc-13.2.0-loongarch64-linux-gnu/sysroot -I/opt/gcc-13.2.0-loongarch64-linux-gnu/include
+LDFLAGS = --sysroot=/opt/gcc-13.2.0-loongarch64-linux-gnu/sysroot -L/opt/gcc-13.2.0-loongarch64-linux-gnu/lib
 
 ```
+编译安装。
