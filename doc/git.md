@@ -1,8 +1,26 @@
 # git 下载编译
 
-最终实现了一个简易版的git:
-仓库链接：git@github.com:zhendewokusi/my_git.git 能完成task1、task2
+手写实现了一个简易版的git:
+能完成task1、task2,路径：`./scripts/my_git`。在线下赛现场完成的，git链接：`git@github.com:zhendewokusi/my_git.git`，十分简单的实现。
 
+实现了`git add`,`git commit`,`git checkout`,`git log`，`git reflog`命令。
+
+`.git`仓库拓扑：
+```
+➜  .git git:(main) tree
+.
+├── HEAD
+├── index
+├── objects
+│   ├── 10f99f17
+│   └── 434eb2fc
+└── refs
+
+3 directories, 4 files
+```
+
+`object`文件夹用于存放文件，修改等。
+`refs`文件夹用于存储tag。
 
 主机配置交叉编译版本的 `zlib`：
 
