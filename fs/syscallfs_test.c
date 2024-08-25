@@ -197,25 +197,14 @@ void test_getdents(void){
 
 void test_fs_all(void)
 {
-
-	int fd = sys_open("/aaa.txt",O_RDWR,0777);
-	printk("fd:%d\n",fd);
-	char buf[64];
-	//char buf[64];
-	//sys_write(fd,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n",4096*15);
-	sys_read(fd,buf,64);
-	int i =0 ;
-	/*while (i <8192)
+	struct path_search_record searched_record;
+	Dirent *file = search_file("/output/bbb",&searched_record);
+	printk("filename:%s\n",file->name);
+	char buf[512];
+	
+	ext4_fread(file,buf,0,512);
+	for (int i = 0; i < 512; i++)
 	{
 		printk("%x ",buf[i]);
-		i++;
-	}*/
-	//sys_read(fd,buf,64);
-	printk("%s \n",buf);
-	
-	//printk("read_down\n");
-	//test_mapping();
-	//test_getdents();
-	while (1) {
-	};
+	}
 } 

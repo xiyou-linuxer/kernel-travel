@@ -145,7 +145,7 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 		ehdr->e_ident[5] != 1 || \
 		ehdr->e_ident[6] != 1)
 	{
-		//printk("load file failed\n");
+		printk("load file failed\n");
 		ret = -1;
 		goto done;
 	}
@@ -186,13 +186,14 @@ int64_t load(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 				*phaddr = phdr.p_vaddr+(phoff-phdr.p_offset);
 
 			if (phdr.p_flags & PF_R) elf_prot |= PROT_READ;
+				printk("%x\n",phdr.p_flags);
 			if (phdr.p_flags & PF_W) elf_prot |= PROT_WRITE;
+				printk("%x\n",phdr.p_flags);
 			if (phdr.p_flags & PF_X) elf_prot |= PROT_EXEC;
+				printk("%x\n",phdr.p_flags);
 			elf_flags = MAP_PRIVATE|MAP_DENYWRITE|
 					MAP_EXECUTABLE|MAP_FOR_INIT_FILE;
 			v_addr = phdr.p_vaddr;
-			//printk("vaddr=%llx:p_offset=%llx\n:filesz=%llx\n",phdr.p_vaddr,phdr.p_offset,phdr.p_filesz);
-			//printk("range:%llx - %llx\n",phdr.p_vaddr,phdr.p_vaddr+phdr.p_filesz);
 			load_phdr(fd,&phdr);
 			/*初始化 vm_area_struct*/
 			unsigned long addr = 

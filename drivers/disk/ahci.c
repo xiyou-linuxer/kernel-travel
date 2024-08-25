@@ -13,24 +13,22 @@ struct block_device_request_queue ahci_req_queue;
 /*启动命令引擎*/
 static void start_cmd(unsigned long prot_base)
 {
-	printk("start_cmd start\n");
 	// Wait until CR (bit15) is cleared
-	//while (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_CR!=0);
+	while ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_CR) != 0);
 
 	// Set FRE (bit4) and ST (bit0)
 	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) |= HBA_PxCMD_FRE;// 开启端口的接收
 
 	// Wait until CR (bit15) is cleared
-	while (*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_CR);
+	while ((*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) & HBA_PxCMD_CR) != 0);
 	
 	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) |= HBA_PxCMD_ST;//开启向端口输入命令
-	printk("start_cmd down\n");
 }
 
 /*停止命令引擎*/ 
 static void stop_cmd(unsigned int prot_base)
 {
-	printk("stop_cmd start\n");
+	//printk("stop_cmd start\n");
 	// Clear ST (bit0)
 	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_CMD)) &= ~HBA_PxCMD_ST;
 
@@ -197,14 +195,13 @@ int ahci_read(unsigned long prot_base, unsigned int startl, unsigned int starth,
 
 int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth, unsigned int count, unsigned long buf)
 {
-	printk("prot_base:%d\n",prot_base);
+	//printk("prot_base:%d\n",prot_base);
 	*(unsigned int *)(SATA_ABAR_BASE|(prot_base+PORT_IS)) = 0xffff; // Clear pending interrupt bits
 	int slot = 0;//ahci_find_cmdslot(prot_base);
 	if (slot == -1)
 		return E_NOEMPTYSLOT;
-	printk("ahci_write2\n");
 	struct hba_command_header* cmdheader = ahci_initialize_command_header(prot_base, slot, count,1);
-	printk("111\n");
+	//printk("111\n");
 	cmdheader->clear_busy_upon_r_ok = 1;
 	cmdheader->pmport = 1;
 	struct hba_command_table* cmdtbl = (struct hba_command_table*)(cmdheader->command_table_base);
@@ -220,7 +217,7 @@ int ahci_write(unsigned long prot_base, unsigned int startl, unsigned int starth
 		buf += 4 * 1024; // 4K uint16_ts
 		count -= 16;     // 16 sectors
 	}
-	printk("222\n");
+	//printk("222\n");
 	cmdtbl->prdt_entries[i].data_base = buf;
 	cmdtbl->prdt_entries[i].byte_count = (count << 9); // 512 bytes per sector
 	cmdtbl->prdt_entries[i].interrupt_on_complete = 0;

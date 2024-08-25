@@ -133,7 +133,6 @@ void test_tlb_func(void)
 	printk("index = 0x%x \nehi = 0x%x \nelo0 = 0x%x \nelo1 = 0x%x",read_tlb.index,read_tlb.ehi,read_tlb.elo0,read_tlb.elo1);
 
 	u64 res = tlb_search(entity.ehi);
-	printk("res = 0x%x \n",res);
 }
 
 static void page_setting_init(void)

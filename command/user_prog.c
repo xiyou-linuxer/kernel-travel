@@ -9,22 +9,24 @@
 
 int main(void)
 {
-	//int count = 0 ;
-	//char filepath[64];
+	int count = 0 ;
+	char filepath[64];
 	char buf[64];
-	//umemset(filepath,0,sizeof(filepath));
-	//ustrcpy(filepath,"/sdcard/busybox");
+	pstr("user_prog\n");
+	umemset(filepath,0,sizeof(filepath));
+	ustrcpy(filepath,"/output/bbb");
+	char *argv[] = {"/output/bbb","sh","busybox_testcode.sh",NULL};
 	//char *argv[] = {"/sdcard/busybox","sh","busybox_testcode.sh",NULL};
-	//char *envp[] = {NULL};
+	char *envp[] = {NULL};
 
 	////myprintf("hello-you\n\n");
-	//int pid = fork();
-	//if (pid == 0){
-	//	execve(filepath,(char**)argv,envp);
-	//}
+	int pid = fork();
+	if (pid == 0){
+		execve(filepath,(char**)argv,envp);
+	}
 
 
-	int p[2];
+	/*int p[2];
 	off_t in_off,out_off;
 	pipe(p);
 	int fd = openfile(AT_OPEN,SOURCEFILE,3,0);
@@ -71,7 +73,7 @@ int main(void)
 	splice(p[1],NULL,outfd,&out_off,100,0);
 	readfile(outfd,buf,10);
 	buf[10]=0;
-	pstr(buf);
+	pstr(buf);*/
 
 	//splice()
 

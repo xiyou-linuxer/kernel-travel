@@ -39,6 +39,7 @@ static void build_dirent_ext4tree(Dirent *parent)
 			break;
 		}
 		child = ext4_dir_entry_next(&d);
+		//printk("%s ",child->name);
 		child->head = parent->head;
 		// 跳过.和..
 		if (strncmp(child->name, ".", 2) == 0 || strncmp(child->name, "..", 3) == 0) {
@@ -49,6 +50,7 @@ static void build_dirent_ext4tree(Dirent *parent)
 		// 如果为目录，就向下一层递归
 		if (child->ext4_dir_en.in.inode_type == EXT4_DE_DIR) {
 			child->type = DIRENT_DIR;
+			printk("\n");
 			build_dirent_ext4tree(child);
 		}
 	}
@@ -61,9 +63,7 @@ int fill_sb(FileSystem *fs)
 {
 	ASSERT(fs != NULL);
 	/*填写超级块中ext4的基本属性*/
-	pr_info("read buf0 start\n");
 	Buffer *buf0 = bufRead(1,2,1);//磁盘中ext4超级块位于第二扇区
-	pr_info("read buf0 end\n");
 	void *p = &fs->superBlock.ext4_sblock;
 	memcpy(p,buf0->data->data,512);
 	bufRelease(buf0);

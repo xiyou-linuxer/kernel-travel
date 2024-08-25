@@ -38,7 +38,6 @@
 	{
 	case ATA_CMD_READ_DMA_EXT:
 		int res = ahci_read(prot_base, LBA_startl, LBA_starth, count, buffer);
-		printk("res = %d\n", res);
 		break;
 	case ATA_CMD_WRITE_DMA_EXT:
 		ahci_write(prot_base,LBA_startl,LBA_starth,count,buffer);
