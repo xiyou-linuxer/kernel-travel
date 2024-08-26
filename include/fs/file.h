@@ -3,6 +3,8 @@
 
 #include <fs/fat32.h>
 #include <xkernel/types.h>
+#include <fs/path.h>
+#include <sync.h>
 
 #define NAME_MAX_LEN 256
 
@@ -60,7 +62,34 @@ int openat(int fd, u64 filename, int flags, mode_t mode);
 #define X_OK 1 /* Test for execute permission.  */
 #define F_OK 0 /* Test for existence.  */
 
-struct file {
+/*struct file {
 	int fd;
+};*/
+
+struct file {
+	union {
+		struct list_head	fu_list;		// 文件对象链表，用于将所有的打开的FILE文件连接起来形成打开文件表
+		//struct rcu_head 	fu_rcuhead;	// RCU （未实现）
+	} f_u;
+	struct path		f_path;						// 包含dentry和mnt两个成员，用于确定文件路径
+#define f_dentry	f_path.dentry		// f_path的成员之一，当前文件的dentry结构
+#define f_vfsmnt	f_path.mnt			// 表示当前文件所在文件系统的挂载根目录
+	//const struct file_operations	*f_op;	// 与该文件相关联的操作函数
+	struct lock		f_lock;  /* f_ep_links, f_flags, no IRQ */	// 单个文件结构锁
+	// 文件的引用计数(有多少进程打开该文件)
+	unsigned int		f_count;		// 文件对象的使用计数
+	// 对应于open时指定的flag
+	unsigned int 		f_flags;		// 打开文件时所指定的标志
+	// 读写模式：open的mod_t mode参数
+	unsigned char			f_mode;					// 文件的访问模式
+	// 当前文件指针位置
+	unsigned int			f_pos;					// 文件当前的位移量(文件指针)
+	// 记录文件的版本号，每次使用之后递增
+	u64			f_version;		// 版本号
+	/* needed for tty driver, and maybe others */
+	/*tty 驱动程序需要，也许其他驱动程序需要*/
+	void			*private_data;		// tty设备驱动的钩子
+	//struct address_space	*f_mapping;		// 页缓存映射(未实现页缓存)
+
 };
 #endif
