@@ -179,18 +179,34 @@ unsigned long get_kernel_pge(void)
 
 u64 get_kernel_pages(u64 count)
 {
-	unsigned long page;
-	u64 bit_off = bit_scan(&reserve_phy_pool.btmp,count);
-	if (bit_off == -1){
-		return 0;
-	}
-	for (u64 i = 0,b = bit_off ; i < count ; i++,b++)
-		bitmap_set(&reserve_phy_pool.btmp,b,1);
+    unsigned long page;
+    // 扫描物理内存池的位图，找到连续的空闲内存块
+    // 该函数返回第一个空闲块的偏移量，如果找不到合适的块则返回-1
+    u64 bit_off = bit_scan(&reserve_phy_pool.btmp, count);
+    
+    // 如果没有找到合适的空闲块，返回0，表示内存分配失败
+    if (bit_off == -1) {
+        return 0;
+    }
 
-	page = (((bit_off << 12) + reserve_phy_pool.paddr_start) | CSR_DMW1_BASE);
-	memset((void *)page,0,(int)(PAGE_SIZE)*count);
-	return page;
+    // 设置位图，标记这些页已经被分配
+    for (u64 i = 0, b = bit_off; i < count; i++, b++) {
+        bitmap_set(&reserve_phy_pool.btmp, b, 1);
+    }
+
+    // 计算物理地址
+    // 将找到的偏移量 `bit_off` 转换为物理地址，左移12位（4KB页大小）
+    // 然后加上物理内存池的起始地址 `paddr_start`
+    // 同时将该地址与 `CSR_DMW1_BASE` 基址进行或运算，生成完整的虚拟地址
+    page = (((bit_off << 12) + reserve_phy_pool.paddr_start) | CSR_DMW1_BASE);
+
+    // 将分配的内存块清零，防止残留的数据影响后续使用
+    memset((void *)page, 0, (int)(PAGE_SIZE) * count);
+
+    // 返回分配好的内存块的虚拟地址
+    return page;
 }
+
 
 void free_kernel_pge(void* k_page)
 {
@@ -267,11 +283,17 @@ unsigned long __init zone_absent_pages_in_node(int nid,
 
 struct page * __init memmap_init(unsigned long size)
 {
-	if(size == 0)
-		return NULL;
+    // 如果传入的大小为0，则不需要分配内存，直接返回NULL
+    if (size == 0)
+        return NULL;
 
-	return (struct page * )get_kernel_pages(CEIL_DIV(size,PAGE_SIZE));
+    // 调用 get_kernel_pages 函数，分配适当数量的物理页
+    // 通过 CEIL_DIV(size, PAGE_SIZE) 计算出需要分配的页数
+    // CEIL_DIV 用于计算分配的页数，确保分配的内存足够大以容纳 size 字节的数据
+    // 将分配的物理内存块返回为 `struct page*` 类型的指针
+    return (struct page *)get_kernel_pages(CEIL_DIV(size, PAGE_SIZE));
 }
+
 
 void __init alloc_node_mem_map(struct pglist_data *pg_data)
 {

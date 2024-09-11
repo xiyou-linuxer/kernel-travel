@@ -109,4 +109,12 @@ register unsigned long current_stack_pointer __asm__("$sp");
 #define _TIF_LSX_CTX_LIVE	(1<<TIF_LSX_CTX_LIVE)
 #define _TIF_LASX_CTX_LIVE	(1<<TIF_LASX_CTX_LIVE)
 
+#ifndef CONFIG_NR_CPUS
+/* FIXME: This should be fixed in the arch's Kconfig */
+#define CONFIG_NR_CPUS	1
+#endif
+
+/* Places which use this should consider cpumask_var_t. */
+#define NR_CPUS		CONFIG_NR_CPUS
+
 #endif /* _ASM_THREAD_INFO_H */
