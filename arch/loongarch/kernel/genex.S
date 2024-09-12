@@ -80,6 +80,16 @@ SYM_FUNC_START(syscall_handler)
 	cfi_st	fp, PT_R22
 	SAVE_STATIC
 
+	path_resolution(path);
+	struct path_search_record searched_record;
+	Dirent * file = search_file(path,&searched_record);
+	if (file != NULL)
+	{
+		return 0;
+	}
+	searched_record.parent_dir->file_system->op->makedir(NULL, path, mode);
+	return 0;
+}
 	move	a0,sp
 	la.abs	t0, do_syscall
 	jirl	ra, t0, 0

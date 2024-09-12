@@ -42,6 +42,8 @@ unsigned long min_low_pfn = 0;
 unsigned long max_pfn = 0;
 unsigned long long max_possible_pfn = 0;
 
+extern unsigned long totalram_pages;
+
 /* 保证物理地址的合法性 */
 static inline phys_addr_t memblock_fit_size(phys_addr_t base, phys_addr_t* size)
 {
@@ -246,7 +248,7 @@ void __meminit memblock_free_all(void)
 
 	reset_node_managed_pages();
 	// printk("reset_node_managed_pages done\n");
-	unsigned long pages = free_low_memory_core_early();
+	totalram_pages = free_low_memory_core_early();
 	// printk("pages: %ld\n", pages);
 
 }

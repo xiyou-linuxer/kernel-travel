@@ -37,6 +37,8 @@
 #define LVL_SHIFT(n)      ((n) * LVL_BITS)
 #define LVL_START(n)      (1UL << LVL_SHIFT(n))
 
+#define HZ 100
+
 extern unsigned long ticks;
 extern void intr_timer_handler(struct pt_regs *regs);
 

@@ -78,6 +78,8 @@ static inline int pfn_valid(unsigned long pfn)
 }
 #endif
 
+#define nr_node_ids		1
+
 #define INVAILD_MMAP_CACHE ((struct vm_area_struct *)NULL)
 
 struct virt_addr {
@@ -197,6 +199,7 @@ struct mm_struct {
 extern struct pool reserve_phy_pool;
 extern struct pool phy_pool;
 extern struct page *mem_map;
+extern unsigned long totalram_pages;
 
 /* 管理中断处理过程中的状态信息 */
 typedef struct irqentry_state {

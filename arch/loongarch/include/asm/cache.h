@@ -6,6 +6,7 @@
 #define CONFIG_L1_CACHE_SHIFT	6
 #define L1_CACHE_SHIFT	CONFIG_L1_CACHE_SHIFT
 #define L1_CACHE_BYTES	(1 << L1_CACHE_SHIFT)
+#define cache_line_size()	L1_CACHE_BYTES
 
 #define __read_mostly __section(".data..read_mostly")
 
