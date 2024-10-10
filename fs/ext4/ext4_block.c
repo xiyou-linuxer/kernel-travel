@@ -162,6 +162,8 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t goal,
 
 	struct ext4_block b;
 	struct ext4_block_group_ref bg_ref;
+	uint32_t block_size;
+	uint32_t fb_cnt;
 
 	/* 获取块组引用 */
 	r = ext4_fs_get_block_group_ref(inode_ref->fs, bg_id, &bg_ref);
@@ -318,7 +320,7 @@ goal_failed:
 
 success:
 
-	uint32_t block_size = ext4_sb_get_block_size(sb);
+	block_size = ext4_sb_get_block_size(sb);
 
 	/* 更新超级块的空闲块数 */
 	uint64_t sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
@@ -332,7 +334,7 @@ success:
 	inode_ref->dirty = true;
 
 	/* 更新块组的空闲块数 */
-	uint32_t fb_cnt = ext4_bg_get_free_blocks_count(bg_ref.block_group, sb);
+	fb_cnt = ext4_bg_get_free_blocks_count(bg_ref.block_group, sb);
 	fb_cnt--;
 	ext4_bg_set_free_blocks_count(bg_ref.block_group, sb, fb_cnt);
 

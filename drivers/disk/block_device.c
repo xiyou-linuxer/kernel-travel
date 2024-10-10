@@ -34,10 +34,12 @@
 	int prot_base = port_num*PORT_OFFEST+PORT_BASE;
 	int LBA_startl = base_addr&0xffffffff;
 	int LBA_starth = (base_addr >> 32);
+    int res;
+
 	switch (cmd)
 	{
 	case ATA_CMD_READ_DMA_EXT:
-		int res = ahci_read(prot_base, LBA_startl, LBA_starth, count, buffer);
+		res = ahci_read(prot_base, LBA_startl, LBA_starth, count, buffer);
 		printk("res = %d\n", res);
 		break;
 	case ATA_CMD_WRITE_DMA_EXT:
