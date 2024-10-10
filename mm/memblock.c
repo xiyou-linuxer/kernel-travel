@@ -248,5 +248,4 @@ void __meminit memblock_free_all(void)
 	// printk("reset_node_managed_pages done\n");
 	unsigned long pages = free_low_memory_core_early();
 	// printk("pages: %ld\n", pages);
-
 }

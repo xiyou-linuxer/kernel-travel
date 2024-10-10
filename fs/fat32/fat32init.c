@@ -158,15 +158,10 @@ void init_root_fs(void)
 	//allocFs(&fatFs);
 	allocFs(&ext4Fs);
 	//fatFs->deviceNumber = 0;
-	pr_info("ext4Fs->root alloc started\n");
 	ext4Fs->root = dirent_alloc();
-	pr_info("ext4Fs->root: 0x%p\n", ext4Fs->root);
-	pr_info("ext4Fs->root alloc finished\n");
 	mnt_root.mnt_rootdir = ext4Fs->root;
 	ext4Fs->root->head = &mnt_root;
-	pr_info("ext4_init start started\n");
 	ext4_init(ext4Fs);
-	pr_info("ext4_init finished\n");
 	//fat32_init(fatFs);
 
 	/* 初始化 proc */
@@ -178,5 +173,4 @@ void init_root_fs(void)
 
 	/*将原来的rootfs目录转移到fat32下*/
 	/*将fat32系统挂载到根挂载点*/
-	
 }

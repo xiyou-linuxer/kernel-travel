@@ -109,13 +109,9 @@ int fill_sb(FileSystem *fs)
 
 void ext4_init(FileSystem* fs)
 {
-	printk("ext4 is initing...\n");
 	strcpy(ext4Fs->name, "ext4");
 	//初始化超级块信息
-	pr_info("fill_sb start\n");
-	pr_info("ext4Fs: 0x%p\n", ext4Fs);
 	ASSERT(fill_sb(ext4Fs) != 0);
-	pr_info("fill_sb finish\n");
 	ext4Fs->superBlock.bytes_per_clus = ext4_sb_get_block_size(&ext4Fs->superBlock.ext4_sblock);
 	//初始化根目录
 	ext4Fs->root->ext4_dir_en.inode = EXT4_ROOT_INO;//根目录对应的inode号
@@ -131,5 +127,4 @@ void ext4_init(FileSystem* fs)
 	//构建目录树
 	build_dirent_ext4tree(ext4Fs->root);
 	//pr_info("build_dirent_ext4tree end\n");
-	printk("\nbuild dirent tree succeed!\n");
 }
