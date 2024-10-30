@@ -1,9 +1,9 @@
 #include <xkernel/block_device.h>
 #include <xkernel/ahci.h>
 #include <xkernel/stdio.h>
-
+#include <xkernel/rbtree.h>
 /*打包请求*/
- /*struct block_device_request_packet **/void block_make_request(int cmd, uint64_t base_addr, uint64_t count, uint64_t buffer,uint8_t port_num)
+struct block_device_request_packet *block_make_request(int cmd, uint64_t base_addr, uint64_t count, uint64_t buffer,uint8_t port_num)
 {
     /*struct block_device_request_packet *pack = (struct block_device_request_packet *)kmalloc(sizeof(struct block_device_request_packet), 0);
     //pack->pthread = running_thread();
@@ -54,9 +54,8 @@
 */
 void block_read(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t port_num)
 {
-    /*struct block_device_request_packet * pack=*/ block_make_request(ATA_CMD_READ_DMA_EXT,base_addr, count, buffer,port_num);
-
-    //ahci_submit(pack);
+    struct block_device_request_packet * pack= block_make_request(ATA_CMD_READ_DMA_EXT,base_addr, count, buffer,port_num);
+    ahci_submit(pack);
 }
 
 /*磁盘写入
@@ -67,7 +66,8 @@ void block_read(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t por
 */
 void block_write(uint64_t base_addr, uint64_t count, uint64_t buffer, uint8_t port_num) 
 {
-    /*struct block_device_request_packet * pack= */block_make_request(ATA_CMD_WRITE_DMA_EXT,base_addr, count, buffer,port_num);
-    //ahci_submit(pack);
+    struct block_device_request_packet * pack= block_make_request(ATA_CMD_WRITE_DMA_EXT,base_addr, count, buffer,port_num);
+
+    ahci_submit(pack);
 }
 

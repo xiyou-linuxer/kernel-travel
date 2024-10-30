@@ -3,7 +3,7 @@
 
 //#include <xkernel/thread.h>
 #include <xkernel/list.h>
-
+#include <xkernel/rbtree.h>
 struct block_device_request_packet
 {
     int cmd;//读写指令
@@ -14,13 +14,14 @@ struct block_device_request_packet
     uint8_t port_num;   // ahci的设备端口号
     void (*end_handler)(unsigned long num, unsigned long arg);//中断处理函数
     struct task_struct* pthread;//发出请求的任务控制块指针
-    struct list_elem* node;//节点
+    struct rb_node* node;//节点
 };
 
 struct block_device_request_queue
 {
     struct list queue_list;
-    struct block_device_request_packet * in_service;    // 正在请求的结点
+    struct rb_root rbroot;//使用红黑树排序
+    struct block_device_request_packet* in_service;  // 正在请求的结点
     unsigned long request_count;
 };
 

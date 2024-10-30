@@ -6,7 +6,8 @@
 #include <xkernel/ahci.h>
 #include <xkernel/list.h>
 #include <xkernel/string.h>
-#include<xkernel/block_device.h>
+#include <xkernel/block_device.h>
+#include <xkernel/rbtree.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
 struct block_device_request_queue ahci_req_queue;
@@ -301,14 +302,20 @@ static int ahci_identify(unsigned long prot_base)
 // }
 
 /*将请求提交到io调度队列*/
-// void ahci_submit(struct block_device_request_packet *pack)
-// {
-//     list_append(&(ahci_req_queue.queue_list), &(pack->list));
-//     ++ahci_req_queue.request_count;
+void ahci_submit(struct block_device_request_packet *pack)
+{
+     
+    ++ahci_req_queue.request_count;
+    rb_insert_color(pack->node, &ahci_req_queue.rbroot);//向红黑树中插入节点。
+    if (ahci_req_queue.in_service == NULL) //
+    // 当前没有正在请求的io包，立即执行磁盘请求 
+	ahci_query_disk();
+}
 
-//     // if (ahci_req_queue.in_service == NULL) // 当前没有正在请求的io包，立即执行磁盘请求
-//         // ahci_query_disk();
-// }
+void kahci(void)
+{
+	
+}
 
 static int check_type(unsigned int port)
 {
