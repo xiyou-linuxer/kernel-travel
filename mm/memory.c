@@ -215,16 +215,6 @@ void free_kernel_pge(void* k_page)
 	memset((void *)k_page,0,(int)(PAGE_SIZE));
 }
 
-void * kmalloc(u64 size)
-{
-	struct task_struct * curr =  running_thread();
-	struct mm_struct * mm = curr->mm;
-	return (void *)get_kernel_pge();
-	// if(__builtin_constant_p(size) && size) {
-	// 	unsigned long index;
-	// 	if(size > KMALLOC_MAX_CACHE_SIZE)
-}
-
 void __init get_pfn_range_for_nid(unsigned int nid,
 			unsigned long *start_pfn, unsigned long *end_pfn)
 {

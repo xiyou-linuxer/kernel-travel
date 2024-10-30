@@ -99,6 +99,7 @@ void create_new_procfile(char* fname)
 	list_append(&proc_dirent->child_list,&new->dirent_tag);
 }
 
+//初始化proc
 void proc_files_init(void)
 {
 	struct Dirent* proc_dirent = dirent_alloc();

@@ -311,7 +311,7 @@ u64 *pmd_ptr(u64 pd,u64 vaddr);
 u64 *pte_ptr(u64 pd,u64 vaddr);
 u64 *reverse_pmd_ptr(u64 pd, u64 vaddr);
 u64 *reverse_pte_ptr(u64 pd, u64 vaddr);
-u64 get_page(void);
+u64 get_page(void);//中简单的位图分配
 u64 get_pages(u64 count);
 void free_page(u64 vaddr);
 void free_pages(u64 vstart,u64 count);
@@ -322,15 +322,13 @@ void page_table_add(uint64_t pd,uint64_t _vaddr,uint64_t _paddr,uint64_t attr);
 u64 vaddr_to_paddr(u64 pd, u64 vaddr);
 void malloc_usrpage_withoutopmap(u64 pd,u64 vaddr);
 void malloc_usrpage(u64 pd,u64 vaddr);
-
-void * kmalloc(u64 size);
 void get_pfn_range_for_nid(unsigned int nid,
 			unsigned long *start_pfn, unsigned long *end_pfn);
 void free_area_init(unsigned long *max_zone_pfn);
 void memblock_init(void);
 void __free_pages_core(struct page *page, unsigned int order);
 void mem_init(void);
-struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid);
+struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid);//伙伴系统分配的入口
 
 void __free_pages_ok(struct page *page, unsigned int order,
 			    bool fpi_flags);

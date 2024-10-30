@@ -26,19 +26,12 @@ struct array_cache {
 			 */
 };
 
+//用于在初始化阶段关联 array_cache 与 cp 
 struct arraycache_init {
 	struct array_cache cache;
 	void *entries[BOOT_CPUCACHE_ENTRIES];
 };
 
-struct kmem_cache_cpu {
-	void **freelist;	/* 指向每个 CPU 可用对象的第一个空闲指针，用于快速分配空闲对象 */
-	struct page *page;	/* 当前 CPU 正在使用的 slab 页，即正在从其中分配内存的 slab */
-	int node;		/* 页所属的节点号（NUMA 节点编号），调试模式下该值为 -1 */
-#ifdef CONFIG_SLUB_STATS
-	unsigned stat[NR_SLUB_STAT_ITEMS];  /* 在启用 SLUB 统计信息时，用于记录分配相关的统计数据 */
-#endif
-};
 
 // 包含三个slab链表，slabs_full，slabs_partial和slabs_empty
 struct kmem_list3 {
@@ -101,11 +94,18 @@ struct kmem_cache {
 
 };
 
-/* Size description struct for general caches. */
+static enum {
+	NONE,///尚未初始化，CPU 缓存系统没有启用。
+	PARTIAL_AC,//处理器的 array 缓存已初始化，但更高级的缓存（如 kmem_list3）尚未设置。
+	PARTIAL_L3,//部分初始化，kmem_list3 缓存已分配并初始化。
+	EARLY,//早期初始化阶段，通常用于指代部分 CPU 缓存或数据结构已经准备好，但尚未完全启用。
+	FULL//已经完全启用
+} g_cpucache_up;
+
 struct cache_sizes {
     size_t cs_size;                  // 描述缓存对象的大小，表示此缓存存储的每个对象的字节数。
     struct kmem_cache *cs_cachep;    // 指向内核缓存管理结构的指针，用于管理指定大小的缓存对象。
 };
-struct kmem_cache *kmem_cache_create (const char *name, size_t size, size_t align,
-	unsigned long flags, void (*ctor)(void *))
+struct kmem_cache *kmem_cache_create (const char *name, size_t size, size_t align, unsigned long flags, void (*ctor)(void *));
+void * kmalloc(u64 size);
 #endif	/* _LINUX_SLAB_DEF_H */

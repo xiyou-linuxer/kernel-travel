@@ -20,13 +20,13 @@ static struct arraycache_init initarray_cache =
 static struct arraycache_init initarray_generic =
     { {0, BOOT_CPUCACHE_ENTRIES, 1, 0} };
 
-//一个node包含三个 kmem_list3
+//cache_cache 中的 
 #define NUM_INIT_LISTS (3 * MAX_NUMNODES)
 struct kmem_list3 initkmem_list3[NUM_INIT_LISTS];
 
 static struct list_head cache_chain;//用来维护所有 kmem_cache 实例（缓存池）的链表
 
-/* internal cache of cache description objs */
+/* 用于为 kmem_cache 结构本身分配小块内存的结构*/
 static struct kmem_cache cache_cache = {
 	.batchcount = 1,
 	.limit = BOOT_CPUCACHE_ENTRIES,
@@ -35,12 +35,28 @@ static struct kmem_cache cache_cache = {
 	.name = "kmem_cache",
 };
 
+struct cache_names {
+	char *name;
+	char *name_dma;
+};
+
+static struct cache_names cache_names[] = {
+#define CACHE(x) { .name = "size-" #x, .name_dma = "size-" #x "(DMA)" },
+#include <xkernel/kmalloc_sizes.h>
+	{NULL,}
+#undef CACHE
+};
+
+//内核中预留的kmem类，从64字节～
 struct cache_sizes malloc_sizes[] = {
 #define CACHE(x) { .cs_size = (x) },
 #include <xkernel/kmalloc_sizes.h>
 	CACHE(ULONG_MAX)
 #undef CACHE
 };
+
+#define INDEX_AC index_of(sizeof(struct arraycache_init))
+#define INDEX_L3 index_of(sizeof(struct kmem_list3))
 
 static int use_alien_caches = 1;
 
@@ -77,7 +93,6 @@ static void set_up_list3s(struct kmem_cache *cachep, int index)
 	cachep->nodelists[0]->next_reap = 
 		    REAPTIMEOUT_LIST3 +                    /* 回收超时常量 */
 		    ((unsigned long)cachep) % REAPTIMEOUT_LIST3; /* 随机化偏移量以避免同步，防止回收时间在同一时刻发生 */
-	
 }
 
 void kmem_cache_init(void)
@@ -206,4 +221,14 @@ void kmem_cache_init(void)
 
 	// 标志 CPU 缓存已初始化
 	g_cpucache_up = EARLY;
+}
+
+void * kmalloc(u64 size)
+{
+	struct task_struct * curr =  running_thread();
+	struct mm_struct * mm = curr->mm;
+	return (void *)get_kernel_pge();
+	// if(__builtin_constant_p(size) && size) {
+	// 	unsigned long index;
+	// 	if(size > KMALLOC_MAX_CACHE_SIZE)
 }
