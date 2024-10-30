@@ -8,6 +8,7 @@
 #include <xkernel/string.h>
 #include <xkernel/block_device.h>
 #include <xkernel/rbtree.h>
+#include <thread.h>
 unsigned long SATA_ABAR_BASE;//sata控制器的bar地址，0x80000000400e0000
 char ahci_port_base_vaddr[1048576];
 struct block_device_request_queue ahci_req_queue;
@@ -314,7 +315,33 @@ void ahci_submit(struct block_device_request_packet *pack)
 
 void kahci(void)
 {
-	
+    
+    while (1) {
+		struct rb_node *crrutern = rb_first(&ahci_req_queue.rbroot.rb_node);
+		if (crrutern!=NULL)
+		{
+			struct block_device_request_packet* pack = elem2entry(struct block_device_request_packet,node,crrutern);
+			int prot_base = pack->port_num*PORT_OFFEST+PORT_BASE;
+			switch (pack->cmd)
+	    	{
+			
+	        	case ATA_CMD_READ_DMA_EXT:
+					int res = ahci_read(prot_base, pack->LBA_startl, pack->LBA_starth, pack->count, pack->buffer_vaddr);
+					break;
+				case ATA_CMD_WRITE_DMA_EXT:
+					ahci_write(prot_base,pack->LBA_startl,pack->LBA_starth,pack->count,pack->buffer_vaddr);
+					break;
+				default:
+					break;
+			}
+        	rb_erase(crrutern, &ahci_req_queue.rbroot);
+        	crrutern = rb_first(&ahci_req_queue.rbroot.rb_node);
+   		}else
+		{
+			schedule();
+		}
+		
+    }
 }
 
 static int check_type(unsigned int port)
