@@ -592,7 +592,7 @@ int sys_getdents(int fd, struct linux_dirent64 * buf, size_t len)
 	return len;
 }
 
-int sys_writev (int fd, const struct iovec *iov, int iovcnt)
+int sys_writev(int fd, const struct iovec *iov, int iovcnt)
 {
 	struct iovec *p = iov;
 	int len = 0;

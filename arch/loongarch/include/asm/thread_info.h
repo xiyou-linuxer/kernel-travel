@@ -8,10 +8,11 @@
 #ifndef _ASM_THREAD_INFO_H
 #define _ASM_THREAD_INFO_H
 
+#include <xkernel/size.h>
+
 #ifndef __ASSEMBLY__
 
 #include <asm/regdef.h>
-#include <xkernel/size.h>
 #include <xkernel/types.h>
 #include <xkernel/preempt.h>
 

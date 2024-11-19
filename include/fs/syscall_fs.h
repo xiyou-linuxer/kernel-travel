@@ -25,7 +25,7 @@ int sys_umount(const char* special);
 int sys_statx(int dirfd, const char *pathname, int flags, unsigned int mask, struct statx *buf);
 int32_t sys_pipe(int32_t pipefd[2]);
 int sys_getdents(int fd, struct linux_dirent64* buf, size_t len);
-int sys_writev(int fd, const struct iovec* iov, int iovcnt);
+int sys_writev(int fd, const struct iovec *iov, int iovcnt);
 int sys_readlinkat(int dirfd, u64 pathname, u64 buf, size_t bufsiz);
 int sys_ppoll(unsigned long p_fds, int nfds, unsigned long tmo_p, unsigned long sigmask);
 int sys_fcntl(int, int, int );

@@ -50,9 +50,6 @@ typedef unsigned long long	phys_addr_t;
 
 typedef int16_t pid_t;
 
-#define __bitwise	__attribute__((bitwise))
-typedef unsigned int __bitwise gfp_t;
-
 #define __aligned_u64 __u64 __attribute__((aligned(8)))
 
 typedef struct {
@@ -81,6 +78,8 @@ typedef struct {
 #else
 #define __bitwise
 #endif
+
+typedef unsigned int __bitwise gfp_t;
 
 /* The kernel doesn't use this legacy form, but user space does */
 #define __bitwise__ __bitwise

@@ -59,6 +59,8 @@ KBUILD_CFLAGS	+= -nostdinc -I./arch/loongarch/include -I./include -I./arch/loong
 	-ffreestanding -fno-stack-protector -Wno-unused-function
 endif
 
+KBUILD_CFLAGS += -Wno-unused-function
+
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 AS		+= -EB
 LD		+= -EB
