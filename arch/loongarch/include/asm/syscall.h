@@ -284,5 +284,4 @@ static inline long splice(int fd_in, off_t *off_in,
 	return syscall(SYS_splice,fd_in,off_in,fd_out,off_out,len,flags);
 }
 
-
 #endif

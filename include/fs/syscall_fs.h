@@ -2,6 +2,7 @@
 #define _FS_SYS_H
 
 #include <xkernel/types.h>
+#include <fs/vfs.h>
 
 #define F_DUPFD_CLOEXEC 1030
 
