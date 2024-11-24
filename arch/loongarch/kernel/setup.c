@@ -5,17 +5,29 @@
 #include <asm/tlb.h>
 #include <xkernel/smp.h>
 #include <xkernel/stdio.h>
+#include <xkernel/init.h>
 
-unsigned long fw_arg0, fw_arg1, fw_arg2;
+unsigned long fw_arg0, fw_arg1, fw_arg2, fw_arg3;
 unsigned long kernelsp;
+
+char __initdata arcs_cmdline[512];
 
 void setup_arch(void)
 {
 	unsigned int config;
+
 	config = read_cpucfg(LOONGARCH_CPUCFG1);
 	if (config & CPUCFG2_PTW) {
 		printk("have PTW configuration\n");
 	}
+
+	printk("@@@@@: fw_arg0 = %lx\n", fw_arg0);
+	printk("@@@@@: fw_arg1 = %lx\n", fw_arg1);
+	printk("@@@@@: fw_arg2 = %lx\n", fw_arg2);
+	printk("@@@@@: fw_arg3 = %lx\n", fw_arg3);
+
+	early_init();
+
 	/**
 	 * 例外与中断的初始化
 	 */

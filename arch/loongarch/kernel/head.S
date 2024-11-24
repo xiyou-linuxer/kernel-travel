@@ -167,6 +167,8 @@ SYM_CODE_START(kernel_entry)			# kernel entry point
 	st.d		a1, t0, 0
 	la.pcrel	t0, fw_arg2
 	st.d		a2, t0, 0
+	la		t0, fw_arg3
+	st.d		a3, t0, 0
 
 	/* KSave3 used for percpu base, initialized as 0 */
 	csrwr		zero, PERCPU_BASE_KS

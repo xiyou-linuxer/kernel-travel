@@ -48,6 +48,8 @@ typedef s16		    int16_t;
 typedef unsigned long		size_t;
 typedef unsigned long long	phys_addr_t;
 
+typedef phys_addr_t resource_size_t;
+
 typedef int16_t pid_t;
 
 #define __aligned_u64 __u64 __attribute__((aligned(8)))

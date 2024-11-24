@@ -107,6 +107,9 @@ all:	$(KBUILD_DTBS) Image
 
 boot := arch/loongarch/boot
 
+uImage: vmlinux
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+
 Image Image.gz: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 

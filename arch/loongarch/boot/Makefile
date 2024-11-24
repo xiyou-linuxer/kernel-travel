@@ -88,9 +88,31 @@ if [ $(words $(LOADADDR)) -gt 1 ]; then \
 	false; \
 fi
 
-$(obj)/uImage:	$(obj)/zImage FORCE
-	@$(check_for_multiple_loadaddr)
-	$(call if_changed,uimage)
+VMLINUX_LOAD_ADDRESS=0x9000000000200000
+# VMLINUX_LOAD_ADDRESS=0x9000000090000000
+
+entry-y	= $(shell /home/huloves/repositories/linux-5.10-2k1000-dp-src/arch/loongarch/tools/elf-entry vmlinux)
+VMLINUX_ENTRY_ADDRESS = $(entry-y)
+
+UIMAGE_LOADADDR  = $(VMLINUX_LOAD_ADDRESS)
+UIMAGE_ENTRYADDR = $(VMLINUX_ENTRY_ADDRESS)
+
+VMLINUX ?= vmlinux
+
+targets += vmlinux.bin
+quiet_cmd_bin = OBJCOPY $@
+      cmd_bin = $(OBJCOPY) -O binary $(strip-flags) $(VMLINUX) $@
+$(obj)/vmlinux.bin: $(VMLINUX) FORCE
+	$(call if_changed,bin)
+
+$(obj)/vmlinux.bin.gz: $(obj)/vmlinux.bin FORCE
+	$(call if_changed,gzip)
+
+$(obj)/uImage.gz: $(obj)/vmlinux.bin.gz FORCE
+	$(call if_changed,uimage,gzip)
+
+$(obj)/uImage:	$(obj)/uImage.gz
+	@ln -sf $(notdir $<) $@
 	@echo '  Image $@ is ready'
 
 $(obj)/bootp/bootp: $(obj)/zImage initrd FORCE

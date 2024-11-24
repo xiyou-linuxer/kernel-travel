@@ -24,4 +24,6 @@ int wstr2str(char* dst, const unsigned short* src);
 int str2wstr(unsigned short* dst, const char* src);
 int strn2wstr(unsigned short* dst, const char* src, int n);
 void strins(char* buf, const char* str);
+size_t strlcat(char *dest, const char *src, size_t count);
+
 #endif /* _LINUX_STRING_H */

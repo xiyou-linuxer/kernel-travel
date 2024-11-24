@@ -2,6 +2,7 @@
 #include <xkernel/printk.h>
 #include <xkernel/stdio.h>
 #include <debug.h>
+
 void memset(void* dst_, uint8_t value, uint32_t size) {
 	
 	uint8_t* dst = (uint8_t*)dst_;
@@ -220,3 +221,26 @@ void strins(char *buf, const char *str)
 	}
 }
 
+/**
+ * strlcat - Append a length-limited, C-string to another
+ * @dest: The string to be appended to
+ * @src: The string to append to it
+ * @count: The size of the destination buffer.
+ */
+size_t strlcat(char *dest, const char *src, size_t count)
+{
+	size_t dsize = strlen(dest);
+	size_t len = strlen(src);
+	size_t res = dsize + len;
+
+	/* This would be a bug */
+	ASSERT(dsize < count);
+
+	dest += dsize;
+	count -= dsize;
+	if (len >= count)
+		len = count-1;
+	memcpy(dest, src, len);
+	dest[len] = 0;
+	return res;
+}

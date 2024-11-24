@@ -1,7 +1,16 @@
 #ifndef __LINUX_COMPILER_TYPES_H
 #define __LINUX_COMPILER_TYPES_H
 
+#ifdef __CHECKER__
+
+# define __iomem	__attribute__((noderef, address_space(__iomem)))
+
+#else
+
+# define __iomem
 #define __force
+
+#endif
 
 #define __scalar_type_to_expr_cases(type)				\
 		unsigned type:	(unsigned type)0,			\

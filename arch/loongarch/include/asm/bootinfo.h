@@ -8,12 +8,19 @@
 #ifndef __ASSEMBLY__
 
 #include <xkernel/types.h>
+#include <xkernel/init.h>
 #include <asm/boot_param.h>
 
 extern uint64_t efi_system_table;
 extern struct loongsonlist_mem_map *loongson_mem_map;
-extern unsigned long fw_arg0, fw_arg1, fw_arg2;
+extern unsigned long fw_arg0, fw_arg1, fw_arg2, fw_arg3;
 extern unsigned long kernelsp;
+
+extern char arcs_cmdline[512];
+
+extern void early_init(void);
+
+extern void __init fw_init_environ(void);
 
 extern char _start[];
 extern char _end[];
