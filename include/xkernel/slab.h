@@ -8,6 +8,21 @@
 #include <sync.h>
 #include <xkernel/thread.h>
 
+/*
+ * 在分配slab块时传递给函数的参数
+ */
+#define SLAB_DEBUG_FREE		0x00000100UL	/* DEBUG: Perform (expensive) checks on free */
+// 导致slab层在已分配的内存周围插入“红色警戒区”以探测缓冲越界
+#define SLAB_RED_ZONE		0x00000400UL	/* DEBUG: Red zone objs in a cache */
+// 使slab层用已知的值（a5a5a5a5）填充slab。这就是所谓的中毒，有利于对未初始化内存的访问
+#define SLAB_POISON		0x00000800UL	/* DEBUG: Poison objects */
+// 所有对象按高速缓存行对齐。
+#define SLAB_HWCACHE_ALIGN	0x00002000UL	/* Align objs on cache lines */
+// slab层使用可以执行DMA的内存给每个slab分配空间。
+#define SLAB_CACHE_DMA		0x00004000UL	/* Use GFP_DMA memory */
+#define SLAB_STORE_USER		0x00010000UL	/* DEBUG: Store the last owner for bug hunting */
+// 当分配失败时提醒slab层
+#define SLAB_PANIC		0x00040000UL	/* Panic if kmem_cache_create() fails */
 
 //该宏定义指定了在系统引导时，每个 CPU 缓存中的初始缓存条目数
 #define BOOT_CPUCACHE_ENTRIES	1
@@ -107,5 +122,5 @@ struct cache_sizes {
     struct kmem_cache *cs_cachep;    // 指向内核缓存管理结构的指针，用于管理指定大小的缓存对象。
 };
 struct kmem_cache *kmem_cache_create (const char *name, size_t size, size_t align, unsigned long flags, void (*ctor)(void *));
-void * kmalloc(u64 size);
+void * kmalloc(u64 size,gfp_t flags);
 #endif	/* _LINUX_SLAB_DEF_H */

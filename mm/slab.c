@@ -1,9 +1,13 @@
 #include <xkernel/slab.h>
 #include <xkernel/memory.h>
 #include <xkernel/kernel.h>
+#include <xkernel/nodemask.h>
+#include <xkernel/gfp.h>
 #include <sync.h>
 
 #define	CACHE_CACHE 0
+#define	SIZE_AC MAX_NUMNODES
+#define	SIZE_L3 (2 * MAX_NUMNODES)
 
 #define REAPTIMEOUT_CPUC	(2*HZ)
 #define REAPTIMEOUT_LIST3	(4*HZ)
@@ -20,8 +24,16 @@ static struct arraycache_init initarray_cache =
 static struct arraycache_init initarray_generic =
     { {0, BOOT_CPUCACHE_ENTRIES, 1, 0} };
 
-//cache_cache 中的 
+#define ARCH_KMALLOC_MINALIGN __alignof__(unsigned long long)//设置默认对齐数
+
+//cache_cache 中的 kmem_list数组的大小
 #define NUM_INIT_LISTS (3 * MAX_NUMNODES)
+
+//如果没有定义 ARCH_KMALLOC_FLAGS 则默认定义为 SLAB_HWCACHE_ALIGN
+#ifndef ARCH_KMALLOC_FLAGS
+#define ARCH_KMALLOC_FLAGS SLAB_HWCACHE_ALIGN
+#endif
+
 struct kmem_list3 initkmem_list3[NUM_INIT_LISTS];
 
 static struct list_head cache_chain;//用来维护所有 kmem_cache 实例（缓存池）的链表
@@ -40,6 +52,19 @@ struct cache_names {
 	char *name_dma;
 };
 
+//用于描述每页内的obj块分布情况
+struct slab{
+	struct list_head list;		// 满、部分满或空链表
+	unsigned long colouroff;	// slab着色的偏移量
+	// 在slab中的第一个对象
+	void *s_mem;		/* including colour offset */		/* 包括颜色偏移的内存指针，指向 slab 的第一个对象 */
+	// slab中已分配的对象数
+	unsigned int inuse;	/* num of objs active in slab */
+	// 第一个空闲对象（如果有的话）
+	kmem_bufctl_t free;
+	unsigned short nodeid;	/* 所属 NUMA 节点的 ID */
+};
+
 static struct cache_names cache_names[] = {
 #define CACHE(x) { .name = "size-" #x, .name_dma = "size-" #x "(DMA)" },
 #include <xkernel/kmalloc_sizes.h>
@@ -47,7 +72,7 @@ static struct cache_names cache_names[] = {
 #undef CACHE
 };
 
-//内核中预留的kmem类，从64字节～
+//内核中预留的kmem类，通过kamlloc函数会从预设的kmem类中获取slab块64字节～
 struct cache_sizes malloc_sizes[] = {
 #define CACHE(x) { .cs_size = (x) },
 #include <xkernel/kmalloc_sizes.h>
@@ -59,6 +84,8 @@ struct cache_sizes malloc_sizes[] = {
 #define INDEX_L3 index_of(sizeof(struct kmem_list3))
 
 static int use_alien_caches = 1;
+static int slab_early_init = 1;//slab初始化标志
+typedef unsigned int kmem_bufctl_t;
 
 u32 reciprocal_value(u32 k)
 {
@@ -223,7 +250,9 @@ void kmem_cache_init(void)
 	g_cpucache_up = EARLY;
 }
 
-void * kmalloc(u64 size)
+
+
+/*void * kmalloc(u64 size)
 {
 	struct task_struct * curr =  running_thread();
 	struct mm_struct * mm = curr->mm;
@@ -231,4 +260,4 @@ void * kmalloc(u64 size)
 	// if(__builtin_constant_p(size) && size) {
 	// 	unsigned long index;
 	// 	if(size > KMALLOC_MAX_CACHE_SIZE)
-}
+}*/
