@@ -16,4 +16,10 @@ typedef atomic_t atomic_long_t;
 #define atomic_long_cond_read_relaxed	atomic_cond_read_relaxed
 #endif
 
+static __always_inline void
+atomic_long_or(long i, atomic_long_t *v)
+{
+	atomic_or(i, v);
+}
+
 #endif /* __XKERNEL_ATOMIC_LONG_H */

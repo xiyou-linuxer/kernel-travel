@@ -37,5 +37,5 @@ void setup_arch(void)
 	memblock_init();
 	phy_pool_init();
 	tlb_init(smp_processor_id());
-	paging_init();
+	// paging_init();
 }

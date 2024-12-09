@@ -12,6 +12,16 @@
 
 #endif
 
+#ifdef __KERNEL__
+
+#ifdef CONFIG_ENABLE_MUST_CHECK
+#define __must_check		__attribute__((__warn_unused_result__))
+#else
+#define __must_check
+#endif
+
+#endif
+
 #define __scalar_type_to_expr_cases(type)				\
 		unsigned type:	(unsigned type)0,			\
 		signed type:	(signed type)0

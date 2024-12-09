@@ -36,19 +36,34 @@ extern unsigned char _ctype[];
 
 static inline unsigned char __tolower(unsigned char c)
 {
-    if (isupper(c))
-        c -= 'A'-'a';
-    return c;
+	if (isupper(c))
+		c -= 'A'-'a';
+	return c;
 }
 
 static inline unsigned char __toupper(unsigned char c)
 {
-    if (islower(c))
-        c -= 'a'-'A';
-    return c;
+	if (islower(c))
+		c -= 'a'-'A';
+	return c;
 }
 
 #define tolower(c) __tolower(c)
 #define toupper(c) __toupper(c)
+
+/*
+ * Fast implementation of tolower() for internal usage. Do not use in your
+ * code.
+ */
+static inline char _tolower(const char c)
+{
+	return c | 0x20;
+}
+
+/* Fast check for octal digit */
+static inline int isodigit(const char c)
+{
+	return c >= '0' && c <= '7';
+}
 
 #endif
