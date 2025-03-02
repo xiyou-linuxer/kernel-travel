@@ -5,8 +5,8 @@
 ### 拉取 Docker 镜像并启动
 
 ```bash
-docker pull docker.educg.net/cg/os-contest:2024p6
-docker run --privileged  -it --name os-contest -p 12306:22 docker.educg.net/cg/os-contest:2024p6 /bin/bash
+docker pull docker.educg.net/cg/os-contest:2024p6				#拉取镜像
+sudo docker run --privileged  -it -v ~/os-contest2025:/xkernel --name os-contest -p 12306:22 docker.educg.net/cg/os-contest:2024p6 /bin/bash		#运行容器
 ```
 
 ### 为 Docker 中的 qemu 配置内部网络
@@ -30,113 +30,94 @@ ifconfig tap0 0.0.0.0 promisc up    #将 tap0 接口的 IP 地址设置为 0.0.0
 ifconfig br0 10.0.0.1 netmask 255.255.255.0 #配置子网掩码
 ```
 
-### 启动 Docker 中的 qemu
+需要在宿主机中安装的工具：
 
-生成2kfs.img：
+```bash
+sudo pacman -S qemu-img qemu-common nbd e2fsprogs cpio xz
+```
 
-在启动qemu之前要先运行脚本create_qemu_img.sh生成2kfs.img文件。
+## 2 编译kernel-travel
+
+编译kernel-travel是在docker中进行的：
+
+* 克隆代码
+
+```bash
+#放置在os-contest目录中
+git clone https://github.com/xiyou-linuxer/kernel-travel.git
+```
+
+* 下载工具
+
+将`kernel-travel`中`arch/loongarch/boot`中的makefile中路径进行替换
+
+```makefile
+entry-y	= $(shell /xkernel/linux/linux-5.10-2k1000-dp-src/arch/loongarch/tools/elf-entry vmlinux)
+# 替换为本地路径(在docker中的路径)
+```
+
+* 脚本运行
+
+```bash
+cd /xkernel/kernel-travel
+./compile.sh
+```
+
+* 编译内核
+
+```bash
+cd /xkernel
+ARCH=loongarch CROSS_COMPILE=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu- make defconfig
+ARCH=loongarch CROSS_COMPILE=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu- make uImage
+```
+
+## 3 启动内核
+
+生成2kfs.img
+
+以下命令是在docker容器内完成的：
 
 ```bash
 cd /tmp/qemu/2k1000
-./create_qemu_img.sh
+cp rootfs-la.cpio.lzma /xkernel
+cp uImage /xkernel
 ```
 
-下载 fat32 格式的磁盘镜像[sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/blob/pre-2023/sdcard.img.gz)
-或者 ext4 格式的磁盘镜像[la-sdcard.img](https://github.com/oscomp/testsuits-for-oskernel/releases/tag/2024-final-la) 解压后传入 docker镜像中
-
-```sh
-sudo docker cp 你存放sdcard-loongarch.img的路径 os-contest:/sdcard-loongarch.img
-```
-
-启动qemu
+以下命令是在宿主机中完成的：
 
 ```bash
-cd /tmp/qemu
-./runqemu
+cd ~/os-contest2025
+
+sudo modprobe nbd max_part=12
+
+qemu-img create -f qcow2 2kfs.img 2G
+
+sudo qemu-nbd -c /dev/nbd0 ./2kfs.img
+
+echo -e 'n\n\n\n\n\n\nw\nq\n' | sudo fdisk /dev/nbd0
+sudo partprobe /dev/nbd0
+
+sudo mkfs.ext4 /dev/nbd0p1
+
+sudo mkdir -p ./mnt
+sudo mount /dev/nbd0p1 /mnt
+
+bash -c "lzcat ./rootfs-la.cpio.lzma | cpio -idmv -D /mnt/2kfs &> ./cpio.log"
+
+sudo mkdir -p /mnt/boot
+sudo cp kernel-travel/arch/loongarch/boot/uImage ./mnt/boot/
+
+sudo docker cp 2kfs.img os-contest:/tmp/qemu/2k1000/
 ```
 
-### 在 Docker 中安装 tftp 服务器并启动服务
+### 运行qemu
 
-在加载内核镜像时需要用到 tftp 服务
+在docker容器中：
 
 ```bash
-apt install tftpd-hpa
-service tftpd-hpa start
+cd /xkernel/kernel
+./runqemu.sh
 ```
 
-## 2 获取UEFI启动引导
 
-这里提供制作好的UEFI启动引导，下载地址：
-[QEMU_EFI.fd](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/QEMU_EFI.fd)
 
-将UEFI启动引导移动到当前工作目录下。
-
-## 3 编译kernel-travel
-
-1. 下载
-
-   ```bash
-   git clone https://github.com/xiyou-linuxer/kernel-travel.git
-   ```
-
-2. 配置交叉工具链
-
-   点击下载交叉工具链：
-   [loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz](https://github.com/Qiubomm-OS/toolchains/releases/download/v0.1/loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz)
-
-   将交叉工具链包解压到 kernel-travel 目录下（交叉编译工具较大，预留足够存储空间）。
-
-   ```bash
-   tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-full.tar.xz
-   ```
-
-3. 编译并将内核镜像传入 Docker 容器
-
-   ```bash
-   cd kernel-travel 
-   make all
-   ```
-
-   提醒：QEMU_EFI.fd路径和交叉工具链包路径可以自定义，修改`quick_start.sh`中`run()`以及TOOLCHAINS路径即可。
-
-4. 将内核与 init 进程的编译(可选项)
-
-   kernel-travel 中的 init 进程代码位于 /command 之下，若要使用该 init 进程的代码
-
-   ```bash
-    cd kernel-tarvel/command
-    bash compile.sh 
-    cd ..
-    bash makeinit.sh
-   ```
-
-## 4 通过 tftp 服务启动内核
-
-向 docker 内传入 qemu 的启动脚本
-
-```sh
-docker cp kernel-travel/runqemu.sh os-contest:/tmp/qemu/runqemu
-```
-
-并在docker中修改权限后运行
-
-```sh
-cd /tmp/qemu/runqemu
-chmod +x runqemu
-./runqemu
-```
-
-执行 ./runqemu 后进入 uboot 界面，执行如下命令：
-
-```bash
-setenv ipaddr 10.0.0.2                      #设置本机的 IP 地址为 10.0.0.2
-setenv serverip 10.0.0.1                    #设置 TFTP 服务器的 IP 地址为 10.0.0.1
-tftpboot 0x9000000008000000 10.0.0.1:Image  #从 TFTP 服务器下载名为 Image 的文件，并将其加载到指定的内存地址处
-go 0x9000000008000000                       #跳转到指定地址执行
-```
-
-## 5 清空生成的文件
-
-```bash
-bash quick_start.sh distclean
-```
