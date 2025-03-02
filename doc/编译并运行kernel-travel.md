@@ -100,11 +100,11 @@ sudo partprobe /dev/nbd0
 sudo mkfs.ext4 /dev/nbd0p1
 
 sudo mkdir -p ./mnt
-sudo mount /dev/nbd0p1 /mnt
+sudo mount /dev/nbd0p1 ./mnt
 
 bash -c "lzcat ./rootfs-la.cpio.lzma | cpio -idmv -D /mnt/2kfs &> ./cpio.log"
 
-sudo mkdir -p /mnt/boot
+sudo mkdir -p ./mnt/boot
 sudo cp kernel-travel/arch/loongarch/boot/uImage ./mnt/boot/
 
 sudo docker cp 2kfs.img os-contest:/tmp/qemu/2k1000/
