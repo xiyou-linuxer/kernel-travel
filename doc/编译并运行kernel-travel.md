@@ -66,7 +66,7 @@ cd /xkernel/kernel-travel
 * 编译内核
 
 ```bash
-cd /xkernel
+cd /xkernel/kernel-travel5
 ARCH=loongarch CROSS_COMPILE=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu- make defconfig
 ARCH=loongarch CROSS_COMPILE=/opt/gcc-13.2.0-loongarch64-linux-gnu/bin/loongarch64-linux-gnu- make uImage
 ```
@@ -115,7 +115,7 @@ sudo docker cp 2kfs.img os-contest:/tmp/qemu/2k1000/
 在docker容器中：
 
 ```bash
-cd /xkernel/kernel
+cd /xkernel/kernel-travel
 ./runqemu.sh
 ```
 
