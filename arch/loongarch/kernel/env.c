@@ -12,7 +12,6 @@
 
 #define EPERM 1
 #define PAGE_MASK (~(PAGE_SIZE - 1))
-
 #ifndef PFN_ALIGN
 #    define PFN_ALIGN(x) (((x) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 #endif
