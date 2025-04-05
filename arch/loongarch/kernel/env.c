@@ -1,14 +1,14 @@
-#include <asm/boot_param.h>
-#include <asm/bootinfo.h>
-#include <asm/fw.h>
-#include <asm/loongarch.h>
-#include <asm/page.h>
 #include <xkernel/atomic.h>
 #include <xkernel/init.h>
 #include <xkernel/kernel.h>
 #include <xkernel/printk.h>
 #include <xkernel/string.h>
 #include <xkernel/types.h>
+#include <asm/boot_param.h>
+#include <asm/bootinfo.h>
+#include <asm/fw.h>
+#include <asm/loongarch.h>
+#include <asm/page.h>
 
 #define EPERM 1
 #define PAGE_MASK (~(PAGE_SIZE - 1))
