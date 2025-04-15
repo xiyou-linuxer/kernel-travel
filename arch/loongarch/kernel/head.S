@@ -9,6 +9,8 @@
 #include <asm/thread_info.h>
 #include <asm/stackframe.h>
 
+	.set UART_BASE, 0x1FE001E0  	/* UART0 base address */
+
 #ifndef CONFIG_2K1000LA
 	.macro	__EFI_PE_HEADER
 	.long	PE_MAGIC
@@ -137,7 +139,11 @@ SYM_CODE_START(kernel_entry)			# kernel entry point
 	// JUMP_VIRT_ADDR	t0, t1
 
 	/* Enable PG */
+#ifdef CONFIG_VIRT
+	li.w		t0, 0xA8		# 1010 1000, PLV=0, IE=0, PG=1, DATF=1
+#else 
 	li.w		t0, 0xb0		# 1011 0000, PLV=0, IE=0, PG=1, DATF=1
+#endif
 	csrwr		t0, LOONGARCH_CSR_CRMD
 	li.w		t0, 0x04		# 0000 0100, PLV=0, PIE=1, PWE=0
 	csrwr		t0, LOONGARCH_CSR_PRMD

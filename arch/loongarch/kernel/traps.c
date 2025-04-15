@@ -235,6 +235,12 @@ void trap_init(void)
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器
 	write_csr_tcfg(tcfg);
+	#ifdef CONFIG_VIRT
+
+	#else ifdef CONFIG_2K1000LA
+
 	io_irq_init();
+
+	#endif
 	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 11);
 }

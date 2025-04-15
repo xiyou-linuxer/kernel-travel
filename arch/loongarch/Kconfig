@@ -161,7 +161,10 @@ config 3A5000
 	bool "3A5000 machine"
 	help
 	  3A5000 machine
-
+config VIRT
+	bool "Virt machine"
+	help
+	  Virt machine
 endchoice
 
 config 32BIT
