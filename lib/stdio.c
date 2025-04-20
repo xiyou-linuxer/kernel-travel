@@ -9,6 +9,7 @@
 
 int printk(const char *fmt, ...)
 {
+#ifndef CONFIG_RISCV
 	char printf_buf[1024];
 	va_list args;
 	int printed;
@@ -36,4 +37,5 @@ int printk(const char *fmt, ...)
 	}
 
 	return printed;
+#endif
 }

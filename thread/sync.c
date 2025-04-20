@@ -12,6 +12,7 @@ void sema_init(struct semaphore* sema,uint8_t value)
 
 void sema_down(struct semaphore* sema)
 {
+#ifndef CONFIG_RISCV
     enum intr_status old_status = intr_disable();
     struct task_struct* cur = (struct task_struct*)running_thread();
     while (sema->value == 0){
@@ -24,10 +25,12 @@ void sema_down(struct semaphore* sema)
     }
     sema->value--;
     intr_set_status(old_status);
+#endif
 }
 
 void sema_up(struct semaphore* sema)
 {
+#ifndef CONFIG_RISCV
     enum intr_status old_status = intr_disable();
     if (!list_empty(&sema->wait_list))
     {
@@ -38,6 +41,7 @@ void sema_up(struct semaphore* sema)
     }
     sema->value++;
     intr_set_status(old_status);
+#endif
 }
 
 void lock_init(struct lock* lk)
@@ -49,6 +53,7 @@ void lock_init(struct lock* lk)
 
 void lock_acquire(struct lock* lk)
 {
+#ifndef CONFIG_RISCV
     if (lk->holder != running_thread()) {
         sema_down(&lk->sema);
         lk->holder = running_thread();
@@ -56,10 +61,12 @@ void lock_acquire(struct lock* lk)
     } else {
         lk->acquire_nr++;
     }
+#endif
 }
 
 void lock_release(struct lock* lk)
 {
+#ifndef CONFIG_RISCV
     ASSERT(lk->acquire_nr != 0);
     if (lk->holder != running_thread()){
         BUG();
@@ -71,4 +78,5 @@ void lock_release(struct lock* lk)
     } else {
         lk->acquire_nr--;
     }
+#endif
 }

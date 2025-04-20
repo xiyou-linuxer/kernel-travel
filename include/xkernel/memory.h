@@ -3,7 +3,7 @@
 #include <xkernel/types.h>
 #include <bitmap.h>
 #include <asm/bootinfo.h>
-#include <asm/numa.h>
+#include <xkernel/numa.h>
 #include <xkernel/list.h>
 #include <asm-generic/int-ll64.h>
 #include <xkernel/compiler.h>
@@ -245,7 +245,9 @@ extern char * const zone_names[3];
 
 static inline void invalidate(void)
 {
+#ifdef CONFIG_LOONGARCH
 	asm volatile("invtlb 0x0,$r0,$r0");
+#endif
 }
 
 static inline int

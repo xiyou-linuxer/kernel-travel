@@ -22,14 +22,18 @@ static int32_t next_pos(int32_t pos)
 /* 判断队列是否已满 */
 bool ioq_full(struct ioqueue *ioq)
 {
+#ifndef CONFIG_RISCV
     ASSERT(intr_get_status() == INTR_OFF);
+#endif
     return next_pos(ioq->head) == ioq->tail;
 }
 
 /* 判断队列是否已空 */
 bool ioq_empty(struct ioqueue *ioq)
 {
+#ifndef CONFIG_RISCV
     ASSERT(intr_get_status() == INTR_OFF);
+#endif
     return ioq->head == ioq->tail;
 }
 
@@ -52,7 +56,9 @@ static void wakeup(struct task_struct **waiter)
 /* 消费者从ioq队列中获取一个字符 */
 char ioq_getchar(struct ioqueue *ioq)
 {
+#ifndef CONFIG_RISCV
     ASSERT(intr_get_status() == INTR_OFF);
+#endif
 
     /* 若缓冲区(队列)为空,把消费者ioq->consumer记为当前线程自己,
      * 目的是将来生产者往缓冲区里装商品后,生产者知道唤醒哪个消费者,
@@ -79,7 +85,9 @@ char ioq_getchar(struct ioqueue *ioq)
 /* 生产者往ioq队列中写入一个字符byte */
 void ioq_putchar(struct ioqueue *ioq, char byte)
 {
+#ifndef CONFIG_RISCV
     ASSERT(intr_get_status() == INTR_OFF);
+#endif
 
     /* 若缓冲区(队列)已经满了,把生产者ioq->producer记为自己,
      * 为的是当缓冲区里的东西被消费者取完后让消费者知道唤醒哪个生产者,

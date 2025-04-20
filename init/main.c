@@ -47,9 +47,8 @@ extern void irq_init(void);
 extern void setup_arch(void);
 extern void trap_init(void);
 
-void thread_a(void *unused);
 #ifdef CONFIG_LOONGARCH
-#endif /* CONFIG_LOONGARCH */
+void thread_a(void *unused);
 void thread_a(void *unused)
 {
 	printk("enter thread_a\n");
@@ -57,7 +56,9 @@ void thread_a(void *unused)
 		printk("thread_a pid=%d\n",sys_getpid());
 	}
 }
+#endif /* CONFIG_LOONGARCH */
 
+#ifdef CONFIG_LOONGARCH
 char* sstr = "hello\n";
 void proc_1(void *unused)
 {
@@ -65,6 +66,7 @@ void proc_1(void *unused)
 		syscall(SYS_PSTR,sstr);
 	}
 }
+#endif
 
 void timer_func(unsigned long unused){
 	printk("timer done");
@@ -87,6 +89,7 @@ char xkernel_banner[] = \
 
 void __init __no_sanitize_address start_kernel(void)
 {
+#ifndef CONFIG_RISCV
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
 	
@@ -126,6 +129,7 @@ void __init __no_sanitize_address start_kernel(void)
 	printk("last test..................\n");
 	test_pcb();
 	local_irq_enable();
+#endif
 	
 	while (1) {
 

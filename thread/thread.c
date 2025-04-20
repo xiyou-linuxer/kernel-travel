@@ -7,7 +7,11 @@
 #include <xkernel/stdio.h>
 #include <asm/pt_regs.h>
 #include <trap/irq.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <xkernel/switch.h>
 #include <asm/asm-offsets.h>
 #include <xkernel/sched.h>
@@ -159,11 +163,13 @@ static void kernel_thread(void)
 
 static void idle(void* arg)
 {
+#ifdef CONFIG_LOONGARCH
 	while (1) {
 		thread_block(TASK_BLOCKED);
 		intr_enable();
 		asm volatile("idle 0");
 	}
+#endif
 }
 
 struct task_struct* running_thread(void)
@@ -219,6 +225,7 @@ error:
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg)
 {
+#ifdef CONFIG_LOONGARCH
 	pthread->self_kstack = (uint64_t*)((uint64_t)pthread->self_kstack - sizeof(struct pt_regs));
 	pthread->function = function;
 	pthread->func_arg = func_arg;
@@ -229,6 +236,7 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
 	kthread_stack->csr_crmd = read_csr_crmd();
 	kthread_stack->csr_prmd = read_csr_prmd();
 	kthread_stack->reg03 = (uint64_t)pthread->self_kstack;
+#endif
 }
 
 struct task_struct *thread_start(char *name, int prio, thread_func function, void *func_arg)
@@ -258,7 +266,9 @@ static void make_main_thread(void)
 void schedule()
 {
 	//printk("schedule...\n");
+#ifndef CONFIG_RISCV
 	ASSERT(intr_get_status() == INTR_OFF);
+#endif
 
 	struct task_struct* cur = running_thread();
 	if (cur->status == TASK_RUNNING) {
@@ -411,6 +421,7 @@ void thread_exit(struct task_struct* exit)
 
 void thread_init(void)
 {
+#ifndef CONFIG_RISCV
 	list_init(&thread_ready_list);
 	list_init(&thread_all_list);
 	pid_pool_init();
@@ -418,5 +429,6 @@ void thread_init(void)
 	process_execute("initcode","init",15);
 	idle_thread = thread_start("idle",10,idle,NULL);
 	make_main_thread();
+#endif
 }
 

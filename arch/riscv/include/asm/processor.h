@@ -7,7 +7,7 @@
  #define _ASM_RISCV_PROCESSOR_H
  
  #include <xkernel/const.h>
- #include <xkernel/cache.h>
+//  #include <xkernel/cache.h>
  
  #include <asm/ptrace.h>
  

@@ -7,7 +7,11 @@
 #include <process.h>
 #include <asm/pt_regs.h>
 #include <xkernel/switch.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <fs/fd.h>
 #include <xkernel/mmap.h>
 extern void user_ret(void);
@@ -89,6 +93,7 @@ void copy_args(struct task_struct* parent,struct task_struct* child,void* page)
 
 static void make_switch_prepare(struct task_struct* child,void *stack,int (*fn)(void *arg))
 {
+#ifdef CONFIG_LOONGARCH
 	struct pt_regs* regs = (struct pt_regs*)((uint64_t)child->self_kstack - sizeof(struct pt_regs));
 	//child->self_kstack = (uint64_t*)((uint64_t)child->self_kstack - sizeof(struct pt_regs));
 
@@ -98,6 +103,7 @@ static void make_switch_prepare(struct task_struct* child,void *stack,int (*fn)(
 		regs->csr_era = (uint64_t)fn;
 	regs->regs[4] = 0;
 	prepare_switch(child,(uint64_t)user_ret,(uint64_t)regs);
+#endif
 }
 
 

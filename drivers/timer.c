@@ -3,7 +3,11 @@
 #include <debug.h>
 #include <xkernel/printk.h>
 #include <asm/pt_regs.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <trap/irq.h>
 #include <trap/softirq.h>
 #include <xkernel/stdio.h>
@@ -27,6 +31,7 @@ static void tvecs_init(void)
 
 void intr_timer_handler(struct pt_regs *regs)
 {
+#ifndef CONFIG_RISCV
 	struct task_struct* cur_thread = running_thread();
 
 	//ASSERT(cur_thread->stack_magic == STACK_MAGIC_NUM);
@@ -44,6 +49,7 @@ void intr_timer_handler(struct pt_regs *regs)
 	} else {
 		cur_thread->ticks--;
 	}
+#endif
 }
 
 int sys_gettimeofday(struct timespec *ts)
@@ -212,6 +218,7 @@ int del_timer(struct timer_list *timer)
 }
 
 void timer_init() {
+#ifdef CONFIG_LOONGARCH
 	printk("timer_init start\n");
 
 	register_handler(EXCCODE_TIMER, intr_timer_handler);
@@ -220,5 +227,6 @@ void timer_init() {
 	raise_softirq(TIMER_SOFTIRQ);
 
 	printk("timer_init done\n");
+#endif
 }
 

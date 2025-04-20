@@ -1,5 +1,8 @@
 ccflags-y := -std=gnu99 -Wno-declaration-after-statement
+ifdef CONFIG_LOONGARCH
 obj-y	+= firmware/
+endif
+
 obj-y	+= serial/
 obj-y   += pci/
 obj-y   += disk/

@@ -195,6 +195,10 @@ config RISCV
 	select UACCESS_MEMCPY if !MMU
 	select ZONE_DMA32 if 64BIT
 
+config L1_CACHE_SHIFT
+	int
+	default "6"
+
 config CLANG_SUPPORTS_DYNAMIC_FTRACE
 	def_bool CC_IS_CLANG
 	# https://github.com/ClangBuiltLinux/linux/issues/1817
@@ -1100,3 +1104,8 @@ endmenu # "CPU Power Management"
 # source "arch/riscv/kvm/Kconfig"
 
 # source "drivers/acpi/Kconfig"
+
+source "drivers/Kconfig"
+source "drivers/firmware/Kconfig"
+source "init/Kconfig"
+source "lib/Kconfig"

@@ -6,7 +6,7 @@
 #include <xkernel/stdio.h>
 #include <xkernel/string.h>
 #include <xkernel/types.h>
-#include <signal.h>
+#include <xkernel/signal.h>
 #include <xkernel/thread.h>
 
 extern void *vector_table[];

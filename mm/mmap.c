@@ -5,6 +5,7 @@
 #include <xkernel/rbtree.h>
 #include <xkernel/mmap.h>
 #include <xkernel/stdio.h>
+#include <xkernel/align.h>
 #include <asm-generic/errno.h>
 #include <asm/page.h>
 #include <sync.h>

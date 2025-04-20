@@ -1,6 +1,6 @@
 #include <asm/page.h>
 #include <asm/loongarch.h>
-#include <asm/numa.h>
+#include <xkernel/numa.h>
 #include <xkernel/memblock.h>
 
 struct pglist_data node_data[MAX_NUMNODES];

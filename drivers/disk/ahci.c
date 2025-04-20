@@ -2,7 +2,11 @@
 #include <xkernel/printk.h>
 #include <asm-generic/io.h>
 #include <xkernel/stdio.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/addrspace.h>
+#endif
+
 #include <xkernel/ahci.h>
 #include <xkernel/list.h>
 #include <xkernel/string.h>
@@ -410,6 +414,7 @@ static void ahci_probe_port(void)
 
 /*磁盘驱动初始化*/
 void disk_init(void) {
+#ifdef CONFIG_LOONGARCH
 	//pr_info("disk_init start\n");
 	char* block_data = 0;
 	/*获取磁盘控制器的bar地址*/
@@ -437,4 +442,5 @@ void disk_init(void) {
 	list_init(&(ahci_req_queue.queue_list));
 	ahci_req_queue.request_count = 0;*/
 	//pr_info("disk_init down\n");
+#endif
 }

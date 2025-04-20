@@ -1,4 +1,7 @@
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <asm/timer.h>
 #include <xkernel/debug.h>
 #include <xkernel/printk.h>
@@ -24,6 +27,7 @@ char* intr_name[INTR_NUM];
 
 void irq_enter(void)
 {
+#ifndef CONFIG_RISCV
 	struct task_struct* cur = running_thread();
 
 	utimes_end(cur);
@@ -31,10 +35,12 @@ void irq_enter(void)
 
 	switching = 0;
 	++irq_count;
+#endif
 }
 
 void irq_exit(void)
 {
+#ifndef CONFIG_RISCV
 	struct task_struct* cur = running_thread();
 
 	stimes_end(cur);
@@ -45,7 +51,10 @@ void irq_exit(void)
 	}
 
 	--irq_count;
+#endif
 }
+
+#ifdef CONFIG_LOONGARCH
 
 static void general_intr_handler(struct pt_regs* regs)
 {
@@ -96,9 +105,12 @@ static inline void arch_local_irq_disable(void)
 		: "memory");
 }
 
+#endif /* CONFIG_LOONGARCH */
+
 /* 开中断并返回开中断前的状态*/
 enum intr_status intr_enable(void)
 {
+#ifndef CONFIG_RISCV
 	enum intr_status old_status;
 
 	if (intr_get_status() == INTR_ON) {
@@ -109,11 +121,13 @@ enum intr_status intr_enable(void)
 	}
 
 	return old_status;
+#endif
 }
 
 /* 关中断并返回关中断前的状态 */
 enum intr_status intr_disable(void)
 {
+#ifndef CONFIG_RISCV
 	enum intr_status old_status;
 
 	if (intr_get_status() == INTR_ON) {
@@ -124,6 +138,7 @@ enum intr_status intr_disable(void)
 	}
 	
 	return old_status;
+#endif
 }
 
 /* 将中断状态设置为status */
@@ -141,12 +156,14 @@ void register_handler(uint8_t vector_no, intr_handler function)
 extern void do_irq(struct pt_regs* regs, uint64_t virq);
 void do_irq(struct pt_regs* regs, uint64_t virq)
 {
+#ifndef CONFIG_RISCV
 	irq_enter();
 	intr_table[virq](regs);
 	irq_exit();
 	if (softirq_active)
 		do_softirq();
 	utimes_begin(running_thread());
+#endif
 }
 
 bool in_interrupt(void)
@@ -159,6 +176,7 @@ bool in_interrupt(void)
  *IPx：中断引脚号，可填入0～3
  *source_num：中断源号0～63
  */
+#ifdef CONFIG_LOONGARCH
 void irq_routing_set(uint8_t cpu, uint8_t IPx, uint8_t source_num)
 {
 	int intenset, ioentry;
@@ -172,12 +190,14 @@ void irq_routing_set(uint8_t cpu, uint8_t IPx, uint8_t source_num)
 	*(unsigned int*)(CSR_DMW0_BASE | intenset) |= (1 << source_num);
 	*(unsigned char*)(CSR_DMW0_BASE | ioentry + source_num) = ((0x1 << IPx) << 4 | (1 << cpu) << 0);
 }
+#endif /* CONFIG_LOONGARCH */
 
 noinstr void irqentry_enter_from_user_mode(struct pt_regs *regs) { }
 noinstr void irqentry_exit_to_user_mode(struct pt_regs *regs) { }
 
 noinstr irqentry_state_t irqentry_enter(struct pt_regs *regs)
 {
+#ifndef CONFIG_RISCV
 	irqentry_state_t ret = {
 		.exit_rcu = false,
 	};
@@ -198,10 +218,12 @@ noinstr irqentry_state_t irqentry_enter(struct pt_regs *regs)
 
 	arch_local_irq_disable();
 	return ret;
+#endif
 }
 
 noinstr void irqentry_exit(struct pt_regs *regs, irqentry_state_t state)
 {
+#ifndef CONFIG_RISCV
 	enum intr_status status = intr_get_status();
 	// 中断已禁用
 	ASSERT(status == INTR_OFF);
@@ -214,9 +236,12 @@ noinstr void irqentry_exit(struct pt_regs *regs, irqentry_state_t state)
 
 	// 如果中断标志未禁用，启用中断
 	arch_local_irq_enable();
+#endif
 }
 
 void irq_init(void)
 {
+#ifndef CONFIG_RISCV
         exception_init();
+#endif
 }

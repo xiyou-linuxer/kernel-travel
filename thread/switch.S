@@ -1,8 +1,10 @@
+#ifdef CONFIG_LOONGARCH
 #include <asm/regdef.h>
 #include <asm/stackframe.h>
 #include <asm/asm-offsets.h>
 #include <asm/asmmacro.h>
 #include <asm/bootinfo.h>
+#endif
 
 .section ".text","ax"
 
@@ -12,6 +14,7 @@
 .globl prepare_switch
 .globl irq_count
 switch_to:
+#ifdef CONFIG_LOONGARCH
 	csrrd	t1, LOONGARCH_CSR_PRMD
 	stptr.d	t1, a0, THREAD_CSRPRMD
 
@@ -27,8 +30,10 @@ switch_to:
 	csrwr	t1, LOONGARCH_CSR_PRMD
 
 	jr	ra
+#endif
 
 prepare_switch:
+#ifdef CONFIG_LOONGARCH
 	csrrd	t1, LOONGARCH_CSR_PRMD
 	stptr.d	t1, a0, THREAD_CSRPRMD
 
@@ -37,3 +42,4 @@ prepare_switch:
 	stptr.d a2, a0, THREAD_REG03
 
 	jr ra
+#endif

@@ -1,5 +1,5 @@
 #include <allocator.h>
-#include <signal.h>
+#include <xkernel/signal.h>
 #include <xkernel/thread.h>
 #include <asm-generic/bitops/ffz.h>
 #include <xkernel/stdio.h>
@@ -95,6 +95,7 @@ int dequeue_signal(struct sigpending *pending,sigset_t *blocked)
 
 static void save_sigcontext(struct pt_regs *regs,struct sigframe *f,sigset_t *blocked)
 {
+#ifdef CONFIG_LOONGARCH
 	ucontext_t *uc = &f->uc;
 	memcpy(&uc->uc_sigmask,blocked,sizeof(sigset_t));
 	uc->uc_stack = regs->regs[3];
@@ -104,10 +105,12 @@ static void save_sigcontext(struct pt_regs *regs,struct sigframe *f,sigset_t *bl
 	for (int r = 0; r < 32; r++) {
 		uc->uc_mcontext.__space[r] = regs->regs[r];
 	}
+#endif
 }
 
 static void restore_sigcontext(struct pt_regs *regs,struct sigframe *f)
 {
+#ifdef CONFIG_LOONGARCH
 	struct task_struct *cur = running_thread();
 	ucontext_t *uc = &f->uc;
 	memcpy(&cur->blocked,&uc->uc_sigmask,sizeof(sigset_t));
@@ -118,16 +121,20 @@ static void restore_sigcontext(struct pt_regs *regs,struct sigframe *f)
 	for (int r = 0; r < 32; r++) {
 		regs->regs[r] = uc->uc_mcontext.__space[r];
 	}
+#endif
 }
 
 void sys_sigreturn(struct pt_regs *regs)
 {
+#ifdef CONFIG_LOONGARCH
 	struct sigframe *f = (struct sigframe*)regs->regs[3];
 	restore_sigcontext(regs,f);
+#endif
 }
 
 static void set_sigframe(int sig,struct pt_regs* regs,sigset_t *blocked)
 {
+#ifdef CONFIG_LOONGARCH
 	/* 保存当前用户进程上下文 */
 	struct sigframe *frame = (struct sigframe*)(regs->regs[3] - sizeof(struct sigframe));
 	save_sigcontext(regs,frame,blocked);
@@ -139,6 +146,7 @@ static void set_sigframe(int sig,struct pt_regs* regs,sigset_t *blocked)
 	regs->regs[3] = (uint64_t)frame;
 	regs->regs[4] = (uint64_t)sig;
 	regs->csr_era = (uint64_t)cur->handlers->action[sig-1].sa_handler;
+#endif /* CONFIG_LOONGARCH */
 }
 
 void check_signals(struct pt_regs* regs)

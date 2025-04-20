@@ -4,7 +4,11 @@
 #include <xkernel/stdio.h>
 #include <stdint.h>
 #include <xkernel/string.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <fs/syscall_fs.h>
 #include <fs/fd.h>
 #include <xkernel/mmap.h>
@@ -257,6 +261,7 @@ int64_t sys_exeload(const char *path,Elf_Ehdr *ehdr,uint64_t *phaddr)
 
 int sys_execve(const char *path, char *const argv[], char *const envp[])
 {
+#ifdef CONFIG_LOONGARCH
 	uint64_t argc = 0, envs = 0, auxs = 13;
 	uint64_t phaddr;
 	Elf_Ehdr ehdr;
@@ -374,5 +379,6 @@ int sys_execve(const char *path, char *const argv[], char *const envp[])
 	utimes_begin(cur);
 	asm volatile("addi.d $r3,%0,0;b user_ret;"::"g"((uint64_t)regs):"memory");
 	return -1;
+#endif
 }
 

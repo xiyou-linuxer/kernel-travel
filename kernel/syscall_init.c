@@ -14,7 +14,9 @@
 
 void sys_pstr(char *str)
 {
+#ifndef CONFIG_RISCV
 	print_str(str);
+#endif
 }
 
 void sys_person(void)
@@ -27,6 +29,7 @@ void sys_person(void)
 void syscall_init(void)
 {
 	printk("syscall init start\n");
+#ifndef CONFIG_RISCV
 	syscall_table[SYS_PP]                 = sys_person;
 	syscall_table[SYS_splice]             = sys_splice;
 	syscall_table[SYS_write]              = sys_write;
@@ -71,6 +74,7 @@ void syscall_init(void)
 	syscall_table[SYS_statx]              = sys_statx;
 	syscall_table[SYS_getdents64]         = sys_getdents;
 	syscall_table[SYS_pipe2]              = sys_pipe;
+#endif /* CONFIG_RISCV */
 	printk("syscall init done\n");
 }
 

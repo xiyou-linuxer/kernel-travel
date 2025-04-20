@@ -5,7 +5,7 @@
 #include <xkernel/printk.h>
 #include <asm/page.h>
 #include <debug.h>
-#include <asm/numa.h>
+#include <xkernel/numa.h>
 #include <xkernel/math.h>
 
 #define INIT_MEMBLOCK_MEMORY_REGIONS 32

@@ -1,8 +1,13 @@
+#include <xkernel/align.h>
 #include <xkernel/memory.h>
 #include <bitmap.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <asm/page.h>
-#include <asm/numa.h>
+#include <xkernel/numa.h>
 #include <debug.h>
 #include <xkernel/stdio.h>
 #include <xkernel/types.h>
@@ -28,6 +33,7 @@ struct page *mem_map;
 
 uint64_t get_page(void)
 {
+#ifdef CONFIG_LOONGARCH
 	//lock_acquire(&pool_lock);
 	unsigned long page;
 	u64 bit_off = bit_scan(&phy_pool.btmp,1);
@@ -39,17 +45,21 @@ uint64_t get_page(void)
 	page = (((bit_off << 12) + phy_pool.paddr_start) | CSR_DMW1_BASE);
 	memset((void *)page,0,(int)(PAGE_SIZE));
 	return page;
+#endif
 }
 
 void free_page(u64 vaddr)
 {
+#ifdef CONFIG_LOONGARCH
 	u64 bit_off = ((vaddr|CSR_DMW1_BASE) - phy_pool.paddr_start) >> 12;
 	ASSERT(bit_off < phy_pool.btmp.btmp_bytes_len);
 	bitmap_set(&phy_pool.btmp,bit_off,0);
+#endif
 }
 
 u64 get_pages(u64 count)
 {
+#ifdef CONFIG_LOONGARCH
 	//lock_acquire(&pool_lock);
 	unsigned long page;
 	u64 bit_off = bit_scan(&phy_pool.btmp,count);
@@ -63,13 +73,16 @@ u64 get_pages(u64 count)
 	page = (((bit_off << 12) + phy_pool.paddr_start) | CSR_DMW1_BASE);
 	memset((void *)page,0,(int)(PAGE_SIZE)*count);
 	return page;
+#endif
 }
 
 void free_pages(u64 vstart,u64 count)
 {
+#ifdef CONFIG_LOONGARCH
 	u64 bit_off = (vstart&~CSR_DMW1_BASE - phy_pool.paddr_start) >> 12;
 	for (u64 i = 0,b = bit_off ; i < count ; i++,b++)
 		bitmap_set(&phy_pool.btmp,b,0);
+#endif
 }
 
 
@@ -80,6 +93,7 @@ u64 *pgd_ptr(u64 pd,u64 vaddr)
 
 u64 *pmd_ptr(u64 pd,u64 vaddr)
 {
+#ifdef CONFIG_LOONGARCH
 	u64 pmd;
 	u64 *pgd = pgd_ptr(pd,vaddr);
 	if(*pgd)
@@ -89,10 +103,12 @@ u64 *pmd_ptr(u64 pd,u64 vaddr)
 		*pgd = pmd;
 	}
 	return (u64*)(pmd + PMD_IDX(vaddr) * ENTRY_SIZE);
+#endif
 }
 
 u64 *pte_ptr(u64 pd,u64 vaddr)
 {
+#ifdef CONFIG_LOONGARCH
 	u64 pt;
 	u64 *pmd = pmd_ptr(pd,vaddr);
 	if (*pmd)
@@ -102,6 +118,7 @@ u64 *pte_ptr(u64 pd,u64 vaddr)
 		*pmd = pt;
 	}
 	return (u64*)(pt + PTE_IDX(vaddr) * ENTRY_SIZE);
+#endif
 }
 
 void page_table_add(u64 pd,u64 _vaddr,u64 _paddr,u64 attr)
@@ -142,12 +159,14 @@ u64 vaddr_to_paddr(u64 pd, u64 vaddr) {
 
 void malloc_usrpage(u64 pd,u64 vaddr)
 {
+#ifndef CONFIG_RISCV
 	unsigned long paddr = get_page();
 	// printk("paddr : 0x%lx\n", paddr);
 	page_table_add(pd,vaddr,paddr,PTE_V | PTE_PLV | PTE_D);
 	struct task_struct *cur = running_thread();
 	uint64_t bit_idx = (vaddr - cur->usrprog_vaddr.vaddr_start)/PAGESIZE;
 	bitmap_set(&cur->usrprog_vaddr.btmp,bit_idx,1);
+#endif
 }
 
 void free_usrpage(u64 pd,u64 vaddr)
@@ -166,6 +185,7 @@ void malloc_usrpage_withoutopmap(u64 pd,u64 vaddr)
 
 unsigned long get_kernel_pge(void)
 {
+#ifdef CONFIG_LOONGARCH
 	unsigned long k_page;
 	u64 bit_off = bit_scan(&reserve_phy_pool.btmp,1);
 	if(bit_off == -1) {
@@ -175,10 +195,12 @@ unsigned long get_kernel_pge(void)
 	k_page = ((bit_off + 0x6) << 12) | CSR_DMW1_BASE;
 	memset((void *)k_page,0,(int)(PAGE_SIZE));
 	return k_page;
+#endif
 }
 
 u64 get_kernel_pages(u64 count)
 {
+	#ifdef CONFIG_LOONGARCH
 	unsigned long page;
 	u64 bit_off = bit_scan(&reserve_phy_pool.btmp,count);
 	if (bit_off == -1){
@@ -190,13 +212,16 @@ u64 get_kernel_pages(u64 count)
 	page = (((bit_off << 12) + reserve_phy_pool.paddr_start) | CSR_DMW1_BASE);
 	memset((void *)page,0,(int)(PAGE_SIZE)*count);
 	return page;
+#endif
 }
 
 void free_kernel_pge(void* k_page)
 {
+#ifdef CONFIG_LOONGARCH
 	u64 bit_off = (((unsigned long)k_page & ~CSR_DMW1_BASE) >> 12) - 0x6;
 	bitmap_set(&reserve_phy_pool.btmp, bit_off, 1);
 	memset((void *)k_page,0,(int)(PAGE_SIZE));
+#endif
 }
 
 void * kmalloc(u64 size)
@@ -212,6 +237,7 @@ void * kmalloc(u64 size)
 void __init get_pfn_range_for_nid(unsigned int nid,
 			unsigned long *start_pfn, unsigned long *end_pfn)
 {
+#ifndef CONFIG_RISCV
 	unsigned long this_start_pfn, this_end_pfn;
 	int i;
 
@@ -225,6 +251,7 @@ void __init get_pfn_range_for_nid(unsigned int nid,
 
 	if (*start_pfn == -1UL)
 		*start_pfn = 0;
+#endif
 }
 
 static unsigned long __init zone_spanned_pages_in_node(int nid,unsigned long zone_type,
@@ -250,6 +277,7 @@ unsigned long __init zone_absent_pages_in_node(int nid,
 			unsigned long range_start_pfn,
 			unsigned long range_end_pfn)
 {
+#ifndef CONFIG_RISCV
 	if(range_start_pfn == range_end_pfn)
 		return 0;
 	
@@ -263,6 +291,7 @@ unsigned long __init zone_absent_pages_in_node(int nid,
 		nr_absent -= end_pfn - start_pfn;
 	}
 	return nr_absent;
+#endif
 }
 
 struct page * __init memmap_init(unsigned long size)
@@ -275,6 +304,7 @@ struct page * __init memmap_init(unsigned long size)
 
 void __init alloc_node_mem_map(struct pglist_data *pg_data)
 {
+#ifndef CONFIG_RISCV
 	unsigned long start, offset, size, end;
 	struct page *map;
 
@@ -296,6 +326,7 @@ void __init alloc_node_mem_map(struct pglist_data *pg_data)
 		if (page_to_pfn(mem_map) != pg_data->node_start_pfn)
 			mem_map -= offset;
 	}
+#endif
 }
 
 static void __init calculate_zone_watermarks(struct zone * zone)
@@ -354,6 +385,7 @@ static void __meminit pgdat_init_internals(struct pglist_data *pg_data)
 static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx, int nid,
 							unsigned long remaining_pages)
 {
+#ifndef CONFIG_RISCV
 	zone->managed_pages = remaining_pages;
 	zone->node = nid;
 	zone->name = zone_names[idx];
@@ -362,6 +394,7 @@ static void __meminit zone_init_internals(struct zone *zone, enum zone_type idx,
 	zone->watermark_boost = 0;
 	// spin_lock_init(&zone->lock);
 	// zone_seqlock_init(zone);
+#endif
 }
 
 static void __meminit zone_init_free_lists(struct zone *zone)
@@ -395,6 +428,7 @@ static unsigned long __init calc_memmap_pages_size(unsigned long spanned_pages)
 
 static void __init free_area_init_core(struct pglist_data *pg_data)
 {
+#ifndef CONFIG_RISCV
 	int nid = pg_data->node_id;
 	pgdat_init_internals(pg_data);
 
@@ -425,10 +459,12 @@ static void __init free_area_init_core(struct pglist_data *pg_data)
 		init_currently_empty_zone(zone, zone->zone_start_pfn, size);
 	}
 	return;
+#endif
 }
 
 static void __init free_area_init_node(int nid)
 {
+#ifndef CONFIG_RISCV
 	pg_data_t *pg_data = &node_data[nid];
 	unsigned long start_pfn = 0, end_pfn = 0;
 	ASSERT(pg_data->nr_zones >= 0);
@@ -449,10 +485,12 @@ static void __init free_area_init_node(int nid)
 	}
 	alloc_node_mem_map(pg_data);
 	free_area_init_core(pg_data);
+#endif
 }
 
 void __init free_area_init(unsigned long *max_zone_pfn)
 {
+#ifndef CONFIG_RISCV
 	unsigned long start_pfn = PHYS_PFN(memblock_start_of_DRAM());
 	int nid;
 	unsigned long end_pfn;
@@ -486,15 +524,17 @@ void __init free_area_init(unsigned long *max_zone_pfn)
 	}
 
 	free_area_init_node(nid);
-
+#endif
 }
 
 static inline void del_page_from_free_list(struct page *page, struct zone *zone,
 					   unsigned int order)
 {
+#ifndef CONFIG_RISCV
 	list_del(&page->buddy_list);
 	set_page_private(page, 0);
 	zone->free_area[order].nr_free--;
+#endif
 }
 
 static inline void add_to_free_list_tail(struct page *page, struct zone *zone,
@@ -509,10 +549,12 @@ static inline void add_to_free_list_tail(struct page *page, struct zone *zone,
 static inline void add_to_free_list(struct page *page, struct zone *zone,
 				    unsigned int order, int migratetype)
 {
+#ifndef CONFIG_RISCV
 	struct free_area *area = &zone->free_area[order];
 
 	list_add(&page->buddy_list, &area->free_list[migratetype]);
 	area->nr_free++;
+#endif
 }
 
 /*判断给定的页面（page）和其伙伴页面（通过参数 buddy_pfn 指定）在指定阶数（order）上是否可以进行合并。*/
@@ -538,6 +580,7 @@ void free_one_page(struct zone *zone,
 				unsigned int order,
 				int migratetype, bool fpi_flags)
 {
+#ifndef CONFIG_RISCV
 	struct page *buddy;
 	unsigned long buddy_pfn = 0;
 	unsigned long combined_pfn;
@@ -572,13 +615,16 @@ done_merging:
 		add_to_free_list_tail(page, zone, order, migratetype);
 	else
 		add_to_free_list(page, zone, order, migratetype);
+#endif
 }
 
 
 static struct zone *
 page_zone(const struct page *page)
 {
+#ifndef CONFIG_RISCV
 	return (struct zone *)&node_data[0].node_zones[page_zonenum(page)];
+#endif
 }
 
 // static
@@ -593,10 +639,12 @@ void __free_pages_ok(struct page *page, unsigned int order,
 
 void __init __free_pages_core(struct page *page,unsigned int order)
 {
+#ifndef CONFIG_RISCV
 	/*清除 struct page 中的数据*/
 	// ...
 	// printk("pageaddr:0x%llx\n",page);
 	__free_pages_ok(page,order,FPI_TO_TAIL);   
+#endif
 }
 
 // static inline
@@ -611,6 +659,7 @@ struct page *get_page_from_free_area(struct free_area *area,
 void expand(struct zone *zone, struct page *page,
 	int low, int high, int migratetype)
 {
+#ifndef CONFIG_RISCV
 	unsigned long size = 1 << high;
 
 	while (high > low) {
@@ -623,6 +672,7 @@ void expand(struct zone *zone, struct page *page,
 		// 设置 page 的 private 为 high 的 order
 		set_buddy_order(&page[size], high);
 	}
+#endif
 }
 
 
@@ -707,6 +757,7 @@ struct page *
 get_page_from_freelist(gfp_t gfp_mask, unsigned int order, int alloc_flags,
 						const struct alloc_context *ac)
 {
+#ifndef CONFIG_RISCV
 	struct zone * zone;
 	int i;
 retry:
@@ -737,6 +788,7 @@ try_this_node:
 	}
 	}
 	return NULL;
+#endif
 }
 
 
@@ -766,9 +818,11 @@ out:
 
 void __init mem_init(void)
 {
+#ifndef CONFIG_RISCV
 	high_memory = (void *) __va(max_low_pfn << PAGE_SHIFT);
 	memblock_free_all();
 	lock_init(&pool_lock);
+#endif
 }
 
 void mm_struct_init(struct mm_struct *mm)

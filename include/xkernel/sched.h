@@ -7,7 +7,7 @@
 #include <asm/thread_info.h>
 #include <fs/fs.h>
 #include <stdint.h>
-#include <signal.h>
+#include <xkernel/signal.h>
 
 
 #define TASK_NAME_LEN 16

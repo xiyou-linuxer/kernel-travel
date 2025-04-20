@@ -4,7 +4,11 @@
 #include <debug.h>
 #include <trap/irq.h>
 #include <allocator.h>
+
+#ifdef CONFIG_LOONGARCH
 #include <asm/loongarch.h>
+#endif
+
 #include <xkernel/stdio.h>
 #include <xkernel/memory.h>
 #include <xkernel/string.h>
@@ -27,6 +31,7 @@ void create_user_vaddr_bitmap(struct task_struct* user_prog) {
 
 void start_process(void* filename)
 {
+#ifdef CONFIG_LOONGARCH
 	printk("start process....\n");
 	unsigned long crmd;
 	unsigned long prmd;
@@ -44,6 +49,7 @@ void start_process(void* filename)
 	char *argv[] = {filename,NULL};
 	char *envp[] = {NULL};
 	sys_execve(filename,argv,envp);
+#endif
 }
 
 void process_execute(void* filename, char* name,int pri) {
@@ -64,10 +70,12 @@ void process_execute(void* filename, char* name,int pri) {
 
 void page_dir_activate(struct task_struct* pcb)
 {
+#ifdef CONFIG_LOONGARCH
 	if (pcb->pgdir != 0) {
 		write_csr_pgdl(pcb->pgdir);
 		invalidate();
 	}
 	//printk("next pgdir=%x\n",pcb->pgdir);
+#endif
 }
 
