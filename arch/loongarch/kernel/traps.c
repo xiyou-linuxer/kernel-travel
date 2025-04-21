@@ -16,17 +16,16 @@ extern void do_irq(struct pt_regs *regs, uint64_t virq);
 
 extern void handle_reserved(void);
 
-#define INTCLR_0 0x1fe0142c
-#define INTCLR_1 0x1fe0146c
-#define INTPOL_0 0x1fe01430
-#define INTPOL_1 0x1fe01470
-#define INTEDGE_0 0x1fe01434
-#define INTEDGE_1 0x1fe01474
-#define BOUNCE_0 0x1fe01438
-#define BOUNCE_1 0x1fe01478
-#define AUTO_0 0x1fe0143c
-#define AUTO_1 0x1fe0147c
-
+#define INTCLR_0        0x2c
+#define INTCLR_1        0x6c
+#define INTPOL_0        0x2d0
+#define INTPOL_1        0x2d4
+#define INTEDGE_0       0x2d8
+#define INTEDGE_1       0x2dc
+#define BOUNCE_0        0x2e0
+#define BOUNCE_1        0x2e4
+#define AUTO_0          0x2e8
+#define AUTO_1          0x2ec
 void handle_reserved(void)
 {
 	printk("have a exception happened\n");
@@ -189,21 +188,23 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 */
 static void io_irq_init(void)
 {
+	printk("io_irq_init start\n");
 	/*clr*/
-	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_0) = ~0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | INTCLR_1) = ~0x0U;
+	csr_write32(~0x0U, INTCLR_0);
+	csr_write32(~0x0U, INTCLR_1);
 	/*pol*/
-	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_0) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | INTPOL_1) = 0x0U;
+	csr_write32(0x0U, INTPOL_0);
+	csr_write32(0x0U, INTPOL_1);
 	/*edge*/
-	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_0) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | INTEDGE_1) = 0x0U;
+	csr_write32(0x0U, INTEDGE_0);
+	csr_write32(0x0U, INTEDGE_1);
 	/*bou*/
-	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_0) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | BOUNCE_1) = 0x0U;
+	csr_write32(0x0U, BOUNCE_0);
+	csr_write32(0x0U, BOUNCE_1);
 	/*auto*/
-	*(unsigned int*)(CSR_DMW0_BASE | AUTO_0) = 0x0U;
-	*(unsigned int*)(CSR_DMW0_BASE | AUTO_1) = 0x0U;
+	csr_write32(0x0U, AUTO_0);
+	csr_write32(0x0U, AUTO_1);
+	printk("io_irq_init end\n");
 }
 /**
  * trap_init - 例外与中断处理初始化
@@ -235,12 +236,8 @@ void trap_init(void)
 	local_flush_icache_range(eentry, eentry + 0x400);
 	//初始化定时器
 	write_csr_tcfg(tcfg);
-	#ifdef CONFIG_VIRT
-
-	#else ifdef CONFIG_2K1000LA
 
 	io_irq_init();
-
-	#endif
+	
 	change_csr_ecfg(CSR_ECFG_IM, ecfg | 0x1 << 11);
 }

@@ -26,11 +26,10 @@ void setup_arch(void)
 	printk("@@@@@: fw_arg2 = %lx\n", fw_arg2);
 	printk("@@@@@: fw_arg3 = %lx\n", fw_arg3);
 
-	#ifdef CONFIG_VIRT
-
-	#else ifdef CONFIG_2K1000LA
-
+#ifdef CONFIG_VIRT
+#elif CONFIG_2K1000LA
 	early_init();
+#endif
 
 	#endif
 

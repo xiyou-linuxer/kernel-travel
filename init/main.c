@@ -53,50 +53,53 @@ void thread_a(void *unused);
 void thread_a(void *unused)
 {
 	printk("enter thread_a\n");
-	while (1) {
-		printk("thread_a pid=%d\n",sys_getpid());
+	while (1)
+	{
+		printk("thread_a pid=%d\n", sys_getpid());
 	}
 }
 
-char* sstr = "hello\n";
+char *sstr = "hello\n";
 void proc_1(void *unused)
 {
-	while(1) {
-		syscall(SYS_PSTR,sstr);
+	while (1)
+	{
+		syscall(SYS_PSTR, sstr);
 	}
 }
 
-void timer_func(unsigned long unused){
+void timer_func(unsigned long unused)
+{
 	printk("timer done");
 }
 
-//char usrprog[2][40000];
+// char usrprog[2][40000];
 int sysnums = 3;
-//extern char* sysname[];
+// extern char* sysname[];
 
-//char init_program[70000];
-//char filename[50][64] = {0};
+// char init_program[70000];
+// char filename[50][64] = {0};
 
-char xkernel_banner[] = \
-"        __                              .__   \n"\
-"___  __|  | __ ___________  ____   ____ |  |  \n"\
-"\\  \\/  /  |/ // __ \\_  __ \\/    \\_/ __ \\|  |  \n"\
-" >    <|    <\\  ___/|  | \\/   |  \\  ___/|  |__\n"\
-"/__/\\_ \\__|_ \\___  >__|  |___|  /\\___  >____/\n"\
-"      \\/    \\/    \\/           \\/     \\/      ";
+char xkernel_banner[] =
+	"        __                              .__   \n"
+	"___  __|  | __ ___________  ____   ____ |  |  \n"
+	"\\  \\/  /  |/ // __ \\_  __ \\/    \\_/ __ \\|  |  \n"
+	" >    <|    <\\  ___/|  | \\/   |  \\  ___/|  |__\n"
+	"/__/\\_ \\__|_ \\___  >__|  |___|  /\\___  >____/\n"
+	"      \\/    \\/    \\/           \\/     \\/      ";
 
 void __init __no_sanitize_address start_kernel(void)
 {
 	char str[] = "xkernel";
 	int cpu = smp_processor_id();
-	
+
 	local_irq_disable();
 
 	printk("%s\n", xkernel_banner);
-	printk("sizeof pcb:%x\n",sizeof(struct task_struct));
+	printk("sizeof pcb:%x\n", sizeof(struct task_struct));
 
 	pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
-	setup_arch();//初始化体系结构
+	setup_arch(); // 初始化体系结构
 	// mem_init();
 	trap_init();
 	irq_init();
@@ -111,23 +114,24 @@ void __init __no_sanitize_address start_kernel(void)
 	syscall_init();
 	vfs_init();
 	fs_init();
-	//proc_files_init();
+	proc_files_init();
 
 	struct task_struct *cur = running_thread();
-	struct task_struct* bak = bak_pcb(cur);
+	struct task_struct *bak = bak_pcb(cur);
 	early_boot_irqs_disabled = true;
-	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	int fd = sys_open("initcode", O_CREATE | O_RDWR, 0);
 	sys_chdir("/sdcard");
-	if (fd == -1) {
+	if (fd == -1)
+	{
 		printk("open failed");
 	}
-	sys_write(fd,init_code,init_code_len);
+	sys_write(fd, init_code, init_code_len);
 	*cur = *bak;
 	printk("last test..................\n");
 	test_pcb();
 	local_irq_enable();
-	
-	while (1) {
 
+	while (1)
+	{
 	}
 }
