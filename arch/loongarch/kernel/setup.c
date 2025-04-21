@@ -31,7 +31,6 @@ void setup_arch(void)
 	early_init();
 #endif
 
-	#endif
 
 	/**
 	 * 例外与中断的初始化
