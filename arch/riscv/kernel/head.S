@@ -3,16 +3,13 @@
  * Copyright (C) 2012 Regents of the University of California
  */
 
+#include <xkernel/init.h>
 #include <xkernel/linkage.h>
 
-SYM_CODE_START(_start)
-	/* jump to start kernel */
-	j _start_kernel
-	/* reserved */
-	.word 0
-SYM_CODE_END(_start)
+	__HEAD
 
-SYM_CODE_START(_start_kernel)
-	/* Mask all interrupts */
-	csrw 0x304, zero
-SYM_CODE_END(_start_kernel)
+SYM_CODE_START(kernel_entry)
+lable_1:
+	j lable_1
+	/* reserved */
+SYM_CODE_END(kernel_entry)

@@ -109,6 +109,7 @@ endif
 CHECKFLAGS += -D__riscv -D__riscv_xlen=$(BITS)
 
 # Default value
+head-y		:= arch/riscv/kernel/head.o
 
 export	TEXT_OFFSET GZFLAGS
 

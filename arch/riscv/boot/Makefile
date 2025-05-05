@@ -48,6 +48,7 @@ $(obj)/xipImage: FORCE
 
 $(obj)/Image: vmlinux FORCE
 	$(call if_changed,objcopy)
+	riscv64-linux-gnu-objcopy  -O binary -R .note -R .note.gnu.build-id -R .comment -S vmlinux arch/riscv/boot/Image
 	@echo '  Kernel: $@ is ready'
 
 $(obj)/compressed/vmlinux: $(obj)/Image FORCE
@@ -91,7 +92,7 @@ fi
 VMLINUX_LOAD_ADDRESS=0xffffffff80000000
 # VMLINUX_LOAD_ADDRESS=0x9000000090000000
 
-entry-y	= $(shell /home/huloves/repositories/linux-5.10-2k1000-dp-src/arch/loongarch/tools/elf-entry vmlinux)
+# entry-y	= $(shell /home/huloves/repositories/linux-5.10-2k1000-dp-src/arch/loongarch/tools/elf-entry vmlinux)
 VMLINUX_ENTRY_ADDRESS = $(entry-y)
 
 UIMAGE_LOADADDR  = $(VMLINUX_LOAD_ADDRESS)
