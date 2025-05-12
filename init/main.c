@@ -35,7 +35,7 @@
 #include <fs/fd.h>
 #include <fs/buf.h>
 #include <fs/syscall_fs.h>
-#include <xkernel/initcode.h>
+//#include <xkernel/initcode.h>
 #include <asm/timer.h>
 
 extern void __init __no_sanitize_address start_kernel(void);
@@ -89,48 +89,46 @@ char xkernel_banner[] = \
 
 void __init __no_sanitize_address start_kernel(void)
 {
-#ifndef CONFIG_RISCV
-	char str[] = "xkernel";
-	int cpu = smp_processor_id();
+	printk("xxxxxxxxxxxxx\n");
+	// char str[] = "xkernel";
+	// int cpu = smp_processor_id();
 	
-	local_irq_disable();
+	// local_irq_disable();
 
-	printk("%s\n", xkernel_banner);
-	printk("sizeof pcb:%x\n",sizeof(struct task_struct));
+	// printk("%s\n", xkernel_banner);
+	// printk("sizeof pcb:%x\n",sizeof(struct task_struct));
 
-	pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
-	setup_arch();//初始化体系结构
-	// mem_init();
-	trap_init();
-	irq_init();
+	// pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
+	// setup_arch();//初始化体系结构
+	// // mem_init();
+	// trap_init();
+	// irq_init();
 
-	thread_init();
-	test_pcb();
-	timer_init();
-	pci_init();
-	console_init();
-	disk_init();
-	console_init();
-	syscall_init();
-	vfs_init();
-	fs_init();
-	//proc_files_init();
+	// thread_init();
+	// test_pcb();
+	// timer_init();
+	// pci_init();
+	// console_init();
+	// disk_init();
+	// console_init();
+	// syscall_init();
+	// vfs_init();
+	// fs_init();
+	// //proc_files_init();
 
-	struct task_struct *cur = running_thread();
-	struct task_struct* bak = bak_pcb(cur);
-	early_boot_irqs_disabled = true;
-	int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	sys_chdir("/sdcard");
-	if (fd == -1) {
-		printk("open failed");
-	}
-	sys_write(fd,init_code,init_code_len);
-	*cur = *bak;
-	printk("last test..................\n");
-	test_pcb();
-	local_irq_enable();
-#endif
-	
+	// struct task_struct *cur = running_thread();
+	// struct task_struct* bak = bak_pcb(cur);
+	// early_boot_irqs_disabled = true;
+	// int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
+	// sys_chdir("/sdcard");
+	// if (fd == -1) {
+	// 	printk("open failed");
+	// }
+	// sys_write(fd,init_code,init_code_len);
+	// *cur = *bak;
+	// printk("last test..................\n");
+	// test_pcb();
+	// local_irq_enable();
 	while (1) {
 
 	}

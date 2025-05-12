@@ -421,32 +421,6 @@
 #define SEED_OPST_DEAD		_AC(0xC0000000, UL)
 #define SEED_ENTROPY_MASK	_AC(0xFFFF, UL)
 
-#ifdef CONFIG_RISCV_M_MODE
-# define CSR_STATUS	CSR_MSTATUS
-# define CSR_IE		CSR_MIE
-# define CSR_TVEC	CSR_MTVEC
-# define CSR_ENVCFG	CSR_MENVCFG
-# define CSR_SCRATCH	CSR_MSCRATCH
-# define CSR_EPC	CSR_MEPC
-# define CSR_CAUSE	CSR_MCAUSE
-# define CSR_TVAL	CSR_MTVAL
-# define CSR_IP		CSR_MIP
-
-# define CSR_IEH		CSR_MIEH
-# define CSR_ISELECT	CSR_MISELECT
-# define CSR_IREG	CSR_MIREG
-# define CSR_IPH		CSR_MIPH
-# define CSR_TOPEI	CSR_MTOPEI
-# define CSR_TOPI	CSR_MTOPI
-
-# define SR_IE		SR_MIE
-# define SR_PIE		SR_MPIE
-# define SR_PP		SR_MPP
-
-# define RV_IRQ_SOFT		IRQ_M_SOFT
-# define RV_IRQ_TIMER	IRQ_M_TIMER
-# define RV_IRQ_EXT		IRQ_M_EXT
-#else /* CONFIG_RISCV_M_MODE */
 # define CSR_STATUS	CSR_SSTATUS
 # define CSR_IE		CSR_SIE
 # define CSR_TVEC	CSR_STVEC
@@ -474,7 +448,6 @@
 # define RV_IRQ_PMU	IRQ_PMU_OVF
 # define SIP_LCOFIP     (_AC(0x1, UL) << IRQ_PMU_OVF)
 
-#endif /* !CONFIG_RISCV_M_MODE */
 
 /* IE/IP (Supervisor/Machine Interrupt Enable/Pending) flags */
 #define IE_SIE		(_AC(0x1, UL) << RV_IRQ_SOFT)

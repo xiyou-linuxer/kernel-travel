@@ -95,10 +95,10 @@ struct alloc_context {
 
 #define wmark_pages(z, i) (z->_watermark[i] + z->watermark_boost)
 
-static unsigned long pgdat_end_pfn(struct pglist_data *pgdat)
-{
-	return pgdat->node_start_pfn + pgdat->node_spanned_pages;
-}
+// static unsigned long pgdat_end_pfn(struct pglist_data *pgdat)
+// {
+// 	return pgdat->node_start_pfn + pgdat->node_spanned_pages;
+// }
 
 static inline bool zone_is_initialized(struct zone *zone)
 {
