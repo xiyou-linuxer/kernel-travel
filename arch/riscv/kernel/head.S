@@ -61,7 +61,7 @@ clear_bss_done:
 	add a0, a0, t0            # 将偏移量加到 a0
 	mv sp, a0                 # 将最终地址加载到 sp
 	mv a0, s1
-	call setup_vm
+	call setup_vm 
 
 	la a0, early_pg_dir
 	# call relocate
