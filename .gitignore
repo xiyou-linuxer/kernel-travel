@@ -4,7 +4,7 @@
 .config.old
 include/config
 include/generated
-vmlinux*
+vmlinux
 uImage*
 System.map
 .missing-syscalls.d
@@ -15,7 +15,7 @@ cross-tools/
 include/linux/version.h
 devicetable-offsets.s
 kernel/bounds.s
-
+vmlinux.lds
 quick_start.sh
 0z1*.md
 .cache/
@@ -26,6 +26,4 @@ include/xkernel/initcode.h
 userdump
 command/userdump
 command/init_code
-#include/xkernel/initcode.h
 dockerset.sh
-

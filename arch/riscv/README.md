@@ -19,14 +19,17 @@ B:gdb-multiarch kernel-travel/vmlinux
 set arch riscv:rv64
 target remote :1234
 
-add-symbol-file kernel-travel/vmlinux 0x80200000 -s .text 0xffffffff80000000
+symbol-file kernel-travel/vmlinux
+
+add-symbol-file kernel-travel/vmlinux 0xffffffff80010000 -s .head.text 0xffffffff80000000 -s .init.text 0xffffffff80040000
 
 objdump -h kernel-travel/vmlinux
 
 x/10i $pc
 disas
 
-readelf
+riscv64-linux-gnu-readelf -a  vmlinux > vmlinux.readelf
+riscv64-linux-gnu-objdump -S vmlinux > vmlinux.objdump
 
 riscv64-linux-musl-readelf -h kernel-rv riscv64-linux-musl-readelf -a kernel-rv
 

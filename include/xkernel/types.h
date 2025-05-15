@@ -27,6 +27,8 @@ typedef enum {
     TRUE = 1
 } bool;
 
+typedef unsigned long int	uintptr_t;
+
 typedef unsigned char		u8;
 typedef u8			        __u8;
 typedef unsigned short		u16;

@@ -40,45 +40,6 @@
 
 extern void __init __no_sanitize_address start_kernel(void);
 
-bool early_boot_irqs_disabled;
-#define VMEM_SIZE (1UL << (9 + 9 + 12))
-extern void disk_init(void);
-extern void irq_init(void);
-extern void setup_arch(void);
-extern void trap_init(void);
-
-#ifdef CONFIG_LOONGARCH
-void thread_a(void *unused);
-void thread_a(void *unused)
-{
-	printk("enter thread_a\n");
-	while (1) {
-		printk("thread_a pid=%d\n",sys_getpid());
-	}
-}
-#endif /* CONFIG_LOONGARCH */
-
-#ifdef CONFIG_LOONGARCH
-char* sstr = "hello\n";
-void proc_1(void *unused)
-{
-	while(1) {
-		syscall(SYS_PSTR,sstr);
-	}
-}
-#endif
-
-void timer_func(unsigned long unused){
-	printk("timer done");
-}
-
-//char usrprog[2][40000];
-int sysnums = 3;
-//extern char* sysname[];
-
-//char init_program[70000];
-//char filename[50][64] = {0};
-
 char xkernel_banner[] = \
 "        __                              .__   \n"\
 "___  __|  | __ ___________  ____   ____ |  |  \n"\
@@ -87,48 +48,24 @@ char xkernel_banner[] = \
 "/__/\\_ \\__|_ \\___  >__|  |___|  /\\___  >____/\n"\
 "      \\/    \\/    \\/           \\/     \\/      ";
 
+#define UART_BASE 0x10000000
+#define UART_THR (volatile char*)(UART_BASE + 0x00) // Transmit Holding Register
+
+static inline void putc(char c) {
+    *UART_THR = c;
+}
 void __init __no_sanitize_address start_kernel(void)
 {
-	printk("xxxxxxxxxxxxx\n");
-	// char str[] = "xkernel";
-	// int cpu = smp_processor_id();
-	
-	// local_irq_disable();
 
-	// printk("%s\n", xkernel_banner);
-	// printk("sizeof pcb:%x\n",sizeof(struct task_struct));
-
-	// pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
-	// setup_arch();//初始化体系结构
-	// // mem_init();
-	// trap_init();
-	// irq_init();
-
-	// thread_init();
-	// test_pcb();
-	// timer_init();
-	// pci_init();
-	// console_init();
-	// disk_init();
-	// console_init();
-	// syscall_init();
-	// vfs_init();
-	// fs_init();
-	// //proc_files_init();
-
-	// struct task_struct *cur = running_thread();
-	// struct task_struct* bak = bak_pcb(cur);
-	// early_boot_irqs_disabled = true;
-	// int fd = sys_open("initcode",O_CREATE|O_RDWR,0);
-	// sys_chdir("/sdcard");
-	// if (fd == -1) {
-	// 	printk("open failed");
-	// }
-	// sys_write(fd,init_code,init_code_len);
-	// *cur = *bak;
-	// printk("last test..................\n");
-	// test_pcb();
-	// local_irq_enable();
+	asm volatile("li a0, 0x10000000\n\t"
+		"li a1, 'P'\n\t"
+		"sb a1,0(a0)\n\t"
+		);
+	// putc('H');
+    // putc('e');
+    // putc('l');
+    // putc('l');
+    // putc('o');
 	while (1) {
 
 	}

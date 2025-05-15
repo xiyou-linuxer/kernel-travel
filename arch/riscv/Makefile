@@ -122,6 +122,7 @@ head-y		:= arch/riscv/kernel/head.o
 export	TEXT_OFFSET GZFLAGS
 
 core-y		+= arch/riscv/kernel/
+core-y		+= arch/riscv/mm/
 
 # Default target when executing plain make
 ifeq ($(CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE),y)
