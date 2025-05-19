@@ -4,6 +4,8 @@
 #include <xkernel/ctype.h>
 
 #include "efistub.h"
+#include <asm/stdio.h>
+
 
 static
 int skip_atoi(const char **s)

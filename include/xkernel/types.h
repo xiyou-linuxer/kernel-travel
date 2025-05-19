@@ -45,6 +45,8 @@ typedef u32                 uint32_t;
 typedef u64                 uint64_t;
 typedef s16		    int16_t;
 
+typedef uint64_t uintptr_t;
+
 typedef unsigned long		size_t;
 typedef unsigned long long	phys_addr_t;
 

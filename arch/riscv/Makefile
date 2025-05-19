@@ -123,6 +123,8 @@ export	TEXT_OFFSET GZFLAGS
 
 core-y		+= arch/riscv/kernel/
 
+core-y		+= arch/riscv/mm/
+core-y		+= arch/riscv/lib/
 # Default target when executing plain make
 ifeq ($(CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE),y)
 KBUILD_IMAGE	:= Image.gz-dtb

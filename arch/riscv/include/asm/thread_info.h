@@ -13,8 +13,8 @@
 #include <xkernel/preempt.h>
  
 /* thread information allocation */
-#define THREAD_SIZE_ORDER	CONFIG_THREAD_SIZE_ORDER
-#define THREAD_SIZE		(PAGE_SIZE << THREAD_SIZE_ORDER)
+#define THREAD_SIZE_ORDER	2
+#define THREAD_SIZE		(( 1 << 12) << 2)
 
 /*
 * By aligning VMAP'd stacks to 2 * THREAD_SIZE, we can detect overflow by

@@ -1,6 +1,9 @@
 ccflags-y := -std=gnu99 -Wno-declaration-after-statement
+
 ifdef CONFIG_LOONGARCH
 obj-y	+= firmware/
+else
+obj-y := firmware/efi/libstub/
 endif
 
 obj-y	+= serial/

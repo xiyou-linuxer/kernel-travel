@@ -1,0 +1,1 @@
+extern void *dtb_early_va;

@@ -6,6 +6,7 @@
 
 bool efi_novamap;
 
+const efi_system_table_t *efi_system_table;
 /**
  * get_efi_config_table() - retrieve UEFI configuration table
  * @guid:	GUID of the configuration table to be retrieved
