@@ -18,7 +18,9 @@
 unsigned long sysctl_max_map_count = 1024;
 unsigned long mmap_min_addr = TASK_SIZE / 3;
 
-
+#ifdef CONFIG_HAVE_ARCH_MMAP_RND_BITS
+int mmap_rnd_bits_max = 18;
+#endif
 void print_tree(struct rb_node *node,int level)
 {
 	if (node == NULL)

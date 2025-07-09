@@ -4,6 +4,6 @@
 #
 CPPFLAGS_vmlinux.lds += -DVMLINUX_LOAD_ADDRESS=0x0000000080000000
 # Object file lists.
-obj-y := setup.o
+obj-y := setup.o sbi.o irq.o time.o entry.o
 head-y			:= head.o
 extra-y := $(head-y) vmlinux.lds

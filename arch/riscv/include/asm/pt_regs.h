@@ -1,5 +1,5 @@
-#ifndef __ASM_PT_REGS_H
-#define __ASM_PT_REGS_H
+#ifndef __ASM_RISCV_PT_REGS_H
+#define __ASM_RISCV_PT_REGS_H
 
 #ifndef __ASSEMBLY__
 
