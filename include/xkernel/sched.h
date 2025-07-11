@@ -40,6 +40,7 @@ enum task_status {
 };
 
 struct task_struct {
+	struct thread_info		thread_info;
 	uint64_t *self_kstack;
 	thread_func *function;
 	void *func_arg;

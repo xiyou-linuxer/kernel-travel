@@ -9,6 +9,7 @@ extern void *dtb_early_va;
 #include <xkernel/mm.h>
 #include <asm/pgtable-bits.h>
 #include <asm/page.h>
+#include <asm/errata_list.h>
 #ifndef CONFIG_MMU
 #define KERNEL_LINK_ADDR	PAGE_OFFSET
 #define KERN_VIRT_SIZE		(UL(-1))
@@ -53,6 +54,7 @@ typedef struct {
 #define __pud(x)        ((pud_t) { (x) })
 #define PTRS_PER_PUD    (PAGE_SIZE / sizeof(pud_t))
 
+#define PAGE_TABLE		__pgprot(_PAGE_TABLE)
 
 #define PGDIR_SIZE      (_AC(1, UL) << PGDIR_SHIFT)
 #define VA_BITS_SV32 32
@@ -67,6 +69,17 @@ typedef struct {
 #define __pmd(x)        ((pmd_t) { (x) })
 #ifdef CONFIG_MMU
 
+
+
+static inline pte_t pfn_pte(unsigned long pfn, pgprot_t prot)
+{
+	unsigned long prot_val = pgprot_val(prot);
+
+	// ALT_THEAD_PMA(prot_val);
+
+	return __pte((pfn << _PAGE_PFN_SHIFT) | prot_val);
+}
+
 #define _PAGE_KERNEL		(_PAGE_READ \
 				| _PAGE_WRITE \
 				| _PAGE_PRESENT \
@@ -77,15 +90,33 @@ typedef struct {
 #define PAGE_KERNEL		__pgprot(_PAGE_KERNEL)
 #define PAGE_KERNEL_READ	__pgprot(_PAGE_KERNEL & ~_PAGE_WRITE)
 #define PAGE_KERNEL_EXEC	__pgprot(_PAGE_KERNEL | _PAGE_EXEC)
-
 #endif
+
+#define PTE_INDEX_MASK          GENMASK(20, 12)
+//这对吗
+#define pte_index(va) (((va) >> PFN_PTE_SHIFT) & PTE_INDEX_MASK)
+#define pmd_index(addr) (((addr) >> PMD_SHIFT) & (PTRS_PER_PMD - 1))
+
+static inline pmd_t pfn_pmd(unsigned long pfn, pgprot_t prot)
+{
+	unsigned long prot_val = pgprot_val(prot);
+
+	// ALT_THEAD_PMA(prot_val);
+
+	return __pmd((pfn << _PAGE_PFN_SHIFT) | prot_val);
+}
+
 
 
 /* 每个页中间目录（PMD）包含的指针数量 */
 
 #define PTRS_PER_PMD    (PAGE_SIZE / sizeof(pmd_t))
 
+#define GENMASK(h, l)  (((~0UL) >> (l)) & ((1UL << ((h) - (l) + 1)) - 1))
+
+
 #define _PAGE_PFN_MASK  GENMASK(53, 10)
+
 /*
  * rv64 PTE format:
  * | 63 | 62 61 | 60 54 | 53  10 | 9             8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0
@@ -117,11 +148,17 @@ typedef struct {
 // #include <linux/mm_types.h>
 // #include <asm/compat.h>
 
+#define __page_val_to_pfn(_val)  (((_val) & _PAGE_PFN_MASK) >> _PAGE_PFN_SHIFT)
+
+
 #define MMAP_VA_BITS_64 ((VA_BITS >= VA_BITS_SV48) ? VA_BITS_SV48 : VA_BITS)
 #define MMAP_MIN_VA_BITS_64 (VA_BITS_SV39)
 // 是否是32位程序运行在64位上
 /* 当前CPU架构和内核配置下，所使用的虚拟地址的总位数。*/
 #define MMAP_VA_BITS  MMAP_VA_BITS_64
+
+#define PFN_PTE_SHIFT		_PAGE_PFN_SHIFT
+
 
 /* 根据物理页帧（PFN）和页表保护，构建PGD条目*/
 static inline pgd_t pfn_pgd(unsigned long pfn, pgprot_t prot)
@@ -133,6 +170,25 @@ static inline pgd_t pfn_pgd(unsigned long pfn, pgprot_t prot)
 	return __pgd((pfn << _PAGE_PFN_SHIFT) | prot_val); /* pfn物理帧 + prot保护标志位*/
 }
 
+static inline unsigned long _pgd_pfn(pgd_t pgd)
+{
+	return __page_val_to_pfn(pgd_val(pgd));
+}
+
+static inline unsigned long _pmd_pfn(pmd_t pmd)
+{
+	return __page_val_to_pfn(pmd_val(pmd));
+}
+static inline unsigned long pte_pfn(pte_t pte)
+{
+	unsigned long res  = __page_val_to_pfn(pte_val(pte));
+
+	// if (has_svnapot() && pte_napot(pte))
+		res = res & (res - 1UL);
+
+	return res;
+}
+
 
 struct pt_alloc_ops {
 	pte_t *(*get_pte_virt)(phys_addr_t pa);
@@ -140,10 +196,10 @@ struct pt_alloc_ops {
 	#ifndef __PAGETABLE_PMD_FOLDED
 	pmd_t *(*get_pmd_virt)(phys_addr_t pa);
 	phys_addr_t (*alloc_pmd)(uintptr_t va);
-	pud_t *(*get_pud_virt)(phys_addr_t pa);
-	phys_addr_t (*alloc_pud)(uintptr_t va);
-	p4d_t *(*get_p4d_virt)(phys_addr_t pa);
-	phys_addr_t (*alloc_p4d)(uintptr_t va);
+	// pud_t *(*get_pud_virt)(phys_addr_t pa);
+	// phys_addr_t (*alloc_pud)(uintptr_t va);
+	// p4d_t *(*get_p4d_virt)(phys_addr_t pa);
+	// phys_addr_t (*alloc_p4d)(uintptr_t va);
 #endif
 };	
 extern struct pt_alloc_ops pt_ops __initdata;

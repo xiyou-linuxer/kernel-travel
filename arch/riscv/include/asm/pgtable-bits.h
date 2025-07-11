@@ -11,7 +11,7 @@
 #define _PAGE_DIRTY     (1 << 7)    /* Set by hardware on any write */
 #define _PAGE_SOFT      (3 << 8)    /* Reserved for software */
 
-
+#define _PAGE_TABLE     _PAGE_PRESENT
 #define _PAGE_PFN_SHIFT 10
 
 #endif

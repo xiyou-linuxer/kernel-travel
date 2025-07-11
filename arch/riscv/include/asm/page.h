@@ -64,6 +64,9 @@ extern struct kernel_mapping kernel_map;
 #define PAGE_OFFSET		_AC(CONFIG_PAGE_OFFSET, UL)
 #endif /* CONFIG_64BIT */
 
+#endif
+
+
 #ifndef __ASSEMBLY__
 
 #ifdef CONFIG_RISCV_ISA_ZICBOZ
@@ -122,8 +125,8 @@ typedef struct page *pgtable_t;
 
 
 
-#endif /* _ASM_RISCV_PAGE_H */
+#endif 
 
-#endif
 
-#endif
+
+#endif/* _ASM_RISCV_PAGE_H */
