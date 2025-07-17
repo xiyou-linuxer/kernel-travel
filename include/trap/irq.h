@@ -8,7 +8,7 @@
 
 typedef void (*intr_handler)(struct pt_regs *regs);
 void irq_init(void);
-
+asmlinkage void generic_handle_arch_irq(struct pt_regs *regs);
 /* 定义中断的两种状态:
  * INTR_OFF值为0,表示关中断,
  * INTR_ON值为1,表示开中断 */

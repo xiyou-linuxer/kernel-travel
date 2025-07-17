@@ -5,10 +5,11 @@
 
  #ifndef _ASM_ASM_H
  #define _ASM_ASM_H
- 
  #ifdef __ASSEMBLY__
+ #include <xkernel/types.h>
  #define __ASM_STR(x)	x
  #else
+  #include <xkernel/types.h>
  #define __ASM_STR(x)	#x
  #endif
  
@@ -53,9 +54,11 @@
  #else
  #error "Unexpected __SIZEOF_SHORT__"
  #endif
- 
- #ifdef __ASSEMBLY__
- #include <asm/asm-offsets.h>
+
+
+#ifdef __ASSEMBLY__
+#include <asm/asm-offsets.h>
+
  
  /* Common assembly source macros */
  
@@ -178,7 +181,19 @@
  #else
  #define ASM_NOKPROBE(name)
  #endif
- 
+ #else
+extern void *_dtb_early_va;
+extern uintptr_t _dtb_early_pextern ;
+#if defined(CONFIG_XIP_KERNEL) && defined(CONFIG_MMU)
+#define dtb_early_va	(*(void **)XIP_FIXUP(&_dtb_early_va))
+#define dtb_early_pa	(*(uintptr_t *)XIP_FIXUP(&_dtb_early_pa))
+#else
+#define dtb_early_va	_dtb_early_va
+#define dtb_early_pa	_dtb_early_pa
+#endif /* CONFIG_XIP_KERNEL */
+
+
+
  #endif /* __ASSEMBLY__ */
  
  #endif /* _ASM_ASM_H */

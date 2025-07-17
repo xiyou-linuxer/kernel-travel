@@ -233,7 +233,7 @@ noinstr void irqentry_exit(struct pt_regs *regs, irqentry_state_t state)
 		irqentry_exit_to_user_mode(regs);
 		return;
 	}
-
+	
 	// 如果中断标志未禁用，启用中断
 	arch_local_irq_enable();
 #endif
@@ -244,4 +244,14 @@ void irq_init(void)
 #ifndef CONFIG_RISCV
         exception_init();
 #endif
+}
+
+
+asmlinkage void generic_handle_arch_irq(struct pt_regs *regs){
+	// struct pt_regs *old_regs;
+	// irq_enter();
+	// old_regs = set_irq_regs(regs);
+	// handle_arch_irq(regs);
+	// set_irq_regs(old_regs);
+	// irq_exit();
 }

@@ -9,14 +9,14 @@
 #include <asm/pgtable.h>
 #include <asm/page.h>
 #include <asm/csr.h>
+#include <asm/asm.h>
 #include <xkernel/string.h>
 #include <xkernel/debug.h>
 #ifndef __maybe_unused
 # define __maybe_unused		__attribute__((unused))
 #endif
 
-
-void *dtb_early_va;
+void *_dtb_early_va __initdata;
 static phys_addr_t dtb_early_pa __initdata;
 struct kernel_mapping kernel_map ;
 /* 每个页全局目录（PGD）包含的指针数量 */

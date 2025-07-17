@@ -90,7 +90,6 @@ if [ $(words $(LOADADDR)) -gt 1 ]; then \
 fi
 
 VMLINUX_LOAD_ADDRESS=0xffffffff80000000
-# VMLINUX_LOAD_ADDRESS=0x9000000090000000
 
 # entry-y	= $(shell /home/huloves/repositories/linux-5.10-2k1000-dp-src/arch/loongarch/tools/elf-entry vmlinux)
 VMLINUX_ENTRY_ADDRESS = $(entry-y)

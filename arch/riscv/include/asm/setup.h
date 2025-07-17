@@ -4,6 +4,4 @@
 extern void setup_arch(void);
 
 
-
-
 #endif
