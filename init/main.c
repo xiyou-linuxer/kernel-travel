@@ -123,17 +123,23 @@ void __init __no_sanitize_address start_kernel(void) {
     puts("hello\n");
     printk("%s\n", xkernel_banner);
     // sppppp();
-   
-    #ifndef CONFIG_RISCV
-    int cpu = smp_processor_id();
 
+    
+   
+    #ifndef CONFIG_RISCV 
+    // int cpu = smp_processor_id();
+    #endif
+
+    //关闭当前 CPU 上的本地中断
     local_irq_disable();
 
-    printk("%s\n", xkernel_banner);
-    printk("sizeof pcb:%x\n", sizeof(struct task_struct));
-
+ 
+    printk("sizeof pcb:%d\n", sizeof(struct task_struct));
+    
     pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
+  
     setup_arch(); //初始化体系结构
+    #ifndef CONFIG_RISCV 
     // mem_init();
     trap_init();
     irq_init();
@@ -159,12 +165,12 @@ void __init __no_sanitize_address start_kernel(void) {
         {
             printk("open failed");
     }
-    sys_write(fd, init_code, init_code_len);
+    // sys_write(fd, init_code, init_code_len);
     *cur = *bak;
     printk("last test..................\n");
     test_pcb();
     local_irq_enable();
-#endif
+    #endif /* CONFIG_RISCV */
     while(1)
         {
         }

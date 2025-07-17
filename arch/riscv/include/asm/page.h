@@ -102,7 +102,7 @@ typedef struct {
 typedef struct page *pgtable_t;
 
 #define pte_val(x)	((x).pte)
-#define pgd_val(x)	((x).pgd)
+#define pgd_val(x)	((x).pgd )
 #define pgprot_val(x)	((x).pgprot)
 
 #define __pte(x)	((pte_t) { (x) })
