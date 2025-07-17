@@ -74,8 +74,9 @@ SYM_CODE_START(_start_kernel)
 .Lclear_bss_done:
 #endif
 
+# 把设备树地址__dtb_start放进setup_vm
+la a0, __dtb_start
 call setup_vm
-
 
 # call setup_trap_vector
 	tail start_kernel
