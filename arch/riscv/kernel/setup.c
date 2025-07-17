@@ -26,5 +26,5 @@ static void __init parse_dtb(void){
 	if(early_init_dt_scan(dtb_early_va)){
 		pr_info("1");
 	}
-
+	
 }
