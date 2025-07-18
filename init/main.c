@@ -139,10 +139,11 @@ void __init __no_sanitize_address start_kernel(void) {
     pr_info("%s %s-%d.%d.%d\n", "hello", str, 0, 0, 1);
   
     setup_arch(); //初始化体系结构
+    trap_init();//异常处理
     #ifndef CONFIG_RISCV 
-    // mem_init();
-    trap_init();
-    irq_init();
+    //mem_init();
+    trap_init();//异常处理
+    irq_init();//中断控制
 
     thread_init();
     test_pcb();

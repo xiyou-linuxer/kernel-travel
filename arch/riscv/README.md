@@ -49,12 +49,12 @@ mount -t sysfs none /sys
 sudo chmod +x etc/init.d/rcS
 sudo umount /tmp/rootfs
 ```shell
-  qemu-system-riscv64 \
+qemu-system-riscv64 \
       -machine virt \
-      -kernel arch/riscv/boot/Image \
+      -kernel kernel-travel/arch/riscv/boot/Image \
       -m 1G -nographic -smp 1 \
       -bios default \
-      -drive file=../busybox-1.36.1/rootfs.ext2,if=none,format=raw,id=x0 \
+      -drive file=busybox-1.37.0/rootfs.ext2,if=none,format=raw,id=x0 \
       -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
       -no-reboot \
       -device virtio-net-device,netdev=net \

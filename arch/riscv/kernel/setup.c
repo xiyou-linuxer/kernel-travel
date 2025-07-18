@@ -30,12 +30,26 @@ unsigned long boot_cpu_hartid;
 
 static void __init parse_dtb(void);
 
+void  parse_early_param(void)
+{
+	static int done __initdata;
+	static char tmp_cmdline[COMMAND_LINE_SIZE] __initdata;
+
+	if (done)
+		return;
+
+	//strscpy(tmp_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+	//parse_early_options(tmp_cmdline);
+	done = 1;
+}
+
 void setup_arch(void)
 {
 	// 解析设备树
 	parse_dtb();
 	early_ioremap_setup();//早期内存映射（early ioremap）机制的初始化函数
 
+	parse_early_param();
 	return;
 }
 
