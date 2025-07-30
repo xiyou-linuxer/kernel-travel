@@ -85,14 +85,7 @@ char xkernel_banner[] = "        __                              .__   \n"
                         " >    <|    <\\  ___/|  | \\/   |  \\  ___/|  |__\n"
                         "/__/\\_ \\__|_ \\___  >__|  |___|  /\\___  >____/\n"
                         "      \\/    \\/    \\/           \\/     \\/      ";
-#ifndef CONFIG_RISCV
-#endif
-void sppppp(void) {
-    asm volatile("li a0, 0x10000000\n\t"
-                 "li a1, 'y'\n\t"
-                 "sb a1,0(a0)\n\t"
-                 "j .");
-}
+
 
 void console_putchar(uint8_t ch) {
     register uintptr_t a0 asm("x10") = (uintptr_t)ch;
